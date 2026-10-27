@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-27 17:06]
+- [Changed] - 저장소: 창 닫기 키·⌘Q·캡처 ⌘C 수정(아래 항목)을 커밋 04c948d로 main에 push
+
 [2026-10-27 17:04]
 - [Fixed] - Sources/PolyMacApp/AppDelegate.swift: 메뉴바 전용 앱이라 기본 메뉴가 없어 ⌘W로 창이 안 닫히고 검색창 ⌘C/⌘V/⌘A가 안 되던 문제 — 화면에 안 보이는 기본 메뉴(편집·윈도우) 추가, ⌘Q는 PolyMac 창이 있으면 그 창만 닫고 캡처·클립보드 창 앞에서는 무시
 - [Added] - Sources/PolyMacCore/SystemSupport.swift: Esc로 닫히는 ClosableWindow — 단축키 설정·앱 삭제 창에 적용
