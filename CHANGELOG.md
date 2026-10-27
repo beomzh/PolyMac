@@ -2,6 +2,13 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-27 17:04]
+- [Fixed] - Sources/PolyMacApp/AppDelegate.swift: 메뉴바 전용 앱이라 기본 메뉴가 없어 ⌘W로 창이 안 닫히고 검색창 ⌘C/⌘V/⌘A가 안 되던 문제 — 화면에 안 보이는 기본 메뉴(편집·윈도우) 추가, ⌘Q는 PolyMac 창이 있으면 그 창만 닫고 캡처·클립보드 창 앞에서는 무시
+- [Added] - Sources/PolyMacCore/SystemSupport.swift: Esc로 닫히는 ClosableWindow — 단축키 설정·앱 삭제 창에 적용
+- [Fixed] - Sources/PolyMacCore/SelectionView.swift, Annotation.swift: 캡처 영역 선택 후 ⌘C로 복사하고 닫기 (기본 메뉴의 복사·모두 선택·실행 취소와도 연결)
+- [Changed] - Sources/CaptureModule/PinPanel.swift: 클릭한 핀에서 기본 메뉴 ⌘C로도 복사
+- [Changed] - README.md: 창 닫기 키, 캡처 ⌘C
+
 [2026-10-27 16:54]
 - [Changed] - 저장소: 클립보드 멈춤·버벅임 수정과 앱 완전 삭제 바로가기(아래 두 항목)를 커밋 274a009로 main에 push
 

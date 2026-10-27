@@ -237,7 +237,7 @@ final class SelectionView: NSView {
                 ("T", "텍스트 추출"),
                 ("F", "화면에 고정"),
                 ("⌘S", "파일로 저장"),
-                ("↩", "복사하고 닫기"),
+                ("↩  ⌘C", "복사하고 닫기"),
                 ("Esc", "취소"),
             ]
         } else {
@@ -553,6 +553,22 @@ final class SelectionView: NSView {
 
     // MARK: - 키보드
 
+    // 기본 메뉴(편집)의 ⌘C·⌘A·⌘Z가 먼저 이 동작들을 찾으므로 같은 일을 하게 연결해 둔다
+
+    @objc func copy(_ sender: Any?) {
+        if isSelected { complete(.copy) }
+    }
+
+    override func selectAll(_ sender: Any?) {
+        reset()
+        selection = bounds
+        confirmSelection()
+    }
+
+    @objc func undo(_ sender: Any?) {
+        undoAnnotation()
+    }
+
     override func keyDown(with event: NSEvent) {
         onActivity?()
         if event.keyCode == 53 { onFinish?(nil); return } // Esc
@@ -580,7 +596,8 @@ final class SelectionView: NSView {
             return
         }
         switch (key, cmd) {
-        case ("z", true): undo()
+        case ("z", true): undoAnnotation()
+        case ("c", true): complete(.copy)
         case ("s", true): complete(.save)
         case ("\r", _): complete(.copy)
         case ("r", false): pick(.rectangle)
@@ -617,7 +634,7 @@ final class SelectionView: NSView {
             self.onActivity?()
             switch action {
             case .tool: if let mouse = self.mouse { self.updateCursor(at: mouse) }
-            case .undo: self.undo()
+            case .undo: self.undoAnnotation()
             case .ocr: self.complete(.ocr)
             case .pin: self.complete(.pin)
             case .save: self.complete(.save)
@@ -645,7 +662,7 @@ final class SelectionView: NSView {
         toolbar?.select(toolbar?.selectedTool == tool ? nil : tool)
     }
 
-    private func undo() {
+    private func undoAnnotation() {
         guard !annotations.isEmpty else { return }
         annotations.removeLast()
         needsDisplay = true

@@ -269,6 +269,11 @@ private final class PinCanvasView: NSView {
 
     override var acceptsFirstResponder: Bool { true }
 
+    /// 기본 메뉴(편집)의 ⌘C가 먼저 찾는 동작
+    @objc func copy(_ sender: Any?) {
+        pin?.copyFromKeyboard()
+    }
+
     /// 핀을 클릭해 앞으로 가져온 상태에서: Esc·⌫·⌦ 닫기, ⌘C 복사
     override func keyDown(with event: NSEvent) {
         switch Int(event.keyCode) {

@@ -39,6 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         for descriptor in registry.descriptors where isEnabled(descriptor) {
             activate(descriptor)
         }
+        NSApp.mainMenu = Self.makeMainMenu(target: self)
         watchAccessibilityChanges()
         logger.info("launched \(self.version, privacy: .public) accessibility=\(Permissions.accessibility)")
     }
@@ -209,6 +210,45 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             items.append(disabled("⚠️ 표시된 단축키는 다른 앱(Spectacle 등)을 끄거나 단축키를 바꾸면 동작합니다"))
         }
         return items
+    }
+
+    /// 화면에는 안 보이지만 키 조합을 처리하는 기본 메뉴.
+    /// 메뉴바 전용 앱이라 이게 없으면 ⌘W(창 닫기)·검색창의 ⌘C/⌘V/⌘A가 동작하지 않는다.
+    private static func makeMainMenu(target: AppDelegate) -> NSMenu {
+        let main = NSMenu()
+        func submenu(_ title: String, _ items: [NSMenuItem]) {
+            let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+            let menu = NSMenu(title: title)
+            items.forEach(menu.addItem)
+            item.submenu = menu
+            main.addItem(item)
+        }
+        let quit = NSMenuItem(title: "창 닫기 / PolyMac 종료", action: #selector(closeWindowOrQuit), keyEquivalent: "q")
+        quit.target = target
+        submenu("PolyMac", [quit])
+        submenu("편집", [
+            NSMenuItem(title: "실행 취소", action: NSSelectorFromString("undo:"), keyEquivalent: "z"),
+            NSMenuItem(title: "잘라내기", action: #selector(NSText.cut(_:)), keyEquivalent: "x"),
+            NSMenuItem(title: "복사", action: #selector(NSText.copy(_:)), keyEquivalent: "c"),
+            NSMenuItem(title: "붙여넣기", action: #selector(NSText.paste(_:)), keyEquivalent: "v"),
+            NSMenuItem(title: "모두 선택", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a"),
+        ])
+        submenu("윈도우", [NSMenuItem(title: "닫기", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")])
+        return main
+    }
+
+    /// ⌘Q: PolyMac 창(설정·앱 삭제)이 떠 있으면 그 창만 닫고, 없을 때만 종료 — 메뉴바 앱이 실수로 꺼지지 않게
+    @objc private func closeWindowOrQuit() {
+        if let key = NSApp.keyWindow {
+            // 캡처 화면·클립보드 창·핀처럼 닫기 버튼이 없는 창이 앞에 있으면 아무것도 하지 않는다 (실수로 종료 방지)
+            if key.styleMask.contains(.closable) { key.performClose(nil) }
+            return
+        }
+        if let window = NSApp.windows.first(where: { $0.isVisible && $0 is ClosableWindow }) {
+            window.performClose(nil)
+        } else {
+            NSApp.terminate(nil)
+        }
     }
 
     @objc private func openUninstaller() {

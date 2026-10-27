@@ -147,3 +147,11 @@ private func fsEventsCallback(
     let paths = Unmanaged<CFArray>.fromOpaque(eventPaths).takeUnretainedValue() as? [String] ?? []
     watcher.deliver(paths)
 }
+
+/// PolyMac의 일반 창(설정·앱 삭제). Esc로 닫힌다 — 메뉴바 앱이라 창을 닫을 방법이 눈에 안 띄기 쉬워서.
+/// 단축키 녹화처럼 Esc를 먼저 쓰는 곳은 이벤트를 가로채므로 여기까지 오지 않는다.
+public final class ClosableWindow: NSWindow {
+    override public func cancelOperation(_ sender: Any?) {
+        performClose(sender)
+    }
+}

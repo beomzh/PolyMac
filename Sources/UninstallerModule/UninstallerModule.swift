@@ -55,7 +55,7 @@ final class UninstallerWindow: NSObject, NSWindowDelegate {
         model.mode = mode
         model.loadApps()
         if mode == .orphans { model.scanOrphans() }
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 960, height: 620),
+        let window = ClosableWindow(contentRect: NSRect(x: 0, y: 0, width: 960, height: 620),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
         window.title = "앱 완전 삭제 — PolyMac"
         window.isReleasedWhenClosed = false

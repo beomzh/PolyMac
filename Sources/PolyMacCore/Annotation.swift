@@ -164,7 +164,7 @@ public final class AnnotationToolbar: NSView {
             stack.addArrangedSubview(button("square.and.arrow.down", "저장… (⌘S)", #selector(saveTapped)))
             stack.addArrangedSubview(separator())
             stack.addArrangedSubview(button("xmark", "취소 (Esc)", #selector(cancelTapped)))
-            let copy = button("checkmark", "복사 (↩︎)", #selector(copyTapped))
+            let copy = button("checkmark", "복사하고 닫기 (↩︎ 또는 ⌘C)", #selector(copyTapped))
             copy.contentTintColor = .systemGreen
             stack.addArrangedSubview(copy)
         } else {

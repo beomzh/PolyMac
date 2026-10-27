@@ -11,7 +11,7 @@ final class ShortcutSettingsWindow {
     func show(moduleNames: [String: String]) {
         let model = ShortcutSettingsModel(moduleNames: moduleNames)
         if window == nil {
-            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 580, height: 560),
+            let w = ClosableWindow(contentRect: NSRect(x: 0, y: 0, width: 580, height: 560),
                              styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
             w.title = "PolyMac 단축키"
             w.isReleasedWhenClosed = false
