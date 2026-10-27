@@ -30,6 +30,9 @@ public final class UninstallerModule: PolyMacModule {
         return [open, orphans].map { $0.target = self; return $0 }
     }
 
+    /// 메뉴바 맨 위 "앱 완전 삭제…"에서 부른다
+    public func openWindow() { window.show(mode: .apps) }
+
     @objc private func openApps() { window.show(mode: .apps) }
     @objc private func openOrphans() { window.show(mode: .orphans) }
 }

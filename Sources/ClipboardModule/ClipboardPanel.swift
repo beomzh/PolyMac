@@ -50,7 +50,8 @@ final class ClipboardPanelController {
             UserDefaults.standard.set(model.previewOpen, forKey: Self.previewKey)
             var frame = panel.frame
             frame.size.width = self.width(model.previewOpen)
-            panel.setFrame(frame, display: true, animate: true)
+            // 애니메이션을 쓰면 프레임마다 미리보기 전체를 다시 배치해 긴 텍스트에서 멈춘다
+            panel.setFrame(frame, display: true, animate: false)
         }
         panel.contentView = NSHostingView(rootView: ClipboardPanelView(model: model, onPick: { [weak self] item in
             self?.close()
@@ -148,25 +149,35 @@ private final class KeyablePanel: NSPanel {
 
 @MainActor
 final class ClipboardPanelModel: ObservableObject {
-    @Published var items: [ClipboardItem]
-    @Published var query = "" {
-        didSet { selectedID = filtered.first?.id }
+    @Published var items: [ClipboardItem] {
+        didSet { refilter() }
     }
+    @Published var query = "" {
+        didSet {
+            refilter()
+            selectedID = filtered.first?.id
+        }
+    }
+    /// 걸러진 목록은 항목·검색어가 바뀔 때만 다시 만든다 (그릴 때마다 계산하면 행 수만큼 반복됨)
+    @Published private(set) var filtered: [ClipboardItem] = []
     @Published var selectedID: UUID?
     @Published private(set) var previewOpen: Bool
+    /// 백그라운드에서 읽어 온 썸네일 — 들어오면 해당 행만 다시 그려진다
+    @Published private var thumbnails: [String: NSImage] = [:]
     var onTogglePreview: (() -> Void)?
 
     let imageDirectory: URL
     let textDirectory: URL
-    private var thumbnails: [String: NSImage] = [:]
+    private var loadingThumbnails = Set<String>()
+    private var previewCache: (id: UUID, text: String, truncated: Bool)?
 
     init(items: [ClipboardItem], imageDirectory: URL, textDirectory: URL, previewOpen: Bool) {
         self.items = items
         self.imageDirectory = imageDirectory
         self.textDirectory = textDirectory
         self.previewOpen = previewOpen
-        self.selectedID = nil
-        self.selectedID = ordered.first?.id
+        refilter()
+        selectedID = filtered.first?.id
     }
 
     func setPreview(_ open: Bool) {
@@ -175,27 +186,31 @@ final class ClipboardPanelModel: ObservableObject {
         onTogglePreview?()
     }
 
-    /// 고정 항목 먼저, 그다음 최근 순
-    private var ordered: [ClipboardItem] { items.filter(\.isPinned) + items.filter { !$0.isPinned } }
-
-    /// 띄어쓰기로 나눈 단어가 모두 들어 있는 항목 (대소문자·한글 정규화 무시). "이미지"로 이미지만 찾기.
-    var filtered: [ClipboardItem] {
+    /// 고정 항목 먼저, 그다음 최근 순. 띄어쓰기로 나눈 단어가 모두 들어 있는 항목만 (대소문자·한글 정규화 무시).
+    /// "이미지"로 이미지만 찾기.
+    private func refilter() {
+        let ordered = items.filter(\.isPinned) + items.filter { !$0.isPinned }
         let words = query.precomposedStringWithCanonicalMapping.lowercased().split(separator: " ").map(String.init)
-        guard !words.isEmpty else { return ordered }
-        return ordered.filter { item in
+        guard !words.isEmpty else { filtered = ordered; return }
+        filtered = ordered.filter { item in
             let text = (item.isImage ? "이미지 image" : item.text).precomposedStringWithCanonicalMapping.lowercased()
             let app = AppInfo.name(for: item.sourceApp).lowercased()
             return words.allSatisfy { text.contains($0) || app.contains($0) }
         }
     }
 
-    var selected: ClipboardItem? { filtered.first { $0.id == selectedID } ?? filtered.first }
+    /// 지금 강조된 항목 id (선택이 없으면 첫 항목)
+    var highlightedID: UUID? { selectedID ?? filtered.first?.id }
+
+    var selected: ClipboardItem? {
+        guard let id = highlightedID else { return nil }
+        return filtered.first { $0.id == id }
+    }
 
     func move(_ delta: Int) {
-        let list = filtered
-        guard !list.isEmpty else { return }
-        let index = list.firstIndex { $0.id == selectedID } ?? 0
-        selectedID = list[min(max(index + delta, 0), list.count - 1)].id
+        guard !filtered.isEmpty else { return }
+        let index = filtered.firstIndex { $0.id == highlightedID } ?? 0
+        selectedID = filtered[min(max(index + delta, 0), filtered.count - 1)].id
     }
 
     func togglePin(_ id: UUID) {
@@ -204,44 +219,51 @@ final class ClipboardPanelModel: ObservableObject {
     }
 
     func remove(_ id: UUID) {
-        let list = filtered
-        let index = list.firstIndex { $0.id == id } ?? 0
+        let index = filtered.firstIndex { $0.id == id } ?? 0
         items.removeAll { $0.id == id }
-        let rest = filtered
-        selectedID = rest.isEmpty ? nil : rest[min(index, rest.count - 1)].id
+        selectedID = filtered.isEmpty ? nil : filtered[min(index, filtered.count - 1)].id
     }
 
     /// 큰 텍스트 미리보기: 화면이 버벅이지 않게 앞 200 KB까지만 읽는다 (복사는 전체)
     static let previewLimit = 200 * 1024
 
+    /// 같은 항목이면 파일을 다시 읽지 않는다
     func previewText(_ item: ClipboardItem) -> (text: String, truncated: Bool) {
-        guard let file = item.textFile,
-              let handle = try? FileHandle(forReadingFrom: textDirectory.appendingPathComponent(file))
-        else { return (item.text, false) }
-        defer { try? handle.close() }
-        let data = (try? handle.read(upToCount: Self.previewLimit)) ?? Data()
-        // 잘린 끝의 깨진 UTF-8 바이트는 버린다
-        var text = String(decoding: data, as: UTF8.self)
-        if text.hasSuffix("\u{FFFD}") { text.removeLast() }
-        return (text, (item.textBytes ?? 0) > Self.previewLimit)
+        if let cache = previewCache, cache.id == item.id { return (cache.text, cache.truncated) }
+        var result = (text: item.text, truncated: false)
+        if let file = item.textFile, let handle = try? FileHandle(forReadingFrom: textDirectory.appendingPathComponent(file)) {
+            defer { try? handle.close() }
+            let data = (try? handle.read(upToCount: Self.previewLimit)) ?? Data()
+            // 잘린 끝의 깨진 UTF-8 바이트는 버린다
+            var text = String(decoding: data, as: UTF8.self)
+            if text.hasSuffix("\u{FFFD}") { text.removeLast() }
+            result = (text, (item.textBytes ?? 0) > Self.previewLimit)
+        }
+        previewCache = (item.id, result.text, result.truncated)
+        return result
     }
 
-    /// 목록·미리보기용 축소 이미지 (원본 전체를 메모리에 올리지 않게 ImageIO 축소본, 창을 닫으면 버림)
+    /// 목록·미리보기용 축소 이미지. 처음엔 nil을 돌려주고 백그라운드에서 읽어 오면 다시 그려진다
+    /// (원본 전체를 메모리에 올리지 않게 ImageIO 축소본, 창을 닫으면 버림)
     func thumbnail(_ item: ClipboardItem, maxPixel: Int = 240) -> NSImage? {
         guard let file = item.imageFile else { return nil }
         let key = "\(file)@\(maxPixel)"
         if let cached = thumbnails[key] { return cached }
+        guard loadingThumbnails.insert(key).inserted else { return nil }
         let url = imageDirectory.appendingPathComponent(file)
-        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
-              let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, [
-                  kCGImageSourceCreateThumbnailFromImageAlways: true,
-                  kCGImageSourceThumbnailMaxPixelSize: maxPixel,
-                  kCGImageSourceCreateThumbnailWithTransform: true,
-              ] as CFDictionary)
-        else { return nil }
-        let image = NSImage(cgImage: cg, size: NSSize(width: cg.width, height: cg.height))
-        thumbnails[key] = image
-        return image
+        Task.detached(priority: .userInitiated) {
+            guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+                  let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                      kCGImageSourceCreateThumbnailFromImageAlways: true,
+                      kCGImageSourceThumbnailMaxPixelSize: maxPixel,
+                      kCGImageSourceCreateThumbnailWithTransform: true,
+                  ] as CFDictionary)
+            else { return }
+            await MainActor.run {
+                self.thumbnails[key] = NSImage(cgImage: cg, size: NSSize(width: cg.width, height: cg.height))
+            }
+        }
+        return nil
     }
 }
 
@@ -296,13 +318,11 @@ struct ClipboardPanelView: View {
                 Divider()
                 ClipboardPreview(item: model.selected, model: model)
                     .frame(width: ClipboardPanelController.previewWidth)
-                    .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
         .frame(height: ClipboardPanelController.height)
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12))
-        .animation(.easeOut(duration: 0.18), value: model.previewOpen)
         .onAppear { searchFocused = true }
     }
 
@@ -337,13 +357,14 @@ struct ClipboardPanelView: View {
             ScrollView {
                 LazyVStack(spacing: 2) {
                     let items = model.filtered
+                    let highlighted = model.highlightedID
                     if items.isEmpty {
                         Text(model.query.isEmpty ? "기록이 없습니다" : "검색 결과가 없습니다")
                             .foregroundStyle(.secondary)
                             .padding(.top, 40)
                     }
                     ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                        ClipboardRow(item: item, index: index, isSelected: item.id == model.selected?.id, model: model)
+                        ClipboardRow(item: item, index: index, isSelected: item.id == highlighted, model: model)
                             .id(item.id)
                             .contentShape(Rectangle())
                             .onTapGesture(count: 2) { onPick(item) }
@@ -386,12 +407,16 @@ private struct ClipboardRow: View {
                 .resizable()
                 .frame(width: 16, height: 16)
                 .opacity(0.9)
-            if item.isImage, let thumb = model.thumbnail(item) {
-                Image(nsImage: thumb)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(maxWidth: 200, maxHeight: 44, alignment: .leading)
-                    .clipShape(RoundedRectangle(cornerRadius: 3))
+            if item.isImage {
+                Group {
+                    if let thumb = model.thumbnail(item) {
+                        Image(nsImage: thumb).resizable().aspectRatio(contentMode: .fit)
+                    } else {
+                        RoundedRectangle(cornerRadius: 3).fill(.quaternary).aspectRatio(1.6, contentMode: .fit)
+                    }
+                }
+                .frame(maxWidth: 200, maxHeight: 44, alignment: .leading)
+                .clipShape(RoundedRectangle(cornerRadius: 3))
                 Spacer(minLength: 0)
             } else {
                 Text(oneLine)
@@ -414,9 +439,9 @@ private struct ClipboardRow: View {
         .background(isSelected ? Color.accentColor : .clear, in: RoundedRectangle(cornerRadius: 6))
     }
 
-    /// 줄바꿈을 ⏎로 보여 한 줄에 요약 (Maccy처럼)
+    /// 줄바꿈을 ⏎로 보여 한 줄에 요약 (Maccy처럼). 한 줄에 보이는 건 몇십 자라 앞 300자만 배치한다.
     private var oneLine: String {
-        let collapsed = item.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let collapsed = String(item.text.prefix(300)).trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "\r\n", with: "\n")
             .replacingOccurrences(of: "\n", with: " ⏎ ")
         return collapsed.isEmpty ? "(공백)" : collapsed
@@ -430,27 +455,30 @@ private struct ClipboardPreview: View {
     var body: some View {
         if let item {
             VStack(alignment: .leading, spacing: 0) {
-                ScrollView {
-                    if item.isImage, let image = model.thumbnail(item, maxPixel: 1400) {
-                        Image(nsImage: image)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(maxWidth: .infinity)
-                            .padding(12)
-                    } else {
-                        let preview = model.previewText(item)
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(preview.text)
-                                .font(.system(size: 12, design: .monospaced))
-                                .textSelection(.enabled)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            if preview.truncated {
-                                Label("미리보기는 앞 200 KB까지만 보여 줍니다. 복사하면 전체가 들어갑니다.", systemImage: "info.circle")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
+                if item.isImage {
+                    ScrollView {
+                        if let image = model.thumbnail(item, maxPixel: 1400) {
+                            Image(nsImage: image)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(maxWidth: .infinity)
+                                .padding(12)
+                        } else {
+                            ProgressView().padding(40)
                         }
-                        .padding(14)
+                    }
+                    .frame(maxHeight: .infinity)
+                } else {
+                    let preview = model.previewText(item)
+                    // SwiftUI Text는 긴 글(특히 고정폭 글꼴의 한글)을 한 번에 배치해 수 초씩 멈춘다 →
+                    // 보이는 부분만 배치하는 시스템 텍스트 뷰로
+                    PreviewTextView(id: item.id, text: preview.text)
+                    if preview.truncated {
+                        Label("미리보기는 앞 200 KB까지만 보여 줍니다. 복사하면 전체가 들어갑니다.", systemImage: "info.circle")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
                     }
                 }
                 Divider()
@@ -485,6 +513,42 @@ private struct ClipboardPreview: View {
             let size = ByteCountFormatter.string(fromByteCount: Int64(item.textBytes ?? 0), countStyle: .file)
             return "긴 텍스트 \(size) (전체 보관)"
         }
-        return "\(item.text.count)자 · \(item.text.components(separatedBy: .newlines).count)줄"
+        return "\(item.text.count)자 · \(item.text.reduce(1) { $1 == "\n" ? $0 + 1 : $0 })줄"
+    }
+}
+
+/// 읽기 전용·선택 가능한 시스템 텍스트 뷰. 화면에 보이는 부분만 배치해 MB 단위 로그도 바로 뜬다.
+private struct PreviewTextView: NSViewRepresentable {
+    let id: UUID
+    let text: String
+
+    final class Coordinator {
+        var shownID: UUID?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let scroll = NSTextView.scrollableTextView()
+        scroll.drawsBackground = false
+        scroll.hasVerticalScroller = true
+        if let textView = scroll.documentView as? NSTextView {
+            textView.isEditable = false
+            textView.isSelectable = true
+            textView.drawsBackground = false
+            textView.isRichText = false
+            textView.font = .monospacedSystemFont(ofSize: 12, weight: .regular)
+            textView.textColor = .labelColor
+            textView.textContainerInset = NSSize(width: 10, height: 10)
+        }
+        return scroll
+    }
+
+    func updateNSView(_ scroll: NSScrollView, context: Context) {
+        // 같은 항목이면 다시 넣지 않는다 (큰 문자열 비교·재배치 방지)
+        guard context.coordinator.shownID != id, let textView = scroll.documentView as? NSTextView else { return }
+        context.coordinator.shownID = id
+        textView.string = text
+        textView.scroll(.zero)
     }
 }

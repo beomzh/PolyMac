@@ -144,6 +144,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(disabled("PolyMac \(version)"))
         menu.addItem(.separator())
 
+        // 자주 여는 창은 맨 위에 바로
+        let uninstall = NSMenuItem(title: "앱 완전 삭제…", action: #selector(openUninstaller), keyEquivalent: "")
+        uninstall.target = self
+        uninstall.image = NSImage(systemSymbolName: "trash", accessibilityDescription: nil)
+        uninstall.isEnabled = registry.isActive("uninstaller")
+        if !uninstall.isEnabled { uninstall.toolTip = "아래 기능 목록에서 '앱 완전 삭제'를 켜세요" }
+        menu.addItem(uninstall)
+        menu.addItem(.separator())
+
         menu.addItem(disabled("기능 켜기 / 끄기"))
         for descriptor in registry.descriptors {
             let item = NSMenuItem(title: descriptor.displayName, action: #selector(toggleModule(_:)), keyEquivalent: "")
@@ -200,6 +209,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             items.append(disabled("⚠️ 표시된 단축키는 다른 앱(Spectacle 등)을 끄거나 단축키를 바꾸면 동작합니다"))
         }
         return items
+    }
+
+    @objc private func openUninstaller() {
+        (registry.module("uninstaller") as? UninstallerModule)?.openWindow()
     }
 
     @objc private func openShortcutSettings() {

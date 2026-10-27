@@ -2,6 +2,14 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-27 16:53]
+- [Fixed] - Sources/ClipboardModule/ClipboardPanel.swift: 히스토리 창이 버벅이던 원인 제거 — 행마다 전체 목록을 다시 거르던 것(200개면 그릴 때마다 4만 번)을 검색어·항목이 바뀔 때만 계산, 긴 텍스트 미리보기 파일을 그릴 때마다 다시 읽던 것을 캐시, 썸네일을 백그라운드에서 읽기, 줄 수 계산 가볍게
+- [Added] - Sources/PolyMacApp/AppDelegate.swift, Sources/UninstallerModule/UninstallerModule.swift: 메뉴바 맨 위에 "앱 완전 삭제…" 바로가기
+- [Changed] - README.md: 앱 완전 삭제 여는 위치
+
+[2026-10-27 16:48]
+- [Fixed] - Sources/ClipboardModule/ClipboardPanel.swift: 미리보기를 펼치면 앱이 멈추던 문제 — 긴 로그(고정폭 글꼴의 한글)를 SwiftUI Text로 한 번에 배치(200 KB에 82초)하면서 창 크기 애니메이션 프레임마다 반복함. 보이는 부분만 배치하는 NSTextView로 바꿔 0.12초, 창 크기 애니메이션 제거, 목록 한 줄 요약은 앞 300자만 배치
+
 [2026-10-27 16:43]
 - [Changed] - 저장소: 0.1.0-alpha.1 작업(아래 항목들)을 커밋 c7d0652로 main에 push — 53개 파일, 테스트 21개 통과
 
