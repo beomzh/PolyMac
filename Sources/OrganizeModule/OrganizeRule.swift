@@ -6,20 +6,21 @@ public enum FileKind: String, Codable, Sendable, CaseIterable {
 }
 
 /// 규칙의 조건. 모두 Codable이라 규칙을 JSON으로 저장·공유할 수 있다.
+/// 연관값에 이름을 붙여 둬야 JSON이 `{"kind":{"kinds":["image"]}}`처럼 사람이 읽고 고칠 수 있는 형태가 된다.
 public indirect enum Condition: Codable, Sendable, Equatable {
     /// 대소문자 무시, 점 없이 ("pdf")
-    case fileExtension([String])
-    case kind([FileKind])
+    case fileExtension(extensions: [String])
+    case kind(kinds: [FileKind])
     /// isRegex == false면 와일드카드(`*견적서*`)
     case nameMatches(pattern: String, isRegex: Bool)
     /// 하위 도메인 포함. "*.go.kr"처럼 앞에 `*.`를 붙여도 같은 의미
-    case sourceDomain([String])
+    case sourceDomain(domains: [String])
     case sizeGreaterThan(bytes: Int64)
     case sizeLessThan(bytes: Int64)
     case addedMoreThan(days: Double)
     case notOpenedFor(days: Double)
     case isDuplicate
-    case not(Condition)
+    case not(condition: Condition)
 }
 
 public enum MatchMode: String, Codable, Sendable {
@@ -33,7 +34,7 @@ public enum Action: Codable, Sendable, Equatable {
     case copy(to: String)
     case rename(template: String)
     case trash
-    case addTag(String)
+    case addTag(name: String)
     /// 손대지 않고 "정리 후보"로만 알림
     case notify
 }

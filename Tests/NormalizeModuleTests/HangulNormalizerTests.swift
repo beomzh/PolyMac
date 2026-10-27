@@ -22,3 +22,18 @@ import Foundation
     let names = try FileManager.default.contentsOfDirectory(atPath: dir)
     #expect(names.allSatisfy { !HangulNormalizer.needsNFC($0) })
 }
+
+@Test func skipsHiddenAndInProgressDownloads() throws {
+    let dir = NSTemporaryDirectory() + "polymac-nfc-\(UUID().uuidString)"
+    try FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(atPath: dir) }
+
+    let downloading = "보고서.pdf.crdownload".decomposedStringWithCanonicalMapping
+    let hidden = ".임시".decomposedStringWithCanonicalMapping
+    FileManager.default.createFile(atPath: dir + "/" + downloading, contents: nil)
+    FileManager.default.createFile(atPath: dir + "/" + hidden, contents: nil)
+
+    #expect(try HangulNormalizer.normalizeDirectory(dir).isEmpty)
+    let names = try FileManager.default.contentsOfDirectory(atPath: dir)
+    #expect(names.allSatisfy { HangulNormalizer.needsNFC($0) }) // 그대로 NFD
+}

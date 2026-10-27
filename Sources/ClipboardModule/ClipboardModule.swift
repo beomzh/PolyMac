@@ -1,3 +1,6 @@
+import AppKit
+import Carbon.HIToolbox
+import CryptoKit
 import PolyMacCore
 
 @MainActor
@@ -8,15 +11,426 @@ public final class ClipboardModule: PolyMacModule {
         permissions: []
     )
 
+    /// 보관 개수 선택지 (고정 항목은 세지 않음)
+    static let capacityChoices = [50, 100, 200, 500, 1000]
+    private static let capacityKey = "clipboard.maxItems"
+    /// 보관 기간 선택지 (일, 0 = 기간 제한 없음). 기본 7일.
+    static let retentionChoices = [1, 3, 7, 30, 0]
+    private static let retentionKey = "clipboard.retentionDays"
+
     private let context: ModuleContext
+    private var items: [ClipboardItem] = []
+    private var timer: Timer?
+    private var lastChangeCount = NSPasteboard.general.changeCount
+    private var isPaused = false
+    /// 이보다 큰 텍스트는 목록 파일(JSON) 대신 별도 파일에 전체를 저장하고 목록엔 앞부분만 둔다
+    private let inlineTextBytes = 64 * 1024
+    /// 텍스트 한 항목 최대 크기 — 긴 로그도 담되, 실수로 거대한 데이터를 복사했을 때 디스크를 채우지 않게
+    private let maxTextBytes = 20 * 1024 * 1024
+    /// 큰 텍스트에서 목록에 남기는 앞부분 (검색·미리보기용)
+    private let previewCharacters = 4000
+    /// 이미지 한 장 최대 크기 (원본 데이터 기준)
+    private let maxImageBytes = 30 * 1024 * 1024
+    private var pendingSave: DispatchWorkItem?
+    private let ioQueue = DispatchQueue(label: "dev.polymac.clipboard.io", qos: .utility)
+
+    private var storeURL: URL { context.dataDirectory.appendingPathComponent("clipboard.json") }
+    var imageDirectory: URL {
+        let url = context.dataDirectory.appendingPathComponent("clipboard-images", isDirectory: true)
+        if !FileManager.default.fileExists(atPath: url.path) {
+            try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        }
+        return url
+    }
+
+    var textDirectory: URL {
+        let url = context.dataDirectory.appendingPathComponent("clipboard-texts", isDirectory: true)
+        if !FileManager.default.fileExists(atPath: url.path) {
+            try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        }
+        return url
+    }
+
+    private var capacity: Int {
+        let value = UserDefaults.standard.integer(forKey: Self.capacityKey)
+        return value > 0 ? value : 200
+    }
+
+    private var retentionDays: Int {
+        UserDefaults.standard.object(forKey: Self.retentionKey) as? Int ?? 7
+    }
+    private var expiryTimer: Timer?
 
     public init(context: ModuleContext) {
         self.context = context
     }
 
     public func activate() throws {
-        // TODO: changeCount 감시(0.5s) → ClipboardPrivacy 확인 → 저장, ⇧⌘V 팝업 (docs/CONCEPT.md 4.7)
+        load()
+        lastChangeCount = NSPasteboard.general.changeCount
+        // macOS엔 클립보드 변경 알림이 없어 changeCount를 주기적으로 비교한다 (정수 비교 1회, docs/ARCHITECTURE.md 3)
+        let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.poll() }
+        }
+        timer.tolerance = 0.25
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
+        // 보관 기간이 지난 항목은 새로 복사하지 않아도 지워지게 1시간마다 확인
+        let expiry = Timer(timeInterval: 3600, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.didChange() }
+        }
+        expiry.tolerance = 600
+        RunLoop.main.add(expiry, forMode: .common)
+        expiryTimer = expiry
+        didChange()
+
+        context.hotkey("showHistory", KeyCombo(kVK_ANSI_V, [.shift, .command]), "클립보드 히스토리 열기") { [weak self] in
+            self?.showPopup()
+        }
     }
 
-    public func deactivate() {}
+    public func deactivate() {
+        timer?.invalidate()
+        timer = nil
+        expiryTimer?.invalidate()
+        expiryTimer = nil
+        panel.close()
+        context.unregisterHotkeys()
+        saveNow()
+    }
+
+    public func menuItems() -> [NSMenuItem] {
+        let open = NSMenuItem(title: "히스토리 열기", action: #selector(openFromMenu), keyEquivalent: "")
+        let pause = NSMenuItem(title: "기록 일시정지", action: #selector(togglePause), keyEquivalent: "")
+        pause.state = isPaused ? .on : .off
+
+        let capacityItem = NSMenuItem(title: "보관 개수: \(capacity)개", action: nil, keyEquivalent: "")
+        let sub = NSMenu()
+        for n in Self.capacityChoices {
+            let item = NSMenuItem(title: "\(n)개", action: #selector(setCapacity(_:)), keyEquivalent: "")
+            item.target = self
+            item.tag = n
+            item.state = n == capacity ? .on : .off
+            sub.addItem(item)
+        }
+        sub.addItem(.separator())
+        let note = NSMenuItem(title: "고정한 항목은 개수에 포함되지 않습니다", action: nil, keyEquivalent: "")
+        note.isEnabled = false
+        sub.addItem(note)
+        capacityItem.submenu = sub
+
+        let retentionItem = NSMenuItem(title: "보관 기간: \(Self.retentionTitle(retentionDays))", action: nil, keyEquivalent: "")
+        let retentionMenu = NSMenu()
+        for days in Self.retentionChoices {
+            let item = NSMenuItem(title: Self.retentionTitle(days), action: #selector(setRetention(_:)), keyEquivalent: "")
+            item.target = self
+            item.tag = days
+            item.state = days == retentionDays ? .on : .off
+            retentionMenu.addItem(item)
+        }
+        retentionMenu.addItem(.separator())
+        let retentionNote = NSMenuItem(title: "기간이 지나거나 개수를 넘으면 오래된 것부터 지웁니다 (고정 항목 제외)", action: nil, keyEquivalent: "")
+        retentionNote.isEnabled = false
+        retentionMenu.addItem(retentionNote)
+        retentionItem.submenu = retentionMenu
+
+        let imageCount = items.filter(\.isImage).count
+        let stats = NSMenuItem(title: "기록 \(items.count)개 (이미지 \(imageCount)개)", action: nil, keyEquivalent: "")
+        stats.isEnabled = false
+        let clear = NSMenuItem(title: "기록 지우기 (고정 항목 제외)", action: #selector(clearUnpinned), keyEquivalent: "")
+        return [open, pause, capacityItem, retentionItem, stats, clear].map { $0.target = $0.target ?? self; return $0 }
+    }
+
+    // MARK: - 기록
+
+    private func poll() {
+        let pb = NSPasteboard.general
+        guard pb.changeCount != lastChangeCount else { return }
+        lastChangeCount = pb.changeCount
+        guard !isPaused else { return }
+
+        let types = pb.types ?? []
+        let front = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        guard !ClipboardPrivacy.shouldIgnore(types: types.map(\.rawValue), frontmostBundleID: front) else { return }
+
+        if let text = pb.string(forType: .string) {
+            let bytes = text.utf8.count
+            guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+            guard bytes <= maxTextBytes else {
+                context.logger.info("clipboard text skipped: \(bytes) bytes")
+                context.toast("20 MB가 넘는 텍스트는 클립보드 기록에 남기지 않았습니다")
+                return
+            }
+            if bytes > inlineTextBytes {
+                record(largeText: text, bytes: bytes, from: front)
+            } else {
+                record(text: text, from: front)
+            }
+        } else if let data = pb.data(forType: .png) ?? pb.data(forType: .tiff) {
+            guard data.count <= maxImageBytes else {
+                context.logger.info("clipboard image skipped: \(data.count) bytes")
+                return
+            }
+            record(imageData: data, from: front)
+        }
+    }
+
+    private func record(text: String, from app: String?) {
+        if let index = items.firstIndex(where: { !$0.isImage && !$0.isLargeText && $0.text == text }) {
+            var item = items.remove(at: index)
+            item.copiedAt = Date()
+            item.sourceApp = app
+            items.insert(item, at: 0)
+        } else {
+            items.insert(ClipboardItem(text: text, sourceApp: app), at: 0)
+        }
+        didChange()
+    }
+
+    /// 긴 로그 등: 전체는 별도 파일, 목록에는 앞부분만 (해시·파일 쓰기는 백그라운드)
+    private func record(largeText text: String, bytes: Int, from app: String?) {
+        let directory = textDirectory
+        let preview = String(text.prefix(previewCharacters))
+        ioQueue.async { [weak self] in
+            let data = Data(text.utf8)
+            let hash = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    if let index = self.items.firstIndex(where: { $0.contentHash == hash }) {
+                        var item = self.items.remove(at: index)
+                        item.copiedAt = Date()
+                        item.sourceApp = app
+                        self.items.insert(item, at: 0)
+                        self.didChange()
+                        return
+                    }
+                    let file = UUID().uuidString + ".txt"
+                    let url = directory.appendingPathComponent(file)
+                    self.ioQueue.async { try? AppPaths.writePrivate(data, to: url) }
+                    self.items.insert(.largeText(preview: preview, file: file, bytes: bytes, hash: hash, sourceApp: app), at: 0)
+                    self.didChange()
+                }
+            }
+        }
+    }
+
+    /// PNG 변환·해시·파일 쓰기는 무거울 수 있어 백그라운드에서
+    private func record(imageData: Data, from app: String?) {
+        let directory = imageDirectory
+        ioQueue.async { [weak self] in
+            let hash = SHA256.hash(data: imageData).map { String(format: "%02x", $0) }.joined()
+            guard let rep = NSBitmapImageRep(data: imageData) else { return }
+            let png = imageData.starts(with: [0x89, 0x50, 0x4E, 0x47]) ? imageData : (rep.representation(using: .png, properties: [:]) ?? imageData)
+            let width = rep.pixelsWide, height = rep.pixelsHigh
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    if let index = self.items.firstIndex(where: { $0.contentHash == hash }) {
+                        var item = self.items.remove(at: index)
+                        item.copiedAt = Date()
+                        item.sourceApp = app
+                        self.items.insert(item, at: 0)
+                        self.didChange()
+                        return
+                    }
+                    let file = UUID().uuidString + ".png"
+                    let url = directory.appendingPathComponent(file)
+                    self.ioQueue.async {
+                        try? AppPaths.writePrivate(png, to: url)
+                    }
+                    self.items.insert(.image(file: file, width: width, height: height, bytes: png.count, hash: hash, sourceApp: app), at: 0)
+                    self.didChange()
+                }
+            }
+        }
+    }
+
+    private func didChange() {
+        trim()
+        scheduleSave()
+        panel.update(items: items)
+    }
+
+    /// 보관 기간이 지났거나 보관 개수를 넘는 오래된 항목 삭제 (고정 항목 제외), 따로 저장한 파일도 함께 지운다
+    private func trim() {
+        let cutoff = retentionDays > 0 ? Date().addingTimeInterval(-Double(retentionDays) * 86_400) : nil
+        var unpinned = 0
+        var removed: [ClipboardItem] = []
+        items.removeAll { item in
+            guard !item.isPinned else { return false }
+            if let cutoff, item.copiedAt < cutoff { removed.append(item); return true }
+            unpinned += 1
+            if unpinned > capacity { removed.append(item); return true }
+            return false
+        }
+        if !removed.isEmpty { context.logger.info("clipboard trimmed \(removed.count) items") }
+        deleteFiles(of: removed)
+    }
+
+    private func deleteFiles(of removed: [ClipboardItem]) {
+        let base = context.dataDirectory
+        let urls = removed.flatMap(\.storedFiles).map { base.appendingPathComponent($0) }
+        guard !urls.isEmpty else { return }
+        ioQueue.async { urls.forEach { try? FileManager.default.removeItem(at: $0) } }
+    }
+
+    // MARK: - 히스토리 창
+
+    private let panel = ClipboardPanelController()
+
+    private func showPopup() {
+        panel.show(items: items, imageDirectory: imageDirectory, textDirectory: textDirectory, callbacks: .init(
+            choose: { [weak self] item, pasteNow in
+                guard let self else { return }
+                self.copyToPasteboard(item)
+                if pasteNow {
+                    self.pasteIntoFrontApp()
+                } else if item.isImage {
+                    self.context.toast("이미지를 클립보드에 복사했습니다")
+                } else if item.isLargeText {
+                    let size = ByteCountFormatter.string(fromByteCount: Int64(item.textBytes ?? 0), countStyle: .file)
+                    self.context.toast("긴 텍스트 전체(\(size))를 클립보드에 복사했습니다")
+                } else {
+                    let preview = item.text.count > 60 ? String(item.text.prefix(60)) + "…" : item.text
+                    self.context.toast("클립보드에 복사했습니다\n\(preview)")
+                }
+            },
+            togglePin: { [weak self] id in self?.togglePin(id) },
+            delete: { [weak self] id in self?.delete(id) }
+        ))
+    }
+
+    /// 큰 텍스트는 파일에서 전체를 읽는다
+    func fullText(_ item: ClipboardItem) -> String {
+        guard let file = item.textFile,
+              let data = try? Data(contentsOf: textDirectory.appendingPathComponent(file)),
+              let text = String(data: data, encoding: .utf8)
+        else { return item.text }
+        return text
+    }
+
+    private func copyToPasteboard(_ item: ClipboardItem) {
+        guard let file = item.imageFile else {
+            PasteboardWriter.copy(fullText(item))
+            return
+        }
+        let url = imageDirectory.appendingPathComponent(file)
+        guard let png = try? Data(contentsOf: url) else {
+            context.toast("이미지 파일을 찾지 못했습니다")
+            return
+        }
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.declareTypes([.png, .tiff], owner: nil)
+        pb.setData(png, forType: .png)
+        if let tiff = NSImage(data: png)?.tiffRepresentation { pb.setData(tiff, forType: .tiff) }
+    }
+
+    /// 앞의 앱에 바로 ⌘V (⇧↩︎)
+    private func pasteIntoFrontApp() {
+        guard Permissions.accessibility else {
+            context.toast("복사했습니다 — ⌘V로 붙여넣으세요\n(자동 붙여넣기는 손쉬운 사용 권한이 필요합니다)")
+            return
+        }
+        // 창이 닫히고 원래 앱으로 포커스가 돌아간 뒤 ⌘V
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+            let source = CGEventSource(stateID: .combinedSessionState)
+            let down = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: true)
+            let up = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: false)
+            down?.flags = .maskCommand
+            up?.flags = .maskCommand
+            // Finder ⌘X 잘라내기 탭이 이 ⌘V를 "이동"으로 바꾸지 않게 표식
+            down?.setIntegerValueField(.eventSourceUserData, value: SyntheticEvent.marker)
+            up?.setIntegerValueField(.eventSourceUserData, value: SyntheticEvent.marker)
+            down?.post(tap: .cgAnnotatedSessionEventTap)
+            up?.post(tap: .cgAnnotatedSessionEventTap)
+        }
+    }
+
+    private func togglePin(_ id: UUID) {
+        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
+        items[index].isPinned.toggle()
+        didChange()
+    }
+
+    private func delete(_ id: UUID) {
+        let removed = items.filter { $0.id == id }
+        items.removeAll { $0.id == id }
+        deleteFiles(of: removed)
+        scheduleSave()
+    }
+
+    @objc private func openFromMenu() {
+        showPopup()
+    }
+
+    @objc private func togglePause() {
+        isPaused.toggle()
+        context.toast(isPaused ? "클립보드 기록을 일시정지했습니다" : "클립보드 기록을 다시 시작합니다")
+    }
+
+    @objc private func setCapacity(_ sender: NSMenuItem) {
+        UserDefaults.standard.set(sender.tag, forKey: Self.capacityKey)
+        didChange()
+        context.toast("클립보드 보관 개수: \(sender.tag)개")
+    }
+
+    private static func retentionTitle(_ days: Int) -> String {
+        days == 0 ? "제한 없음" : "\(days)일"
+    }
+
+    @objc private func setRetention(_ sender: NSMenuItem) {
+        UserDefaults.standard.set(sender.tag, forKey: Self.retentionKey)
+        didChange()
+        context.toast("클립보드 보관 기간: \(Self.retentionTitle(sender.tag))")
+    }
+
+    @objc private func clearUnpinned() {
+        let removed = items.filter { !$0.isPinned }
+        items.removeAll { !$0.isPinned }
+        deleteFiles(of: removed)
+        scheduleSave()
+        context.toast("기록을 지웠습니다")
+    }
+
+    // MARK: - 저장 (0600, 로컬만)
+
+    private func load() {
+        guard let data = try? Data(contentsOf: storeURL) else { return }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        do {
+            items = try decoder.decode([ClipboardItem].self, from: data)
+        } catch {
+            context.logger.error("clipboard store unreadable: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    /// 연속으로 복사해도 1초에 한 번만, 백그라운드에서 쓴다
+    private func scheduleSave() {
+        pendingSave?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            MainActor.assumeIsolated { self?.saveNow() }
+        }
+        pendingSave = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: work)
+    }
+
+    private func saveNow() {
+        pendingSave?.cancel()
+        pendingSave = nil
+        let snapshot = items
+        let url = storeURL
+        let logger = context.logger
+        ioQueue.async {
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            do {
+                try AppPaths.writePrivate(try encoder.encode(snapshot), to: url)
+            } catch {
+                logger.error("clipboard save failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
 }

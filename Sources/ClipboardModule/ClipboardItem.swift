@@ -1,34 +1,59 @@
 import Foundation
 
-/// 클립보드 히스토리 한 항목.
-public struct ClipboardItem: Sendable, Identifiable {
-    public enum Content: Sendable {
-        case text(String)
-        case richText(Data)
-        case image(fileName: String)   // 원본은 디스크에, 메모리엔 썸네일만
-        case files([URL])
-    }
-
-    /// 어디서 왔는지. PolyMac 내부 모듈이 복사한 경우 해당 캡처·기능으로 돌아갈 수 있다.
-    public enum Source: Sendable {
-        case app(bundleID: String?)
-        case ocr(captureID: UUID)
-        case capture(captureID: UUID)
-        case pathCopy
-    }
-
-    public let id: UUID
-    public let content: Content
-    public let source: Source
-    public let copiedAt: Date
+/// 클립보드 히스토리 한 항목 — 텍스트 또는 이미지.
+/// 이미지와 큰 텍스트(긴 로그 등)는 JSON에 넣지 않고 데이터 폴더에 따로 저장한다 (0600):
+/// clipboard-images/<파일>.png, clipboard-texts/<파일>.txt
+public struct ClipboardItem: Codable, Sendable, Identifiable, Equatable {
+    public var id: UUID
+    /// 이미지 항목이면 빈 문자열, 큰 텍스트면 앞부분(미리보기·검색용)만
+    public var text: String
+    /// 큰 텍스트의 전체 내용이 들어 있는 파일 (없으면 text가 전체)
+    public var textFile: String?
+    /// 큰 텍스트의 전체 크기 (UTF-8 바이트)
+    public var textBytes: Int?
+    /// 복사할 때 앞에 있던 앱의 번들 ID. PolyMac이 복사한 OCR·경로 결과는 PolyMac의 ID.
+    public var sourceApp: String?
+    public var copiedAt: Date
     public var isPinned: Bool
+    // 이미지 항목 (예전 기록에는 없으므로 모두 옵셔널)
+    public var imageFile: String?
+    public var imageWidth: Int?
+    public var imageHeight: Int?
+    public var imageBytes: Int?
+    /// 같은 이미지를 두 번 저장하지 않기 위한 SHA-256
+    public var contentHash: String?
 
-    public init(id: UUID = UUID(), content: Content, source: Source, copiedAt: Date = Date(), isPinned: Bool = false) {
+    public var isImage: Bool { imageFile != nil }
+    /// 앞부분만 들고 있는 큰 텍스트
+    public var isLargeText: Bool { textFile != nil }
+
+    /// 이 항목이 쓰는 별도 파일 (지울 때 같이 지운다)
+    public var storedFiles: [String] { [imageFile.map { "clipboard-images/" + $0 }, textFile.map { "clipboard-texts/" + $0 }].compactMap { $0 } }
+
+    public init(id: UUID = UUID(), text: String, sourceApp: String?, copiedAt: Date = Date(), isPinned: Bool = false) {
         self.id = id
-        self.content = content
-        self.source = source
+        self.text = text
+        self.sourceApp = sourceApp
         self.copiedAt = copiedAt
         self.isPinned = isPinned
+    }
+
+    public static func largeText(preview: String, file: String, bytes: Int, hash: String, sourceApp: String?) -> ClipboardItem {
+        var item = ClipboardItem(text: preview, sourceApp: sourceApp)
+        item.textFile = file
+        item.textBytes = bytes
+        item.contentHash = hash
+        return item
+    }
+
+    public static func image(file: String, width: Int, height: Int, bytes: Int, hash: String, sourceApp: String?) -> ClipboardItem {
+        var item = ClipboardItem(text: "", sourceApp: sourceApp)
+        item.imageFile = file
+        item.imageWidth = width
+        item.imageHeight = height
+        item.imageBytes = bytes
+        item.contentHash = hash
+        return item
     }
 }
 

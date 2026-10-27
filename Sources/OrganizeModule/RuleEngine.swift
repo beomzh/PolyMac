@@ -135,7 +135,7 @@ public enum RuleEngine {
             let rendered = render(t, file, now: now)
             let hasExt = t.contains("{ext}") || file.fileExtension.isEmpty
             return .rename(template: hasExt ? rendered : rendered + "." + file.fileExtension)
-        case .addTag(let tag): return .addTag(render(tag, file, now: now))
+        case .addTag(let tag): return .addTag(name: render(tag, file, now: now))
         case .trash, .notify: return action
         }
     }

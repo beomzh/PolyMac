@@ -41,10 +41,17 @@ public enum HangulNormalizer {
         return target
     }
 
+    /// 다운로드 중이거나 앱이 쓰고 있는 임시 파일 — 이름을 바꾸면 그 앱이 파일을 잃을 수 있다.
+    public static let inProgressExtensions: Set<String> = ["crdownload", "download", "part", "partial", "tmp", "opdownload"]
+
     /// 폴더 바로 아래 항목 중 NFD 이름을 모두 NFC로 바꾸고, 바뀐 경로를 돌려준다.
+    /// 숨김 파일과 다운로드 중인 파일은 건드리지 않는다.
     public static func normalizeDirectory(_ dir: String, fileManager: FileManager = .default) throws -> [String] {
         try fileManager.contentsOfDirectory(atPath: dir).compactMap { name in
-            try renameToNFC(name: name, inDirectory: dir)
+            guard !name.hasPrefix("."),
+                  !inProgressExtensions.contains((name as NSString).pathExtension.lowercased())
+            else { return nil }
+            return try renameToNFC(name: name, inDirectory: dir)
         }
     }
 

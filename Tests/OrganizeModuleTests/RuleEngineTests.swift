@@ -13,13 +13,13 @@ private func settings(_ rules: [OrganizeRule]) -> OrganizeSettings {
 }
 
 @Test func moduleOffPlansNothing() {
-    var s = settings([OrganizeRule(name: "pdf", conditions: [.fileExtension(["pdf"])], actions: [.trash])])
+    var s = settings([OrganizeRule(name: "pdf", conditions: [.fileExtension(extensions: ["pdf"])], actions: [.trash])])
     s.isEnabled = false
     #expect(RuleEngine.plan(for: FileFacts(name: "a.pdf", size: 1, addedAt: daysAgo(1)), settings: s, now: now).isEmpty)
 }
 
 @Test func disabledRuleIsSkipped() {
-    let s = settings([OrganizeRule(name: "pdf", isEnabled: false, conditions: [.fileExtension(["pdf"])], actions: [.trash])])
+    let s = settings([OrganizeRule(name: "pdf", isEnabled: false, conditions: [.fileExtension(extensions: ["pdf"])], actions: [.trash])])
     #expect(RuleEngine.plan(for: FileFacts(name: "a.pdf", size: 1, addedAt: daysAgo(1)), settings: s, now: now).isEmpty)
 }
 
@@ -40,7 +40,7 @@ private func settings(_ rules: [OrganizeRule]) -> OrganizeSettings {
 @Test func templatesAndDomainMatching() {
     let rule = OrganizeRule(
         name: "정부 문서",
-        conditions: [.sourceDomain(["*.go.kr"]), .nameMatches(pattern: "*신청서*", isRegex: false)],
+        conditions: [.sourceDomain(domains: ["*.go.kr"]), .nameMatches(pattern: "*신청서*", isRegex: false)],
         actions: [.move(to: "~/Documents/{domain}/{yyyy}-{MM}"), .rename(template: "{yyyy}{MM}{dd}_{name}")]
     )
     let file = FileFacts(name: "지원금 신청서.hwp", size: 1, addedAt: daysAgo(1), sourceURLs: ["https://www.gov.go.kr/file/1"])
@@ -51,9 +51,9 @@ private func settings(_ rules: [OrganizeRule]) -> OrganizeSettings {
 }
 
 @Test func anyModeNotAndStopAfterMatch() {
-    let first = OrganizeRule(name: "이미지·영상", match: .any, conditions: [.kind([.image]), .kind([.video])],
-                             actions: [.addTag("미디어")], stopAfterMatch: false)
-    let second = OrganizeRule(name: "작은 파일 아님", conditions: [.not(.sizeLessThan(bytes: 1_000))], actions: [.notify])
+    let first = OrganizeRule(name: "이미지·영상", match: .any, conditions: [.kind(kinds: [.image]), .kind(kinds: [.video])],
+                             actions: [.addTag(name: "미디어")], stopAfterMatch: false)
+    let second = OrganizeRule(name: "작은 파일 아님", conditions: [.not(condition: .sizeLessThan(bytes: 1_000))], actions: [.notify])
     let steps = RuleEngine.plan(for: FileFacts(name: "clip.mp4", size: 5_000, addedAt: daysAgo(1)), settings: settings([first, second]), now: now)
     #expect(steps.map(\.ruleName) == ["이미지·영상", "작은 파일 아님"])
 }

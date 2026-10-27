@@ -3,8 +3,9 @@
 ## 개발 환경
 
 - macOS 14 이상, Apple Silicon 권장
-- **Xcode 16 이상** — 앱 번들·Finder 확장 빌드와 `swift test` 실행에 필요
-  (Command Line Tools만 있으면 `swift build`만 됨)
+- **Xcode 16 이상** — 테스트 실행과 Finder 확장 빌드에 필요
+  (Command Line Tools만 있어도 `swift build`와 `scripts/build-app.sh`로 앱 설치까지는 됨)
+- Xcodes.app(버전 관리 도구)만으로는 안 되고, 그 안에서 Xcode 자체를 설치해야 함
 
 ```bash
 git clone https://github.com/beomzh/PolyMac.git
@@ -15,13 +16,19 @@ cd PolyMac && swift build
 ```
 
 ```bash
-swift test
+scripts/test.sh
+```
+
+앱으로 묶어 설치·실행 (Command Line Tools만으로 가능):
+
+```bash
+scripts/build-app.sh --install
 ```
 
 ## 코드 위치
 
 - 로직은 전부 `Sources/<모듈>/` (SwiftPM) — UI 없는 부분은 순수 함수로 두고 `Tests/`에 테스트
-- 앱 번들·확장·서명만 `App/` (Xcode 프로젝트, 예정)
+- 앱 진입점·메뉴바는 `Sources/PolyMacApp/`, 번들 설정(Info.plist·entitlements)은 `App/`, 번들 조립·서명은 `scripts/build-app.sh`
 - 새 모듈은 `PolyMacModule` 프로토콜을 따르고 `Package.swift`의 `modules` 배열에 추가
 
 ## 커밋 메시지

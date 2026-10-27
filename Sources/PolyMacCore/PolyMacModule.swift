@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 import os
 
 /// 모듈이 필요로 하는 시스템 권한.
@@ -23,21 +23,62 @@ public struct ModuleDescriptor: Sendable {
     public let displayName: String
     public let permissions: [Permission]
     public let residency: Residency
+    /// 사용자가 아직 켜고 끈 적이 없을 때의 기본값
+    public let enabledByDefault: Bool
 
-    public init(id: String, displayName: String, permissions: [Permission], residency: Residency = .inProcess) {
+    public init(
+        id: String,
+        displayName: String,
+        permissions: [Permission],
+        residency: Residency = .inProcess,
+        enabledByDefault: Bool = true
+    ) {
         self.id = id
         self.displayName = displayName
         self.permissions = permissions
         self.residency = residency
+        self.enabledByDefault = enabledByDefault
     }
 }
 
+public struct ModuleError: LocalizedError {
+    public let message: String
+    public init(_ message: String) { self.message = message }
+    public var errorDescription: String? { message }
+}
+
 /// 모듈에 주입되는 공유 서비스. 모듈끼리는 직접 참조하지 않고 이것을 통해 연결된다.
-public struct ModuleContext: Sendable {
+@MainActor
+public struct ModuleContext {
+    public let moduleID: String
     public let logger: Logger
 
     public init(moduleID: String) {
+        self.moduleID = moduleID
         self.logger = Logger(subsystem: "dev.polymac", category: moduleID)
+    }
+
+    public var dataDirectory: URL { AppPaths.dataDirectory }
+
+    public func toast(_ message: String, duration: TimeInterval = 2) {
+        Toast.show(message, duration: duration)
+    }
+
+    /// 이 모듈 소유의 전역 단축키 등록. `id`는 사용자가 바꾼 조합을 저장하는 키라 바꾸지 않는다.
+    /// 모듈을 끌 때 `unregisterHotkeys()`로 한 번에 해제한다.
+    public func hotkey(_ id: String, _ defaultCombo: KeyCombo, _ name: String, _ handler: @escaping @MainActor () -> Void) {
+        HotkeyCenter.shared.register(key: "\(moduleID).\(id)", defaultCombo: defaultCombo, name: name, owner: moduleID, handler: handler)
+    }
+
+    /// 전역 등록 없이 조합만 관리하는 단축키 (예: Finder 안에서만 쓰는 잘라내기). 바뀔 때마다 onChange로 알려 준다.
+    public func localShortcut(_ id: String, _ defaultCombo: KeyCombo, _ name: String, note: String,
+                              _ onChange: @escaping @MainActor (KeyCombo?) -> Void) {
+        HotkeyCenter.shared.registerLocal(key: "\(moduleID).\(id)", defaultCombo: defaultCombo, name: name,
+                                          owner: moduleID, note: note, onChange: onChange)
+    }
+
+    public func unregisterHotkeys() {
+        HotkeyCenter.shared.unregister(owner: moduleID)
     }
 }
 
@@ -47,4 +88,10 @@ public protocol PolyMacModule: AnyObject {
     init(context: ModuleContext)
     func activate() throws
     func deactivate()
+    /// 메뉴바 메뉴에 덧붙일 항목. 모듈이 켜져 있을 때만 표시된다.
+    func menuItems() -> [NSMenuItem]
+}
+
+public extension PolyMacModule {
+    func menuItems() -> [NSMenuItem] { [] }
 }
