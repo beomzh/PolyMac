@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-27 16:43]
+- [Changed] - 저장소: 0.1.0-alpha.1 작업(아래 항목들)을 커밋 c7d0652로 main에 push — 53개 파일, 테스트 21개 통과
+
 [2026-10-27 16:42]
 - [Added] - Sources/UninstallerCore/LeftoverScanner.swift: 앱 잔여물 탐색 규칙 (앱 ID·팀 ID+앱 ID·개발사 데이터·백그라운드 항목·앱 이름·pkg 설치 기록) + 이미 지운 앱의 흔적 (설치된 상위 ID·컴퓨터 UUID·살아 있는 서비스·사용 중 도우미 제외)
 - [Changed] - Sources/UninstallerCore/LeftoverItem.swift: 종류별 이름·설명, 판단 근거, 확실/유력/추정 등급, 앱 정보 모델
