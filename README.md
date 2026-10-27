@@ -76,7 +76,7 @@
 
 ### 앱 설치 (0.1.0부터 예정)
 
-GitHub Releases에서 `PolyMac-X.Y.Z.zip`을 받아 압축을 풀고 `PolyMac.app`을 `/Applications`로 옮깁니다. 받은 파일이 변조되지 않았는지 확인하려면:
+[GitHub Releases](https://github.com/beomzh/PolyMac/releases)에서 `PolyMac-X.Y.Z.zip`을 받아 압축을 풀고 `PolyMac.app`을 `/Applications`로 옮깁니다. 받은 파일이 변조되지 않았는지 확인하려면:
 
 ```bash
 shasum -a 256 -c PolyMac-X.Y.Z.zip.sha256
@@ -89,7 +89,7 @@ shasum -a 256 -c PolyMac-X.Y.Z.zip.sha256
 필요한 것: macOS 14 이상, Xcode 16 이상 (Command Line Tools만 있으면 `swift build`까지만 됩니다)
 
 ```bash
-git clone <저장소 주소> PolyMac
+git clone https://github.com/beomzh/PolyMac.git
 ```
 
 ```bash

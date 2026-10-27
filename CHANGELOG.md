@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-27 14:15]
+- [Changed] - README.md, CONTRIBUTING.md: clone 주소와 Releases 링크를 실제 저장소(github.com/beomzh/PolyMac)로 교체
+
 [2026-10-27 14:13]
 - [Added] - README.md, docs/*.md: 프로젝트 컨셉·아키텍처·로드맵·보안·릴리즈 규칙·참고자료 문서 작성
 - [Added] - Package.swift, Sources/PolyMacCore: 모듈 계약(PolyMacModule)과 lazy 활성화 레지스트리

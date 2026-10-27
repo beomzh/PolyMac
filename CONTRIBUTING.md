@@ -7,7 +7,7 @@
   (Command Line Tools만 있으면 `swift build`만 됨)
 
 ```bash
-git clone <저장소 주소> PolyMac
+git clone https://github.com/beomzh/PolyMac.git
 ```
 
 ```bash
