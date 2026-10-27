@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-27 16:54]
+- [Changed] - 저장소: 클립보드 멈춤·버벅임 수정과 앱 완전 삭제 바로가기(아래 두 항목)를 커밋 274a009로 main에 push
+
 [2026-10-27 16:53]
 - [Fixed] - Sources/ClipboardModule/ClipboardPanel.swift: 히스토리 창이 버벅이던 원인 제거 — 행마다 전체 목록을 다시 거르던 것(200개면 그릴 때마다 4만 번)을 검색어·항목이 바뀔 때만 계산, 긴 텍스트 미리보기 파일을 그릴 때마다 다시 읽던 것을 캐시, 썸네일을 백그라운드에서 읽기, 줄 수 계산 가볍게
 - [Added] - Sources/PolyMacApp/AppDelegate.swift, Sources/UninstallerModule/UninstallerModule.swift: 메뉴바 맨 위에 "앱 완전 삭제…" 바로가기
