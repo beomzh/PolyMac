@@ -137,38 +137,96 @@ public final class OrganizeModule: PolyMacModule {
 
     // MARK: - 실행
 
-    private func run() {
-        let now = Date()
-        var batch: [HistoryEntry] = []
-        var previewCount = 0
+    /// 감시 폴더에서 규칙에 걸리는 파일과 그 계획
+    private func pendingPlans(now: Date = Date()) -> [(path: String, name: String, steps: [PlannedStep])] {
+        var plans: [(path: String, name: String, steps: [PlannedStep])] = []
         for folder in settings.watchedFolders where folder.isEnabled {
             let dir = NSString(string: folder.path).expandingTildeInPath
             guard let names = try? FileManager.default.contentsOfDirectory(atPath: dir) else { continue }
-            for name in names where !name.hasPrefix(".") {
+            for name in names.sorted() where !name.hasPrefix(".") {
                 let path = dir + "/" + name
                 var isDirectory: ObjCBool = false
                 // 폴더(.app 번들 포함)는 건드리지 않는다
                 guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory), !isDirectory.boolValue else { continue }
                 let steps = RuleEngine.plan(for: Self.facts(path: path, name: name), settings: settings, now: now)
-                guard !steps.isEmpty else { continue }
-
-                if settings.dryRun {
-                    for step in steps where previewed.insert(path + "|" + step.ruleID.uuidString).inserted {
-                        log(L("[미리보기] \(name) ← '\(step.ruleName)': \(step.actions.map(Self.describe).joined(separator: ", "))", "[preview] \(name) ← '\(step.ruleName)': \(step.actions.map(Self.describe).joined(separator: ", "))"))
-                        previewCount += 1
-                    }
-                } else {
-                    batch += execute(steps, path: path)
-                }
+                if !steps.isEmpty { plans.append((path, name, steps)) }
             }
         }
-        if previewCount > 0 {
-            context.toast(L("자동 정리 미리보기: \(previewCount)건\n메뉴 › 정리 기록 보기에서 확인하세요", "Auto-organize preview: \(previewCount) item(s)\nSee menu › Show Log"))
+        return plans
+    }
+
+    /// 자동 실행(감시·1시간마다). 미리보기 모드면 기록만 남긴다.
+    private func run() {
+        let plans = pendingPlans()
+        if settings.dryRun {
+            var previewCount = 0
+            for plan in plans {
+                for step in plan.steps where previewed.insert(plan.path + "|" + step.ruleID.uuidString).inserted {
+                    log(L("[미리보기] \(plan.name) ← '\(step.ruleName)': \(step.actions.map(Self.describe).joined(separator: ", "))", "[preview] \(plan.name) ← '\(step.ruleName)': \(step.actions.map(Self.describe).joined(separator: ", "))"))
+                    previewCount += 1
+                }
+            }
+            if previewCount > 0 {
+                context.toast(L("자동 정리 미리보기: \(previewCount)건\n메뉴 › 정리 기록 보기에서 확인하세요", "Auto-organize preview: \(previewCount) item(s)\nSee menu › Show Log"))
+            }
+        } else {
+            executeAll(plans)
         }
-        if !batch.isEmpty {
-            lastBatch = batch
-            context.toast(L("자동 정리: \(batch.count)건 처리했습니다", "Auto-organize: processed \(batch.count) item(s)"))
+    }
+
+    private func executeAll(_ plans: [(path: String, name: String, steps: [PlannedStep])]) {
+        let batch = plans.flatMap { execute($0.steps, path: $0.path) }
+        guard !batch.isEmpty else { return }
+        lastBatch = batch
+        context.toast(L("자동 정리: \(batch.count)건 처리했습니다\n되돌리려면 메뉴 › 마지막 정리 되돌리기", "Auto-organize: processed \(batch.count) item(s)\nTo undo: menu › Undo Last Run"))
+    }
+
+    /// 미리보기 모드에서 "지금 정리 실행": 무엇을 할지 보여주고, 확인하면 이번 한 번만 실제로 정리한다.
+    private func confirmPreviewRun() {
+        let plans = pendingPlans()
+        guard !plans.isEmpty else {
+            context.toast(L("정리할 파일이 없습니다\n켜진 규칙에 맞는 파일이 감시 폴더에 없습니다", "Nothing to organize\nNo file in the watched folders matches an enabled rule"))
+            return
         }
+        for plan in plans {
+            for step in plan.steps {
+                log(L("[미리보기] \(plan.name) ← '\(step.ruleName)': \(step.actions.map(Self.describe).joined(separator: ", "))", "[preview] \(plan.name) ← '\(step.ruleName)': \(step.actions.map(Self.describe).joined(separator: ", "))"))
+            }
+        }
+        let shown = 15
+        var lines = plans.prefix(shown).map { plan in
+            "• \(plan.name)\n    → " + plan.steps.flatMap(\.actions).map(Self.describe).joined(separator: ", ")
+        }
+        if plans.count > shown { lines.append(L("… 외 \(plans.count - shown)개 (정리 기록에 전체)", "… and \(plans.count - shown) more (full list in the log)")) }
+
+        let alert = NSAlert()
+        alert.messageText = L("파일 \(plans.count)개를 정리할까요?", "Organize \(plans.count) file(s)?")
+        alert.informativeText = L("미리보기 모드라 아직 옮기지 않았습니다. \"정리하기\"를 누르면 이번 한 번만 실제로 정리하고, 미리보기 모드는 그대로 둡니다. 정리한 뒤에는 메뉴 › 마지막 정리 되돌리기로 되돌릴 수 있습니다.",
+                                  "Preview mode is on, so nothing has moved yet. \"Organize\" runs it for real this once and keeps preview mode on. You can undo with menu › Undo Last Run.")
+        let list = NSTextView(frame: NSRect(x: 0, y: 0, width: 440, height: 10))
+        list.string = lines.joined(separator: "\n")
+        list.isEditable = false
+        list.drawsBackground = false
+        list.font = .systemFont(ofSize: 12)
+        list.textContainer?.widthTracksTextView = true
+        let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 460, height: min(220, CGFloat(lines.count) * 34 + 8)))
+        scroll.hasVerticalScroller = true
+        scroll.borderType = .bezelBorder
+        scroll.documentView = list
+        list.frame.size.width = scroll.contentSize.width
+        list.sizeToFit()
+        alert.accessoryView = scroll
+        alert.addButton(withTitle: L("정리하기", "Organize"))
+        alert.addButton(withTitle: L("취소", "Cancel"))
+        NSApp.activate()
+        alert.window.orderFrontRegardless()
+        guard alert.runModal() == .alertFirstButtonReturn else {
+            context.toast(L("정리하지 않았습니다\n미리보기 결과는 정리 기록에 남겼습니다", "Nothing was moved\nThe preview was written to the log"))
+            return
+        }
+        log(L("[수동 실행] 미리보기 모드에서 확인 후 \(plans.count)개 정리", "[manual run] organizing \(plans.count) file(s) after confirmation in preview mode"))
+        executeAll(plans)
+        if lastBatch.isEmpty { context.toast(L("정리하지 못했습니다\n정리 기록에서 이유를 확인하세요", "Nothing was organized\nSee the log for details")) }
     }
 
     private func execute(_ steps: [PlannedStep], path: String) -> [HistoryEntry] {
@@ -262,8 +320,17 @@ public final class OrganizeModule: PolyMacModule {
 
     @objc private func runNow() {
         previewed.removeAll()
-        run()
-        if settings.dryRun == false, lastBatch.isEmpty { context.toast(L("정리할 파일이 없습니다", "Nothing to organize")) }
+        if settings.dryRun {
+            confirmPreviewRun()
+            return
+        }
+        let plans = pendingPlans()
+        guard !plans.isEmpty else {
+            context.toast(L("정리할 파일이 없습니다", "Nothing to organize"))
+            return
+        }
+        lastBatch = []
+        executeAll(plans)
     }
 
     @objc private func undoLast() {
