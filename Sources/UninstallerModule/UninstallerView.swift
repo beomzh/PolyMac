@@ -115,6 +115,8 @@ struct UninstallerView: View {
                 Text(app.name).font(.title2.weight(.semibold))
                 Text([app.version.map { "버전 \($0)" }, app.bundleID, app.teamID.map { "개발사 팀 \($0)" }].compactMap { $0 }.joined(separator: " · "))
                     .font(.caption).foregroundStyle(.secondary)
+                Text("마지막 사용: " + (model.appLastUsed.map(dateText) ?? "기록 없음"))
+                    .font(.caption).foregroundStyle(.secondary)
                 if model.isSelectedAppRunning {
                     Label("지금 실행 중 — 지울 때 먼저 종료합니다", systemImage: "exclamationmark.triangle.fill")
                         .font(.caption).foregroundStyle(.orange)
@@ -166,17 +168,25 @@ struct UninstallerView: View {
     }
 
     private func row(_ item: LeftoverItem) -> some View {
-        HStack(spacing: 10) {
-            Toggle("", isOn: Binding(get: { model.checked.contains(item.id) }, set: { _ in model.toggle(item) }))
+        let user = model.inUse[item.id]
+        return HStack(spacing: 10) {
+            Toggle("", isOn: Binding(get: { model.checked.contains(item.id) && user == nil }, set: { _ in model.toggle(item) }))
                 .toggleStyle(.checkbox).labelsHidden()
+                .disabled(user != nil)
             VStack(alignment: .leading, spacing: 2) {
                 Text((item.url.path as NSString).abbreviatingWithTildeInPath)
                     .lineLimit(1).truncationMode(.middle)
+                    .foregroundStyle(user == nil ? .primary : .secondary)
                 HStack(spacing: 6) {
                     Text(item.reason)
                     if item.requiresAdmin { Label("암호 필요", systemImage: "lock.fill") }
+                    if let date = model.modified[item.id] { Text("· 수정 " + dateText(date)) }
                 }
                 .font(.caption).foregroundStyle(.secondary)
+                if let user {
+                    Label("사용 중 (\(user)) — 지우지 않습니다. 그 프로그램을 끄고 다시 찾으세요", systemImage: "lock.circle")
+                        .font(.caption).foregroundStyle(.orange)
+                }
             }
             Spacer()
             badge(item.confidence)
@@ -209,7 +219,10 @@ struct UninstallerView: View {
     private var footer: some View {
         HStack(spacing: 12) {
             if let status = model.status {
-                Text(status).font(.callout).foregroundStyle(.secondary).lineLimit(2)
+                Text(status).font(.callout).foregroundStyle(.secondary).lineLimit(3)
+            } else if model.isCheckingUse {
+                ProgressView().controlSize(.small)
+                Text("사용 중인 파일 확인 중…").font(.callout).foregroundStyle(.secondary)
             }
             Spacer()
             Text("선택 \(model.checkedItems.count)개 · \(size(model.checkedSize))")
@@ -220,7 +233,7 @@ struct UninstallerView: View {
                 if model.isDeleting { ProgressView().controlSize(.small) } else { Text("휴지통으로 이동") }
             }
             .keyboardShortcut(.delete, modifiers: .command)
-            .disabled(model.checkedItems.isEmpty || model.isDeleting)
+            .disabled(model.checkedItems.isEmpty || model.isDeleting || model.isCheckingUse)
             .confirmationDialog("선택한 \(model.checkedItems.count)개를 휴지통으로 옮길까요?", isPresented: $model.askConfirm) {
                 Button("휴지통으로 이동", role: .destructive) { model.deleteChecked() }
             } message: {
@@ -236,6 +249,11 @@ struct UninstallerView: View {
             Text(text).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// "2026. 10. 21. (6일 전)"
+    private func dateText(_ date: Date) -> String {
+        date.formatted(date: .abbreviated, time: .omitted) + " (" + date.formatted(.relative(presentation: .named)) + ")"
     }
 
     private func size(_ bytes: Int64) -> String {

@@ -32,25 +32,25 @@ Poly(여럿) + Mac. 여러 도구를 하나로 모으되, 기능은 모듈로 �
 
 ## 4. 기능별 실현 가능성 분석
 
-범례: ✅ 공개 API로 충분 · ⚠️ 가능하지만 함정 있음 · 🧪 비공개 API/실험적 · ❌ 현실적으로 불가
+범례: [가능] 공개 API로 충분 · [주의] 가능하지만 함정 있음 · [실험] 비공개 API/실험적 · [불가] 현실적으로 불가
 
-### 4.1 창 분할 (Spectacle 대체) — ✅
+### 4.1 창 분할 (Spectacle 대체) — 가능
 
 - **방법**: Accessibility API(`AXUIElement`)로 포커스 창의 위치·크기 변경. Spectacle의 후속작인 **Rectangle(MIT)** 이 같은 방식이라 구조를 그대로 참고 가능.
 - **함정**: 일부 앱(Electron, 터미널 계열)은 크기 변경 후 "튕김" 현상 → Rectangle처럼 2단계 적용(크기→위치→크기)로 보정.
 - **현실 체크**: macOS 15부터 기본 창 타일링이 생겼지만 단축키 커스터마이즈·⅓ 분할·다음 디스플레이 이동은 부족 → 여전히 가치 있음.
 - **비공개 API(옵트인)**: `CGSSpace*` 계열로 "창을 다음 데스크톱(Space)으로 보내기". SIP 해제 없이 되는 범위만 지원.
 
-### 4.2 캡처 + 핀 + 마크업 (Snipaste 대체) — ✅ / ⚠️
+### 4.2 캡처 + 핀 + 마크업 (Snipaste 대체) — 가능 / 주의
 
 - **캡처**: `ScreenCaptureKit`의 `SCScreenshotManager` (macOS 14+). 구 API `CGWindowListCreateImage`는 macOS 15에서 deprecated라 쓰지 않는다.
 - **영역 선택 UI**: 모니터별 전체화면 투명 `NSPanel` 오버레이 + 창 경계 자동 감지(Snipaste의 "창 자동 스냅"), 돋보기, 픽셀 좌표·색상 표시.
 - **핀**: 테두리 없는 `NSPanel`을 `.floating` 레벨로, 모든 Space에 표시 옵션. 스크롤로 확대/축소, 투명도 조절, 클릭 통과(click-through) 모드.
 - **마크업 살리기(핵심 요구)**: 마크업을 비트맵에 바로 굽지 않고 **벡터 레이어(도형·텍스트·화살표·모자이크)로 저장**. 핀을 다시 열면 마크업 편집 가능. 저장 포맷은 `원본 PNG + annotations.json` 묶음.
-- **함정 ⚠️**: macOS 15부터 화면 녹화 권한을 가진 앱에 **주기적 재승인 알림**이 뜬다. 공개 API로 피할 방법은 없고, 시스템 `SCContentSharingPicker`를 쓰면 알림은 줄지만 "영역 즉시 캡처" UX와 맞지 않음 → 첫 실행 안내 문서로 대응.
+- **함정 주의**: macOS 15부터 화면 녹화 권한을 가진 앱에 **주기적 재승인 알림**이 뜬다. 공개 API로 피할 방법은 없고, 시스템 `SCContentSharingPicker`를 쓰면 알림은 줄지만 "영역 즉시 캡처" UX와 맞지 않음 → 첫 실행 안내 문서로 대응.
 - **나중에(스트레치)**: 스크롤 캡처(긴 페이지 이어붙이기), GIF 녹화.
 
-### 4.3 OCR 자동화 (TRex 대체) — ✅
+### 4.3 OCR 자동화 (TRex 대체) — 가능
 
 - **엔진**: Apple Vision `RecognizeTextRequest`(macOS 15+ Swift API) / `VNRecognizeTextRequest`. 한국어 지원, 온디바이스, 추가 모델 다운로드 없음. TRex도 같은 엔진.
 - **macOS 26 이상**: `RecognizeDocumentsRequest`로 **표·문단 구조** 인식 → 표를 TSV/Markdown으로 복사 가능.
@@ -65,7 +65,7 @@ Poly(여럿) + Mac. 여러 도구를 하나로 모으되, 기능은 모듈로 �
   - 단축 명령어(Shortcuts)/URL 스킴 노출 → 다른 자동화에서 호출 가능
 - **현실 체크**: 손글씨·저해상도·작은 글씨는 품질이 떨어짐 → 캡처 영역을 2배 업스케일 후 인식하는 옵션 제공.
 
-### 4.4 Finder 잘라내기 — ✅ / ⚠️
+### 4.4 Finder 잘라내기 — 가능 / 주의
 
 현재 macOS: `⌘C` 후 `⌘⌥V`가 "이동"이긴 하지만, ① 잘라낸 상태가 안 보이고 ② `⌘X`가 안 먹고 ③ 내가 원하는 폴더로 바로 보내는 수단이 없다.
 
@@ -73,10 +73,10 @@ Poly(여럿) + Mac. 여러 도구를 하나로 모으되, 기능은 모듈로 �
   - `⌘X` → `⌘C`로 바꿔 보내고 "잘라내기 대기" 상태 기록 + HUD에 대기 파일 표시
   - 대기 상태에서 `⌘V` → `⌘⌥V`로 바꿔 보냄
   - **장점**: 실제 이동은 Finder가 하므로 **Finder의 `⌘Z` 실행 취소, 충돌 대화상자, 진행률 표시가 그대로** 동작.
-- **함정 ⚠️**: 파일 이름 편집 중(텍스트 필드 포커스)에는 `⌘X`를 건드리면 안 됨 → AX로 포커스 요소 role이 `AXTextField`인지 확인 후 통과.
+- **함정 주의**: 파일 이름 편집 중(텍스트 필드 포커스)에는 `⌘X`를 건드리면 안 됨 → AX로 포커스 요소 role이 `AXTextField`인지 확인 후 통과.
 - **"지정 폴더로 보내기"**: 즐겨찾기 폴더 목록을 등록 → 선택 파일을 단축키/메뉴로 즉시 이동·복사. 선택 파일은 Apple Events(`tell application "Finder" to get selection`)로 획득 → **자동화(Apple Events) 권한** 필요.
 
-### 4.5 Finder: 터미널 열기 / 경로 복사 — ✅
+### 4.5 Finder: 터미널 열기 / 경로 복사 — 가능
 
 - **방법**: **Finder Sync Extension** → Finder 툴바 버튼 + 우클릭 메뉴 ("여기서 터미널 열기", "경로 복사", "VS Code로 열기").
 - 터미널은 Terminal / iTerm2 / Ghostty / Warp 중 선택. 참고: **OpenInTerminal(MIT)**.
@@ -84,21 +84,21 @@ Poly(여럿) + Mac. 여러 도구를 하나로 모으되, 기능은 모듈로 �
 - **참고**: macOS 기본 기능으로도 `⌥⌘C`(경로 복사)가 있음 — 그래도 메뉴 통합과 형식 선택이 필요하다면 의미 있음. 문서에 기본 단축키도 함께 안내.
 - **함정**: Finder Sync 확장은 사용자가 시스템 설정 > 일반 > 로그인 항목 및 확장 프로그램에서 켜야 함.
 
-### 4.6 앱 완전 제거 (AppCleaner 대체) — ✅ / ⚠️
+### 4.6 앱 완전 제거 (AppCleaner 대체) — 가능 / 주의
 
 AppCleaner의 불만 = "어디에 뭐가 남았는지 구분이 안 됨". 그래서 **분류와 근거**가 핵심 차별점.
 
 - **탐색 위치**: `~/Library/{Application Support, Caches, Preferences, Containers, Group Containers, Saved Application State, HTTPStorages, WebKit, Logs, LaunchAgents, Application Scripts}`, `/Library/{LaunchAgents, LaunchDaemons, PrivilegedHelperTools, Application Support}`, `pkgutil --pkgs` 설치 영수증, 로그인 항목/백그라운드 항목.
 - **매칭 근거별 확신도 표시**:
-  - 🟢 **확실** — Bundle ID 정확히 일치 (`com.foo.App`)
-  - 🟡 **유력** — Team ID 일치, 영수증(pkg receipt)에 기록됨
-  - 🟠 **추정** — 앱 이름 유사 매칭 → 기본 체크 해제
+  - **확실** — Bundle ID 정확히 일치 (`com.foo.App`)
+  - **유력** — Team ID 일치, 영수증(pkg receipt)에 기록됨
+  - **추정** — 앱 이름 유사 매칭 → 기본 체크 해제
 - **UI**: 트리맵/그룹 리스트로 "설정 2KB / 캐시 1.2GB / 백그라운드 데몬 1개 실행 중"처럼 **종류별 용량**을 보여줌. 각 항목에 "이게 뭔지" 한 줄 설명.
 - **안전장치**: 영구 삭제 대신 **휴지통 이동**, 시스템 앱·실행 중인 앱 보호, 삭제 전 목록 내보내기. 이미 지운 앱의 잔여물(고아 파일) 스캔도 지원.
-- **함정 ⚠️**: `Containers` 등은 **전체 디스크 접근 권한** 필요, `/Library/LaunchDaemons` 제거는 관리자 권한 필요(인증 대화상자). 
+- **함정 주의**: `Containers` 등은 **전체 디스크 접근 권한** 필요, `/Library/LaunchDaemons` 제거는 관리자 권한 필요(인증 대화상자). 
 - **모듈 방식**: 별도 앱/프로세스(`PolyMacUninstaller.app`)로 분리 → 메뉴에서 열 때만 실행, 닫으면 메모리 0.
 
-### 4.7 클립보드 히스토리 (Maccy 대체) — ✅ / ⚠️
+### 4.7 클립보드 히스토리 (Maccy 대체) — 가능 / 주의
 
 - **감시 방식**: `NSPasteboard.general.changeCount`를 0.5초마다 비교. macOS엔 클립보드 변경 알림이 없어서 Maccy를 포함한 모든 클립보드 앱이 이렇게 함. 정수 비교 한 번이라 CPU 영향은 측정 불가 수준 → PolyMac에서 유일하게 허용하는 폴링.
 - **저장**: SQLite(메타데이터·텍스트) + 이미지는 별도 파일(원본 + 썸네일). 개수/용량 상한, 오래된 항목 자동 정리. 전부 로컬, 네트워크 없음.
@@ -113,11 +113,11 @@ AppCleaner의 불만 = "어디에 뭐가 남았는지 구분이 안 됨". 그래
 - **개인정보 (기본값이 중요)**:
   - `org.nspasteboard.ConcealedType` / `TransientType` / `AutoGeneratedType` 표시된 항목은 저장하지 않음 (1Password·Bitwarden 등이 비밀번호 복사 시 이 표시를 씀)
   - 키체인 접근, 비밀번호 관리자 앱은 기본 제외 목록에 포함
-- **함정 ⚠️**:
+- **함정 주의**:
   - macOS 26 Spotlight에 기본 클립보드 기록이 생겼음 → 고정·제외 규칙·출처 연결이 차별점이어야 함.
   - Apple이 **프로그램에 의한 클립보드 읽기에 개인정보 알림**을 붙이는 방향으로 가고 있음(다른 앱이 복사한 내용 읽을 때 사용자 승인). 정확한 적용 시점·범위는 구현 전에 최신 문서로 확인하고, 권한 대시보드에서 안내.
 
-### 4.8 한글 자소분리(NFD) 해결 — ✅ / ⚠️
+### 4.8 한글 자소분리(NFD) 해결 — 가능 / 주의
 
 **원인**: macOS는 파일명을 유니코드 **NFD**(자모를 풀어 쓴 형태 `ㅎ+ㅏ+ㄴ`)로 만드는 경우가 많고, Windows·대부분의 웹은 **NFC**(완성형 `한`)를 기대함. 그래서 Mac에서 보낸 파일·압축·업로드 파일명이 다른 곳에서 `ㅎㅏㄴㄱㅡㄹ`로 보인다. Finder에선 둘이 똑같이 보여서 알아채기 어려움.
 
@@ -136,13 +136,13 @@ AppCleaner의 불만 = "어디에 뭐가 남았는지 구분이 안 됨". 그래
   - APFS는 정규화를 구분하지 않는(normalization-insensitive) 파일시스템이라 `한.txt`(NFD) → `한.txt`(NFC)로 바로 이름을 바꾸면 "이미 존재"로 막힐 수 있음 → **임시 이름을 거쳐 두 단계로 변경**.
   - **실측(macOS 26.6, APFS)**: `FileManager`·`URL`은 경로를 넘길 때 이름을 **다시 NFD로 분해**함. `FileManager.createFile`에 NFC 이름을 줘도 디스크엔 NFD로 생기고, `moveItem`으로 NFC 이름을 지정해도 NFD로 남음 → 이름 변경은 POSIX `rename(2)`에 UTF-8 바이트를 직접 넘겨야 함.
   - `URL.lastPathComponent`도 NFD로 분해해서 돌려줌 → 디스크의 실제 형태는 `contentsOfDirectory(atPath:)`의 문자열로만 판단. 그러지 않으면 이미 NFC인 파일을 계속 다시 바꾸고, FSEvents와 맞물려 무한 반복됨.
-- **함정 ⚠️**:
+- **함정 주의**:
   - **HFS+ 볼륨**(오래된 외장 디스크 등)은 파일시스템이 NFD를 강제 → 이름 변경이 무의미. 감지해서 건너뛰고 "압축 시 변환"으로 안내.
   - `.app` 번들 내부, git 저장소 작업 폴더, `~/Library`는 이름 변경 시 깨질 수 있음 → 기본 제외. git은 `core.precomposeunicode` 설정 안내.
   - iCloud Drive/Dropbox 폴더는 변경이 동기화로 퍼짐 → 기본 제외, 사용자가 명시적으로 켤 때만.
   - 다운로드·데스크탑·문서 폴더 접근은 macOS "파일 및 폴더" 권한 요청이 뜸.
 
-### 4.9 다운로드 폴더 자동 정리 (Hazel 대체) — ✅
+### 4.9 다운로드 폴더 자동 정리 (Hazel 대체) — 가능
 
 정리 방식은 사람마다 다르므로 **고정된 정리 방식이 아니라 사용자가 조합하는 규칙 엔진**으로 만든다.
 
@@ -189,7 +189,7 @@ AppCleaner의 불만 = "어디에 뭐가 남았는지 구분이 안 됨". 그래
 
 규칙은 JSON으로 저장되어 **내보내기/가져오기**로 다른 Mac이나 다른 사람과 공유할 수 있다.
 
-### 4.10 "리버스 엔지니어링 / 비공개 API" 활용 범위 — 🧪
+### 4.10 "리버스 엔지니어링 / 비공개 API" 활용 범위 — 실험
 
 현실적으로 의미 있는 곳만 골랐다:
 

@@ -98,6 +98,30 @@ public protocol PolyMacModule: AnyObject {
 | 배포 | Developer ID 서명 + 공증 + Homebrew cask | App Store 불가(샌드박스) |
 | 최소 OS | macOS 14 | ScreenCaptureKit 스크린샷 API. 표 인식 등은 `if #available(macOS 26, *)` |
 
+## 5-1. 모듈별 사용 기술
+
+외부 라이브러리는 쓰지 않는다 (의존성 0개). 모두 macOS에 들어 있는 Apple 프레임워크다.
+
+| 모듈 | 핵심 기술 | 하는 일 |
+|---|---|---|
+| Core | Carbon `RegisterEventHotKey`, AppKit `NSPanel`, FSEvents, `os.Logger`, ServiceManagement | 전역 단축키, 안내 토스트, 폴더 감시, 로그, 로그인 시 실행 |
+| Window | Accessibility (`AXUIElement`) | 앞 창의 위치·크기 읽기/바꾸기 |
+| Capture | ScreenCaptureKit (`SCScreenshotManager`), Core Graphics, `CGWindowListCopyWindowInfo` | 화면 캡처, 창 위치(창 자동 감지), 돋보기·표시 그리기 |
+| OCR | **Vision** `VNRecognizeTextRequest` + `VNDetectBarcodesRequest` | 글자·QR 인식 (아래) |
+| Clipboard | `NSPasteboard`, CryptoKit(SHA-256), ImageIO, SwiftUI, `NSTextView` | 기록, 중복 판정, 썸네일, 창, 긴 글 미리보기 |
+| Finder | Quartz Event Tap(`CGEvent.tapCreate`), Accessibility, `osascript`(AppleScript) | ⌘X 잘라내기, Finder 현재 폴더·선택 항목 |
+| Normalize | Foundation(`precomposedStringWithCanonicalMapping`), POSIX `rename(2)`, FSEvents | 자소분리(NFD) → NFC |
+| Organize | UniformTypeIdentifiers, Spotlight `MDItem`(받은 사이트·마지막 사용), POSIX `rename`·`copyfile` | 규칙 판정·실행 |
+| Uninstaller | Security(코드 서명 팀 ID), `MDItem`, `libproc`(`proc_pidpath`), `lsof`, `launchctl`, Finder AppleScript, `NSWorkspace.recycle` | 잔여물 찾기, 사용 중 확인, 휴지통 이동 |
+
+**OCR 자세히** — Apple **Vision** 프레임워크의 `VNRecognizeTextRequest`를 쓴다.
+- macOS에 들어 있는 신경망 글자 인식 모델로 **기기 안에서만** 돈다 (네트워크·추가 다운로드 없음). 사진 앱의 "라이브 텍스트"와 같은 계열이다.
+- 설정: 인식 수준 `.accurate`(정확도 우선), 언어 `["ko-KR", "en-US"]`(한국어 우선), 언어 보정 켬
+- 같은 이미지에 `VNDetectBarcodesRequest`를 함께 돌려 QR·바코드 내용을 먼저 넣는다
+- 결과는 줄 단위로 합치고 NFC로 정규화해 클립보드에 넣는다
+- TRex 등 다른 macOS OCR 앱도 같은 Vision 엔진을 쓴다. 차이는 엔진이 아니라 캡처 흐름·후처리다
+- 성능: 일반 화면 영역 기준 첫 실행 약 0.9초(모델 적재 포함), 이후 더 빠름
+
 ## 6. 저장소 구조
 
 ```

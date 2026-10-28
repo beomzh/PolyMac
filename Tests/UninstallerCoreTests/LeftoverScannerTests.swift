@@ -8,7 +8,7 @@ private func makeFakeLibrary(_ entries: [String: [String]]) throws -> (URL, [Lef
     var locations: [LeftoverScanner.Location] = []
     let kinds: [String: LeftoverItem.Kind] = [
         "Application Support": .appSupport, "Caches": .caches, "Preferences": .preferences,
-        "Group Containers": .groupContainers, "LaunchAgents": .launchAgent, "Logs": .logs,
+        "Group Containers": .groupContainers, "LaunchAgents": .launchAgent, "Logs": .logs, "Shared": .sharedData,
     ]
     for (dir, names) in entries {
         let url = root.appendingPathComponent(dir)
@@ -106,6 +106,33 @@ private let app = AppBundleInfo(url: URL(fileURLWithPath: "/Applications/Foo Bar
     #expect(!ids.contains("com.live.helper"))
     #expect(!ids.contains("com.live.service"))
     #expect(groups.first { $0.bundleID == "com.gone.agent" }?.items.first?.reason.contains("지워진") == true)
+}
+
+@Test func namedFoldersJoinDeletedAppAndSharedGroups() throws {
+    let (root, locations) = try makeFakeLibrary([
+        "Preferences": ["com.riotgames.RiotGames.RiotClient.plist"],
+        "Application Support": ["Riot Client", "riot-client-ux", "Blizzard Entertainment", "Zoom", "AddressBook"],
+        "Logs": ["Riot Games"],
+        "Shared": ["Riot Games", "Blizzard", "SC Info", "Relocated Items", "Previously Relocated Items 3", "Zoom Data"],
+    ])
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let groups = LeftoverScanner.orphans(locations: locations, isInstalled: { _ in false },
+                                         installedIDs: ["us.zoom.xos"], installedNames: ["zoom.us"])
+    func names(_ title: String) -> Set<String> { Set(groups.first { $0.bundleID == title }?.items.map(\.url.lastPathComponent) ?? []) }
+
+    // 지운 앱 ID 묶음에 같은 이름 폴더가 붙는다 (유력)
+    let riot = names("com.riotgames.RiotGames.RiotClient")
+    #expect(riot.isSuperset(of: ["com.riotgames.RiotGames.RiotClient.plist", "Riot Client", "riot-client-ux", "Riot Games"]))
+    // 공유 폴더의 관련 없는 폴더는 이름 묶음 (추정), Application Support의 같은 이름도 붙는다
+    let blizzard = groups.first { $0.bundleID == "Blizzard (이름으로 찾음)" }
+    #expect(Set(blizzard?.items.map(\.url.lastPathComponent) ?? []) == ["Blizzard", "Blizzard Entertainment"])
+    #expect(blizzard?.items.allSatisfy { $0.confidence == .guessed } == true)
+    // 업데이트 잔여물
+    #expect(names("macOS 업데이트가 옮겨 둔 항목") == ["Relocated Items", "Previously Relocated Items 3"])
+    // 설치된 앱(zoom)과 macOS 폴더, 아무 묶음과도 관계없는 폴더는 제외
+    let all = Set(groups.flatMap(\.items).map(\.url.lastPathComponent))
+    #expect(!all.contains("Zoom") && !all.contains("Zoom Data") && !all.contains("SC Info") && !all.contains("AddressBook"))
 }
 
 @Test func systemAppsAreProtected() {

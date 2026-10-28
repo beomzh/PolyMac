@@ -31,6 +31,31 @@ scripts/build-app.sh --install
 - 앱 진입점·메뉴바는 `Sources/PolyMacApp/`, 번들 설정(Info.plist·entitlements)은 `App/`, 번들 조립·서명은 `scripts/build-app.sh`
 - 새 모듈은 `PolyMacModule` 프로토콜을 따르고 `Package.swift`의 `modules` 배열에 추가
 
+## 작업 흐름 — 브랜치 + Pull Request
+
+`main`에는 직접 push하지 않는다. 모든 변경은 브랜치에서 작업하고 Pull Request(PR)로 합친다.
+
+1. **브랜치 만들기**
+   - 외부 기여자: 저장소를 fork → fork에서 브랜치
+   - 메인테이너: 이 저장소에서 바로 브랜치
+   - 이름: `feat/<모듈>-<설명>`, `fix/<설명>`, `docs/<설명>`, `chore/<설명>` (예: `fix/finder-cut-paste`)
+2. **작업·커밋** — 아래 커밋 메시지 규칙, 커밋마다 `CHANGELOG.md` 항목
+3. **PR 열기** — 대상은 `main`. 설명에 다음을 적는다
+   - 무엇을 왜 바꿨는지, 어떻게 확인했는지
+   - **새로 요구하는 권한**이 있으면 명시 (손쉬운 사용·화면 녹음 등)
+   - **설정 형식이 바뀌면** 마이그레이션 여부 ([docs/RELEASING.md](docs/RELEASING.md) 1)
+   - 화면이 바뀌면 스크린샷
+4. **체크리스트** (PR 템플릿과 같음)
+   - [ ] `scripts/test.sh` 통과
+   - [ ] `swift build -c release` 경고 0
+   - [ ] [docs/SECURITY.md](docs/SECURITY.md) 원칙 위반 없음 (네트워크 호출·키 입력 저장·영구 삭제·덮어쓰기 없음)
+   - [ ] 외부 코드를 가져왔으면 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 갱신
+5. **리뷰** — 메인테이너 1명 이상 승인
+6. **머지** — Squash merge. 합쳐진 커밋 제목은 PR 제목(`type(scope): 제목` 형식)
+7. 머지 후 브랜치 삭제
+
+저장소 설정(메인테이너): `main` 브랜치 보호 — PR 필수, 승인 1명, 강제 push 금지. CI가 생기면 테스트 통과도 필수로.
+
 ## 커밋 메시지
 
 ```

@@ -8,15 +8,18 @@ public struct AppBundleInfo: Sendable, Hashable, Identifiable {
     public let version: String?
     /// 코드 서명의 개발사 팀 ID (같은 개발사의 공유 데이터 판정용)
     public let teamID: String?
+    /// 실행 파일 이름 (충돌 기록이 이 이름으로 남는다)
+    public let executableName: String?
 
     public var id: String { url.path }
 
-    public init(url: URL, bundleID: String, name: String, version: String? = nil, teamID: String? = nil) {
+    public init(url: URL, bundleID: String, name: String, version: String? = nil, teamID: String? = nil, executableName: String? = nil) {
         self.url = url
         self.bundleID = bundleID
         self.name = name
         self.version = version
         self.teamID = teamID
+        self.executableName = executableName
     }
 
     /// macOS 기본 앱 — 지우면 시스템이 망가질 수 있어 대상에서 뺀다
@@ -29,7 +32,8 @@ public struct AppBundleInfo: Sendable, Hashable, Identifiable {
 public struct LeftoverItem: Sendable, Hashable, Identifiable {
     public enum Kind: String, Sendable, CaseIterable {
         case app, appSupport, caches, preferences, containers, groupContainers
-        case savedState, webData, logs, launchAgent, launchDaemon, privilegedHelper, receipt, other
+        case savedState, webData, logs, crashReports, tempFiles, plugins
+        case launchAgent, launchDaemon, privilegedHelper, receipt, sharedData, relocated, other
 
         public var title: String {
             switch self {
@@ -42,10 +46,15 @@ public struct LeftoverItem: Sendable, Hashable, Identifiable {
             case .savedState: return "창 상태 기록"
             case .webData: return "웹 데이터 (쿠키·저장소)"
             case .logs: return "로그"
+            case .crashReports: return "충돌 기록"
+            case .tempFiles: return "임시 파일"
+            case .plugins: return "플러그인·확장"
             case .launchAgent: return "백그라운드 항목 (로그인 시 실행)"
             case .launchDaemon: return "시스템 백그라운드 서비스"
             case .privilegedHelper: return "관리자 권한 도우미"
             case .receipt: return "설치 기록"
+            case .sharedData: return "공유 폴더 데이터"
+            case .relocated: return "macOS 업데이트가 옮겨 둔 항목"
             case .other: return "기타"
             }
         }
@@ -62,10 +71,15 @@ public struct LeftoverItem: Sendable, Hashable, Identifiable {
             case .savedState: return "다음 실행 때 창을 복원하기 위한 기록. 지워도 안전합니다."
             case .webData: return "앱 안 웹 화면의 쿠키·로컬 저장소. 지우면 로그인이 풀립니다."
             case .logs: return "기록 파일. 지워도 안전합니다."
+            case .crashReports: return "앱이 비정상 종료될 때 남긴 보고서. 지워도 안전합니다."
+            case .tempFiles: return "macOS가 앱별로 따로 두는 숨은 캐시·임시 폴더(/var/folders). 지워도 안전합니다."
+            case .plugins: return "다른 앱(오디오 프로그램, Quick Look, Spotlight, 시스템 설정 등)에 꽂혀 동작하는 구성요소입니다."
             case .launchAgent: return "로그인할 때마다 몰래 실행되는 항목. 앱을 지웠다면 함께 지우는 게 좋습니다."
             case .launchDaemon: return "시스템 시작 때 관리자 권한으로 실행되는 서비스. 지울 때 암호가 필요합니다."
             case .privilegedHelper: return "앱이 설치한 관리자 권한 도우미 프로그램. 지울 때 암호가 필요합니다."
             case .receipt: return "설치 프로그램(pkg)이 남긴 설치 기록. 지울 때 암호가 필요합니다."
+            case .sharedData: return "모든 사용자 계정이 함께 쓰는 /Users/Shared에 앱(주로 게임 런처)이 남긴 데이터."
+            case .relocated: return "macOS 업데이트 때 새 시스템과 맞지 않아 옮겨 둔 예전 설정 파일. 안을 확인했다면 지워도 됩니다. 암호가 필요합니다."
             case .other: return ""
             }
         }
