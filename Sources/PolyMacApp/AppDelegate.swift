@@ -6,13 +6,12 @@ import NormalizeModule
 import OCRModule
 import OrganizeModule
 import PolyMacCore
-import ServiceManagement
 import UninstallerModule
 import WindowModule
 import os
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SettingsHost {
     private let registry = ModuleRegistry()
     private var statusItem: NSStatusItem?
     private let logger = Logger(subsystem: "dev.polymac", category: "app")
@@ -103,7 +102,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             registry.deactivate(d.id)
             activate(d)
         }
-        Toast.show("손쉬운 사용 권한이 확인되었습니다\n창 분할 · Finder ⌘X · 자동 붙여넣기를 사용할 수 있습니다", duration: 3)
+        Toast.show(L("손쉬운 사용 권한이 확인되었습니다\n창 분할 · Finder ⌘X · 자동 붙여넣기를 사용할 수 있습니다",
+                     "Accessibility permission granted\nWindow layout, Finder ⌘X and auto-paste are ready"), duration: 3)
     }
 
     // MARK: - 모듈 on/off
@@ -114,27 +114,51 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         UserDefaults.standard.object(forKey: defaultsKey(descriptor.id)) as? Bool ?? descriptor.enabledByDefault
     }
 
-    private func activate(_ descriptor: ModuleDescriptor) {
+    /// 켜지 못하면 이유를 알리고 돌려준다
+    @discardableResult
+    private func activate(_ descriptor: ModuleDescriptor) -> String? {
         do {
             try registry.activate(descriptor.id)
+            return nil
         } catch {
-            Toast.show("\(descriptor.displayName)을(를) 켜지 못했습니다\n\(error.localizedDescription)", duration: 5)
+            let reason = L("\(descriptor.displayName)을(를) 켜지 못했습니다", "Could not turn on \(descriptor.displayName)") + "\n" + error.localizedDescription
+            Toast.show(reason, duration: 5)
+            return reason
         }
     }
 
-    @objc private func toggleModule(_ sender: NSMenuItem) {
-        guard let id = sender.representedObject as? String,
-              let descriptor = registry.descriptors.first(where: { $0.id == id })
-        else { return }
-        if registry.isActive(id) {
-            registry.deactivate(id)
-            UserDefaults.standard.set(false, forKey: defaultsKey(id))
-            Toast.show("\(descriptor.displayName) 끔")
-        } else {
-            UserDefaults.standard.set(true, forKey: defaultsKey(id))
-            activate(descriptor)
-            if registry.isActive(id) { Toast.show("\(descriptor.displayName) 켬") }
+    // MARK: - 환경 설정 (SettingsHost)
+
+    var descriptors: [ModuleDescriptor] { registry.descriptors }
+
+    func isActive(_ id: String) -> Bool { registry.isActive(id) }
+
+    func setEnabled(_ id: String, _ on: Bool) -> String? {
+        guard let descriptor = registry.descriptors.first(where: { $0.id == id }) else { return nil }
+        UserDefaults.standard.set(on, forKey: defaultsKey(id))
+        if on {
+            return registry.isActive(id) ? nil : activate(descriptor)
         }
+        registry.deactivate(id)
+        return nil
+    }
+
+    /// 켜진 기능을 다시 올려 단축키 이름·메뉴 항목·창을 새 언어로 만든다 (설정은 그대로)
+    func languageChanged() {
+        for d in registry.descriptors where registry.isActive(d.id) {
+            registry.deactivate(d.id)
+            activate(d)
+        }
+        NSApp.mainMenu = Self.makeMainMenu(target: self)
+        logger.info("language changed: \(L10n.resolved.rawValue, privacy: .public)")
+    }
+
+    @objc private func openSettings() {
+        SettingsWindow.shared.show(host: self)
+    }
+
+    @objc private func openPermissions() {
+        SettingsWindow.shared.show(host: self, tab: .permissions)
     }
 
     // MARK: - 메뉴
@@ -146,70 +170,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
 
         // 자주 여는 창은 맨 위에 바로
-        let uninstall = NSMenuItem(title: "앱 완전 삭제…", action: #selector(openUninstaller), keyEquivalent: "")
+        let uninstall = NSMenuItem(title: L("앱 완전 삭제…", "Uninstall an App…"), action: #selector(openUninstaller), keyEquivalent: "")
         uninstall.target = self
         uninstall.image = NSImage(systemSymbolName: "trash", accessibilityDescription: nil)
         uninstall.isEnabled = registry.isActive("uninstaller")
-        if !uninstall.isEnabled { uninstall.toolTip = "아래 기능 목록에서 '앱 완전 삭제'를 켜세요" }
+        if !uninstall.isEnabled { uninstall.toolTip = L("환경 설정 › 기능에서 '앱 완전 삭제'를 켜세요", "Turn on 'App Uninstaller' in Settings › Features") }
         menu.addItem(uninstall)
-        menu.addItem(.separator())
 
-        menu.addItem(disabled("기능 켜기 / 끄기"))
-        for descriptor in registry.descriptors {
-            let item = NSMenuItem(title: descriptor.displayName, action: #selector(toggleModule(_:)), keyEquivalent: "")
-            item.target = self
-            item.representedObject = descriptor.id
-            item.state = registry.isActive(descriptor.id) ? .on : .off
-            item.indentationLevel = 1
-            menu.addItem(item)
-        }
-
+        // 켜진 기능의 도구
         let tools = registry.descriptors.compactMap { d -> NSMenuItem? in
             guard let items = registry.module(d.id)?.menuItems(), !items.isEmpty else { return nil }
-            let parent = NSMenuItem(title: d.displayName, action: nil, keyEquivalent: "")
-            let sub = NSMenu()
-            items.forEach(sub.addItem)
-            parent.submenu = sub
-            return parent
+            return submenu(d.displayName, items)
         }
         if !tools.isEmpty {
             menu.addItem(.separator())
             tools.forEach(menu.addItem)
         }
 
+        // 켜진 기능에 필요한 권한이 빠졌으면 바로 알 수 있게
+        let needed = Set(registry.descriptors.filter { registry.isActive($0.id) }.flatMap(\.permissions))
+        let missing = (needed.contains(.accessibility) && !Permissions.accessibility)
+            || (needed.contains(.screenRecording) && !Permissions.screenRecording)
+        if missing {
+            menu.addItem(.separator())
+            let warn = NSMenuItem(title: L("권한이 필요합니다…", "Permissions needed…"), action: #selector(openPermissions), keyEquivalent: "")
+            warn.target = self
+            warn.image = NSImage(systemSymbolName: "exclamationmark.triangle", accessibilityDescription: nil)
+            menu.addItem(warn)
+        }
+
         menu.addItem(.separator())
-        menu.addItem(submenu("단축키", hotkeyItems()))
-        menu.addItem(submenu("권한", permissionItems()))
-
-        let login = NSMenuItem(title: "로그인 시 자동 실행", action: #selector(toggleLoginItem), keyEquivalent: "")
-        login.target = self
-        login.state = SMAppService.mainApp.status == .enabled ? .on : .off
-        menu.addItem(login)
-
-        let data = NSMenuItem(title: "데이터 폴더 열기", action: #selector(openDataFolder), keyEquivalent: "")
-        data.target = self
-        menu.addItem(data)
-
-        menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "PolyMac 종료", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
-    }
-
-    private func hotkeyItems() -> [NSMenuItem] {
-        let settings = NSMenuItem(title: "단축키 변경…", action: #selector(openShortcutSettings), keyEquivalent: ",")
+        let settings = NSMenuItem(title: L("환경 설정…", "Settings…"), action: #selector(openSettings), keyEquivalent: ",")
         settings.target = self
-        var items: [NSMenuItem] = [settings, .separator()]
-        let list = HotkeyCenter.shared.registrations
-        if list.isEmpty { items.append(disabled("등록된 단축키 없음")) }
-        for r in list {
-            let combo = r.combo?.display ?? "—"
-            let mark = r.combo == nil ? "   (사용 안 함)" : (r.isRegistered ? (r.note.map { "   (\($0))" } ?? "") : "   ⚠️ 다른 앱이 사용 중")
-            items.append(disabled("\(combo)\t\(r.name)\(mark)"))
-        }
-        if list.contains(where: { $0.combo != nil && !$0.isRegistered }) {
-            items.append(.separator())
-            items.append(disabled("⚠️ 표시된 단축키는 다른 앱(Spectacle 등)을 끄거나 단축키를 바꾸면 동작합니다"))
-        }
-        return items
+        menu.addItem(settings)
+        menu.addItem(NSMenuItem(title: L("PolyMac 종료", "Quit PolyMac"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
     }
 
     /// 화면에는 안 보이지만 키 조합을 처리하는 기본 메뉴.
@@ -223,17 +217,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             item.submenu = menu
             main.addItem(item)
         }
-        let quit = NSMenuItem(title: "창 닫기 / PolyMac 종료", action: #selector(closeWindowOrQuit), keyEquivalent: "q")
+        let settings = NSMenuItem(title: L("환경 설정…", "Settings…"), action: #selector(openSettings), keyEquivalent: ",")
+        settings.target = target
+        let quit = NSMenuItem(title: L("창 닫기 / PolyMac 종료", "Close Window / Quit PolyMac"), action: #selector(closeWindowOrQuit), keyEquivalent: "q")
         quit.target = target
-        submenu("PolyMac", [quit])
-        submenu("편집", [
-            NSMenuItem(title: "실행 취소", action: NSSelectorFromString("undo:"), keyEquivalent: "z"),
-            NSMenuItem(title: "잘라내기", action: #selector(NSText.cut(_:)), keyEquivalent: "x"),
-            NSMenuItem(title: "복사", action: #selector(NSText.copy(_:)), keyEquivalent: "c"),
-            NSMenuItem(title: "붙여넣기", action: #selector(NSText.paste(_:)), keyEquivalent: "v"),
-            NSMenuItem(title: "모두 선택", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a"),
+        submenu("PolyMac", [settings, quit])
+        submenu(L("편집", "Edit"), [
+            NSMenuItem(title: L("실행 취소", "Undo"), action: NSSelectorFromString("undo:"), keyEquivalent: "z"),
+            NSMenuItem(title: L("잘라내기", "Cut"), action: #selector(NSText.cut(_:)), keyEquivalent: "x"),
+            NSMenuItem(title: L("복사", "Copy"), action: #selector(NSText.copy(_:)), keyEquivalent: "c"),
+            NSMenuItem(title: L("붙여넣기", "Paste"), action: #selector(NSText.paste(_:)), keyEquivalent: "v"),
+            NSMenuItem(title: L("모두 선택", "Select All"), action: #selector(NSText.selectAll(_:)), keyEquivalent: "a"),
         ])
-        submenu("윈도우", [NSMenuItem(title: "닫기", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")])
+        submenu(L("윈도우", "Window"), [NSMenuItem(title: L("닫기", "Close"), action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")])
         return main
     }
 
@@ -253,56 +249,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func openUninstaller() {
         (registry.module("uninstaller") as? UninstallerModule)?.openWindow()
-    }
-
-    @objc private func openShortcutSettings() {
-        let names = Dictionary(uniqueKeysWithValues: registry.descriptors.map { ($0.id, $0.displayName) })
-        ShortcutSettingsWindow.shared.show(moduleNames: names)
-    }
-
-    private func permissionItems() -> [NSMenuItem] {
-        func row(_ title: String, granted: Bool, _ permission: Permission) -> NSMenuItem {
-            let item = NSMenuItem(title: "\(granted ? "✅" : "⚠️") \(title)\(granted ? "" : " — 클릭해서 설정 열기")", action: #selector(openPermission(_:)), keyEquivalent: "")
-            item.target = self
-            item.representedObject = permission.rawValue
-            return item
-        }
-        return [
-            row("손쉬운 사용 (창 분할, ⌘X, 자동 붙여넣기)", granted: Permissions.accessibility, .accessibility),
-            row("화면 녹음 (캡처, OCR)", granted: Permissions.screenRecording, .screenRecording),
-            row("자동화 › Finder (터미널 열기, 경로 복사)", granted: true, .automationFinder),
-            row("파일 및 폴더 (자소분리, 자동 정리)", granted: true, .filesAndFolders),
-            .separator(),
-            disabled("자동화·파일 권한은 처음 사용할 때 macOS가 직접 묻습니다"),
-        ]
-    }
-
-    @objc private func openPermission(_ sender: NSMenuItem) {
-        guard let raw = sender.representedObject as? String, let permission = Permission(rawValue: raw) else { return }
-        switch permission {
-        case .accessibility where !Permissions.accessibility: Permissions.requestAccessibility()
-        case .screenRecording where !Permissions.screenRecording: Permissions.requestScreenRecording()
-        default: break
-        }
-        Permissions.openSettings(for: permission)
-    }
-
-    @objc private func toggleLoginItem() {
-        do {
-            if SMAppService.mainApp.status == .enabled {
-                try SMAppService.mainApp.unregister()
-                Toast.show("로그인 시 자동 실행 끔")
-            } else {
-                try SMAppService.mainApp.register()
-                Toast.show("로그인 시 자동 실행 켬")
-            }
-        } catch {
-            Toast.show("로그인 항목 변경 실패: \(error.localizedDescription)", duration: 4)
-        }
-    }
-
-    @objc private func openDataFolder() {
-        NSWorkspace.shared.open(AppPaths.dataDirectory)
     }
 
     private func disabled(_ title: String) -> NSMenuItem {

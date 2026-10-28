@@ -35,7 +35,8 @@ echo "▶ 앱 번들 조립"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN_DIR/PolyMac" "$APP/Contents/MacOS/PolyMac"
-cp App/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"   # 아이콘 다시 만들기: swift scripts/make-icon.swift
+cp App/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
+cp -R App/en.lproj "$APP/Contents/Resources/"   # 영어 시스템에서 권한 안내 문구   # 아이콘 다시 만들기: swift scripts/make-icon.swift
 sed -e "s/__VERSION__/$VERSION/" -e "s/__SHORT_VERSION__/$SHORT_VERSION/" -e "s/__BUILD__/$BUILD/" \
     App/Info.plist > "$APP/Contents/Info.plist"
 plutil -lint "$APP/Contents/Info.plist" > /dev/null

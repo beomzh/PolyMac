@@ -1,4 +1,5 @@
 import AppKit
+import PolyMacL10n
 
 /// 화면 아래쪽에 잠깐 떴다 사라지는 안내. 클릭을 가로채지 않는다.
 @MainActor

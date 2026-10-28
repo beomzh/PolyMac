@@ -1,4 +1,5 @@
 import AppKit
+import PolyMacL10n
 
 /// 캡처 배경 — 찍어 둔 화면을 레이어로 한 번만 올려 둔다 (마우스를 움직일 때마다 다시 그리지 않음).
 final class CaptureBackgroundView: NSView {
@@ -114,7 +115,7 @@ final class SelectionView: NSView {
             ctx.setStrokeColor(NSColor.systemBlue.cgColor)
             ctx.setLineWidth(3)
             ctx.stroke(hover.insetBy(dx: 1.5, dy: 1.5))
-            pill("\(Int(hover.width * scale)) × \(Int(hover.height * scale)) px  ·  클릭하면 이 창 선택",
+            pill(L("\(Int(hover.width * scale)) × \(Int(hover.height * scale)) px  ·  클릭하면 이 창 선택", "\(Int(hover.width * scale)) × \(Int(hover.height * scale)) px  ·  click to select this window"),
                  at: NSPoint(x: hover.minX + 6, y: min(hover.maxY - 28, bounds.maxY - 28)), ctx)
         } else if let mouse {
             drawCrosshair(at: mouse, ctx)
@@ -212,7 +213,7 @@ final class SelectionView: NSView {
         let copied = colorCopiedAt.map { Date().timeIntervalSince($0) < 1.2 } ?? false
         text("(\(Int(p.x)), \(Int(bounds.height - p.y)))", at: NSPoint(x: info.minX + 8, y: info.maxY - 20), size: 11)
         text(colorText, at: NSPoint(x: info.minX + 26, y: info.maxY - 38), size: 11)
-        text(copied ? "✓ 색상을 복사했습니다" : "C 색상 복사 · ⇧ RGB/HEX", at: NSPoint(x: info.minX + 8, y: info.minY + 6), size: 10,
+        text(copied ? L("✓ 색상을 복사했습니다", "✓ Color copied") : L("C 색상 복사 · ⇧ RGB/HEX", "C copy color · ⇧ RGB/HEX"), at: NSPoint(x: info.minX + 8, y: info.minY + 6), size: 10,
              color: copied ? .systemGreen : NSColor.white.withAlphaComponent(0.7))
     }
 
@@ -229,25 +230,25 @@ final class SelectionView: NSView {
         let rows: [(String, String)]
         if isSelected {
             rows = [
-                ("드래그", "안쪽: 이동 · 테두리: 크기 조절"),
-                ("← ↑ ↓ →", "1px 이동 (⇧ 10px)"),
-                ("R A P", "사각형 · 화살표 · 펜"),
-                ("1 ~ 8", "색상 (1 빨강)"),
-                ("⌘Z", "표시 되돌리기"),
-                ("T", "텍스트 추출"),
-                ("F", "화면에 고정"),
-                ("⌘S", "파일로 저장"),
-                ("↩  ⌘C", "복사하고 닫기"),
-                ("Esc", "취소"),
+                (L("드래그", "Drag"), L("안쪽: 이동 · 테두리: 크기 조절", "inside: move · edge: resize")),
+                ("← ↑ ↓ →", L("1px 이동 (⇧ 10px)", "move 1px (⇧ 10px)")),
+                ("R A P", L("사각형 · 화살표 · 펜", "box · arrow · pen")),
+                ("1 ~ 8", L("색상 (1 빨강)", "color (1 red)")),
+                ("⌘Z", L("표시 되돌리기", "undo markup")),
+                ("T", L("텍스트 추출", "extract text")),
+                ("F", L("화면에 고정", "pin to screen")),
+                ("⌘S", L("파일로 저장", "save to file")),
+                ("↩  ⌘C", L("복사하고 닫기", "copy and close")),
+                ("Esc", L("취소", "cancel")),
             ]
         } else {
             rows = [
-                ("드래그", "영역 선택"),
-                ("클릭", "마우스 아래 창 선택"),
-                ("⌘A", "화면 전체"),
-                ("C", "커서 위치 색상 복사"),
-                ("⇧", "RGB / HEX 바꾸기"),
-                ("Esc", "취소"),
+                (L("드래그", "Drag"), L("영역 선택", "select area")),
+                (L("클릭", "Click"), L("마우스 아래 창 선택", "select window under cursor")),
+                ("⌘A", L("화면 전체", "whole screen")),
+                ("C", L("커서 위치 색상 복사", "copy color under cursor")),
+                ("⇧", L("RGB / HEX 바꾸기", "toggle RGB / HEX")),
+                ("Esc", L("취소", "cancel")),
             ]
         }
         let rowHeight: CGFloat = 22
@@ -258,7 +259,7 @@ final class SelectionView: NSView {
         ctx.setFillColor(NSColor.black.withAlphaComponent(0.72).cgColor)
         ctx.fillPath()
         ctx.restoreGState()
-        text("PolyMac 캡처", at: NSPoint(x: panel.minX + 12, y: panel.maxY - 26), size: 13, weight: .semibold)
+        text(L("PolyMac 캡처", "PolyMac Capture"), at: NSPoint(x: panel.minX + 12, y: panel.maxY - 26), size: 13, weight: .semibold)
         for (i, row) in rows.enumerated() {
             let y = panel.maxY - 52 - CGFloat(i) * rowHeight
             keycap(row.0, at: NSPoint(x: panel.minX + 12, y: y), ctx)

@@ -2,28 +2,6 @@ import AppKit
 import PolyMacCore
 import SwiftUI
 
-/// 단축키 설정 창. 열 때만 만들어지고, 닫아도 다음에 다시 쓰려고 창 하나만 유지한다.
-@MainActor
-final class ShortcutSettingsWindow {
-    static let shared = ShortcutSettingsWindow()
-    private var window: NSWindow?
-
-    func show(moduleNames: [String: String]) {
-        let model = ShortcutSettingsModel(moduleNames: moduleNames)
-        if window == nil {
-            let w = ClosableWindow(contentRect: NSRect(x: 0, y: 0, width: 580, height: 560),
-                             styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
-            w.title = "PolyMac 단축키"
-            w.isReleasedWhenClosed = false
-            w.center()
-            window = w
-        }
-        window?.contentViewController = NSHostingController(rootView: ShortcutSettingsView(model: model))
-        NSApp.activate()
-        window?.makeKeyAndOrderFront(nil)
-    }
-}
-
 @MainActor
 final class ShortcutSettingsModel: ObservableObject {
     struct Group: Identifiable {
@@ -36,11 +14,12 @@ final class ShortcutSettingsModel: ObservableObject {
     @Published private(set) var recordingKey: String?
     @Published var message: String?
 
-    private let moduleNames: [String: String]
+    /// 모듈 id → 현재 언어의 이름 (언어를 바꾸면 달라진다)
+    private let moduleName: (String) -> String
     private var monitor: Any?
 
-    init(moduleNames: [String: String]) {
-        self.moduleNames = moduleNames
+    init(moduleName: @escaping (String) -> String) {
+        self.moduleName = moduleName
         reload()
     }
 
@@ -49,7 +28,7 @@ final class ShortcutSettingsModel: ObservableObject {
         var owners: [String] = []
         for r in all where !owners.contains(r.owner) { owners.append(r.owner) }
         groups = owners.map { owner in
-            Group(id: owner, title: moduleNames[owner] ?? owner, rows: all.filter { $0.owner == owner })
+            Group(id: owner, title: moduleName(owner), rows: all.filter { $0.owner == owner })
         }
     }
 
@@ -85,7 +64,7 @@ final class ShortcutSettingsModel: ObservableObject {
     func resetAll() {
         stopRecording()
         HotkeyCenter.shared.resetAll()
-        message = "모든 단축키를 기본값으로 되돌렸습니다"
+        message = L("모든 단축키를 기본값으로 되돌렸습니다", "All shortcuts were reset to their defaults")
         reload()
     }
 
@@ -107,18 +86,18 @@ final class ShortcutSettingsModel: ObservableObject {
         }
         let combo = KeyCombo(event: event)
         guard combo.isUsableAsGlobalHotkey else {
-            message = "⌘ · ⌃ · ⌥ 중 하나 이상과 함께 눌러 주세요 (F키는 단독 가능)"
+            message = L("⌘ · ⌃ · ⌥ 중 하나 이상과 함께 눌러 주세요 (F키는 단독 가능)", "Press with at least one of ⌘ ⌃ ⌥ (function keys work alone)")
             return
         }
         if let other = HotkeyCenter.shared.conflict(for: combo, excluding: key) {
-            message = "\(combo.display)은(는) '\(other.name)'에서 이미 쓰고 있습니다"
+            message = L("\(combo.display)은(는) '\(other.name)'에서 이미 쓰고 있습니다", "\(combo.display) is already used by '\(other.name)'")
             return
         }
         HotkeyCenter.shared.setCombo(combo, for: key)
         message = nil
         stopRecording()
         if let row = HotkeyCenter.shared.registrations.first(where: { $0.key == key }), !row.isRegistered {
-            message = "\(combo.display)은(는) 다른 앱이 이미 쓰고 있어 동작하지 않을 수 있습니다"
+            message = L("\(combo.display)은(는) 다른 앱이 이미 쓰고 있어 동작하지 않을 수 있습니다", "\(combo.display) is taken by another app and may not work")
         }
     }
 }
@@ -128,7 +107,7 @@ struct ShortcutSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("바꿀 단축키를 클릭한 뒤 새 조합을 누르세요.  Esc 취소 · ⌫ 사용 안 함")
+            Text(L("바꿀 단축키를 클릭한 뒤 새 조합을 누르세요.  Esc 취소 · ⌫ 사용 안 함", "Click a shortcut, then press the new combination.  Esc cancels · ⌫ turns it off"))
                 .font(.callout)
                 .foregroundStyle(.secondary)
 
@@ -152,14 +131,13 @@ struct ShortcutSettingsView: View {
                         .font(.callout)
                 }
                 Spacer()
-                Button("모두 기본값으로") { model.resetAll() }
+                Button(L("모두 기본값으로", "Reset All")) { model.resetAll() }
             }
-            Text("꺼진 기능의 단축키는 목록에 나오지 않습니다. 메뉴바에서 기능을 켜면 나타납니다.")
+            Text(L("꺼진 기능의 단축키는 목록에 나오지 않습니다. \"기능\" 탭에서 켜면 나타납니다.", "Shortcuts of disabled features are hidden. Turn them on in the Features tab."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
         .padding(16)
-        .frame(minWidth: 520, minHeight: 420)
         .onDisappear { model.stopRecording() }
     }
 }
@@ -182,10 +160,10 @@ private struct ShortcutRow: View {
             if row.combo != nil && !row.isRegistered && !isRecording {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.orange)
-                    .help("다른 앱이 이미 쓰고 있는 조합입니다")
+                    .help(L("다른 앱이 이미 쓰고 있는 조합입니다", "Another app already uses this combination"))
             }
             Button(action: record) {
-                Text(isRecording ? "입력 대기…" : (row.combo?.display ?? "사용 안 함"))
+                Text(isRecording ? L("입력 대기…", "Press keys…") : (row.combo?.display ?? L("사용 안 함", "Off")))
                     .font(.system(.body, design: .rounded).monospacedDigit())
                     .frame(minWidth: 96)
             }
@@ -195,7 +173,7 @@ private struct ShortcutRow: View {
                 Image(systemName: "arrow.uturn.backward")
             }
             .buttonStyle(.borderless)
-            .help("기본값 \(row.defaultCombo.display)")
+            .help(L("기본값 \(row.defaultCombo.display)", "Default \(row.defaultCombo.display)"))
             .disabled(row.combo == row.defaultCombo)
         }
     }

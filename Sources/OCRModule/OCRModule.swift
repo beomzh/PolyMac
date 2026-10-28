@@ -6,7 +6,8 @@ import PolyMacCore
 public final class OCRModule: PolyMacModule {
     public static let descriptor = ModuleDescriptor(
         id: "ocr",
-        displayName: "텍스트 추출 (OCR)",
+        displayName: ("텍스트 추출 (OCR)", "Text Recognition (OCR)"),
+        summary: ("화면 영역의 글자·QR 코드를 읽어 복사 (기기 안에서만)", "Read text and QR codes on screen and copy them (on-device only)"),
         permissions: [.screenRecording]
     )
 
@@ -17,19 +18,19 @@ public final class OCRModule: PolyMacModule {
     }
 
     public func activate() throws {
-        context.hotkey("recognizeRegion", KeyCombo(kVK_ANSI_2, [.control, .shift]), "영역 선택 → 텍스트 복사") {
+        context.hotkey("recognizeRegion", KeyCombo(kVK_ANSI_2, [.control, .shift]), L("영역 선택 → 텍스트 복사", "Select area → copy text")) {
             Task { @MainActor in
                 guard let capture = await RegionCapture.selectRegion() else { return }
                 await OCRRunner.recognizeAndCopy(capture.image)
             }
         }
-        context.hotkey("recognizeClipboardImage", KeyCombo(kVK_ANSI_5, [.control, .shift]), "클립보드 이미지 → 텍스트 복사") { [weak self] in
+        context.hotkey("recognizeClipboardImage", KeyCombo(kVK_ANSI_5, [.control, .shift]), L("클립보드 이미지 → 텍스트 복사", "Clipboard image → copy text")) { [weak self] in
             self?.recognizeClipboardImage()
         }
     }
 
     public func menuItems() -> [NSMenuItem] {
-        let item = NSMenuItem(title: "클립보드 이미지에서 텍스트 추출", action: #selector(recognizeFromMenu), keyEquivalent: "")
+        let item = NSMenuItem(title: L("클립보드 이미지에서 텍스트 추출", "Extract Text from Clipboard Image"), action: #selector(recognizeFromMenu), keyEquivalent: "")
         item.target = self
         return [item]
     }
@@ -41,7 +42,7 @@ public final class OCRModule: PolyMacModule {
         guard let image = NSImage(pasteboard: NSPasteboard.general),
               let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil)
         else {
-            context.toast("클립보드에 이미지가 없습니다")
+            context.toast(L("클립보드에 이미지가 없습니다", "No image on the clipboard"))
             return
         }
         Task { @MainActor in await OCRRunner.recognizeAndCopy(cg) }

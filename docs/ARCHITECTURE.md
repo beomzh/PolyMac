@@ -128,6 +128,7 @@ public protocol PolyMacModule: AnyObject {
 polymac/
 ├─ Package.swift              # 모듈 코어 (SwiftPM) — swift build / swift test
 ├─ Sources/
+│  ├─ PolyMacL10n/            # 화면 문구 언어 고르기 L("한국어", "English") — 의존성 없음
 │  ├─ PolyMacCore/              # 모듈 계약, 레지스트리, 공유 서비스
 │  ├─ WindowModule/
 │  ├─ CaptureModule/
@@ -143,6 +144,14 @@ polymac/
 ```
 
 Xcode 프로젝트는 **앱 번들·확장·서명**만 담당하고, 로직은 전부 SwiftPM 패키지에 둔다. → CLI 환경에서도 로직 빌드·테스트 가능.
+
+## 6-1. 화면 언어
+
+- 문구는 쓰는 자리에 두 언어를 함께 적는다: `L("저장했습니다", "Saved")`. 번역 키 파일을 따로 두지 않아 빠진 번역이 생기지 않고, `\(n)` 보간도 그대로 쓴다.
+- 언어 설정(`app.language`: system / ko / en)은 환경 설정 › 언어에서 바꾼다. "시스템"은 macOS 첫 번째 언어가 한국어일 때만 한국어, 그 밖에는 영어.
+- 바꾸면 켜진 기능을 다시 올려(deactivate → activate) 단축키 이름·메뉴 항목·창이 새 언어로 만들어진다. 그래서 문구를 `static let`에 담아 두지 않는다 (처음 언어로 굳어 버림).
+- macOS가 권한을 물을 때의 문구(Info.plist)는 `App/en.lproj/InfoPlist.strings`. 이것만은 macOS 언어를 따른다.
+- 새 기능을 만들 때: 사용자에게 보이는 모든 문구를 `L(…)`로 쓴다. 로그(`logger`)는 번역하지 않는다.
 
 ## 7. 로깅
 

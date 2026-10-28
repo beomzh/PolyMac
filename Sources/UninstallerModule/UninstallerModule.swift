@@ -6,7 +6,8 @@ import SwiftUI
 public final class UninstallerModule: PolyMacModule {
     public static let descriptor = ModuleDescriptor(
         id: "uninstaller",
-        displayName: "앱 완전 삭제",
+        displayName: ("앱 완전 삭제", "App Uninstaller"),
+        summary: ("앱과 남은 설정·캐시를 함께 휴지통으로", "Move an app and its leftover settings and caches to the Trash"),
         permissions: [.automationFinder]
     )
 
@@ -25,8 +26,8 @@ public final class UninstallerModule: PolyMacModule {
     }
 
     public func menuItems() -> [NSMenuItem] {
-        let open = NSMenuItem(title: "앱 삭제 창 열기…", action: #selector(openApps), keyEquivalent: "")
-        let orphans = NSMenuItem(title: "이미 지운 앱의 흔적 찾기…", action: #selector(openOrphans), keyEquivalent: "")
+        let open = NSMenuItem(title: L("앱 삭제 창 열기…", "Open Uninstaller…"), action: #selector(openApps), keyEquivalent: "")
+        let orphans = NSMenuItem(title: L("이미 지운 앱의 흔적 찾기…", "Find Leftovers of Removed Apps…"), action: #selector(openOrphans), keyEquivalent: "")
         return [open, orphans].map { $0.target = self; return $0 }
     }
 
@@ -57,7 +58,7 @@ final class UninstallerWindow: NSObject, NSWindowDelegate {
         if mode == .orphans { model.scanOrphans() }
         let window = ClosableWindow(contentRect: NSRect(x: 0, y: 0, width: 960, height: 620),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
-        window.title = "앱 완전 삭제 — PolyMac"
+        window.title = L("앱 완전 삭제 — PolyMac", "App Uninstaller — PolyMac")
         window.isReleasedWhenClosed = false
         window.contentViewController = NSHostingController(rootView: UninstallerView(model: model))
         window.delegate = self

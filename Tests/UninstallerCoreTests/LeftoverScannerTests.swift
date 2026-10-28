@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import PolyMacL10n
 @testable import UninstallerCore
 
 /// 가짜 Library 폴더를 만들어 탐색 규칙을 확인한다.
@@ -83,6 +84,7 @@ private let app = AppBundleInfo(url: URL(fileURLWithPath: "/Applications/Foo Bar
 }
 
 @Test func orphanRulesSkipInstalledParentsAndLiveServices() throws {
+    L10n.override = .ko // 이유 문구·묶음 이름을 한국어로 확인
     let (root, locations) = try makeFakeLibrary([
         "Preferences": ["com.vendor.App.ShipIt.A63A9676-B16D-5374-BDA1-21A96D85C95E.plist"],
         "LaunchAgents": [],
@@ -109,6 +111,7 @@ private let app = AppBundleInfo(url: URL(fileURLWithPath: "/Applications/Foo Bar
 }
 
 @Test func namedFoldersJoinDeletedAppAndSharedGroups() throws {
+    L10n.override = .ko // 이유 문구·묶음 이름을 한국어로 확인
     let (root, locations) = try makeFakeLibrary([
         "Preferences": ["com.riotgames.RiotGames.RiotClient.plist"],
         "Application Support": ["Riot Client", "riot-client-ux", "Blizzard Entertainment", "Zoom", "AddressBook"],

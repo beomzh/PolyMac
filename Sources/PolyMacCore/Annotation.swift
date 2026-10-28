@@ -1,4 +1,5 @@
 import AppKit
+import PolyMacL10n
 
 /// 캡처 위에 그리는 표시 도구.
 public enum AnnotationTool: String, CaseIterable, Sendable {
@@ -14,9 +15,9 @@ public enum AnnotationTool: String, CaseIterable, Sendable {
 
     var title: String {
         switch self {
-        case .rectangle: return "사각형 (R)"
-        case .arrow: return "화살표 (A)"
-        case .pen: return "펜 (P)"
+        case .rectangle: return L("사각형 (R)", "Rectangle (R)")
+        case .arrow: return L("화살표 (A)", "Arrow (A)")
+        case .pen: return L("펜 (P)", "Pen (P)")
         }
     }
 }
@@ -106,10 +107,10 @@ public final class AnnotationToolbar: NSView {
     }
 
     /// 1~8 키로도 고른다. 첫 번째(빨강)가 기본값.
-    public static let palette: [(name: String, color: NSColor)] = [
-        ("빨강", .systemRed), ("주황", .systemOrange), ("노랑", .systemYellow), ("초록", .systemGreen),
-        ("파랑", .systemBlue), ("보라", .systemPurple), ("검정", .black), ("흰색", .white),
-    ]
+    public static var palette: [(name: String, color: NSColor)] { [
+        (L("빨강", "Red"), .systemRed), (L("주황", "Orange"), .systemOrange), (L("노랑", "Yellow"), .systemYellow), (L("초록", "Green"), .systemGreen),
+        (L("파랑", "Blue"), .systemBlue), (L("보라", "Purple"), .systemPurple), (L("검정", "Black"), .black), (L("흰색", "White"), .white),
+    ] }
 
     public var onAction: ((Action) -> Void)?
     public private(set) var selectedTool: AnnotationTool?
@@ -155,20 +156,20 @@ public final class AnnotationToolbar: NSView {
             stack.addArrangedSubview(swatch)
         }
         stack.addArrangedSubview(separator())
-        stack.addArrangedSubview(button("arrow.uturn.backward", "되돌리기 (⌘Z)", #selector(undoTapped)))
+        stack.addArrangedSubview(button("arrow.uturn.backward", L("되돌리기 (⌘Z)", "Undo (⌘Z)"), #selector(undoTapped)))
         stack.addArrangedSubview(separator())
 
         if output {
-            stack.addArrangedSubview(button("text.viewfinder", "텍스트 추출 (T)", #selector(ocrTapped)))
-            stack.addArrangedSubview(button("pin", "화면에 고정 (F)", #selector(pinTapped)))
-            stack.addArrangedSubview(button("square.and.arrow.down", "저장… (⌘S)", #selector(saveTapped)))
+            stack.addArrangedSubview(button("text.viewfinder", L("텍스트 추출 (T)", "Extract text (T)"), #selector(ocrTapped)))
+            stack.addArrangedSubview(button("pin", L("화면에 고정 (F)", "Pin to screen (F)"), #selector(pinTapped)))
+            stack.addArrangedSubview(button("square.and.arrow.down", L("저장… (⌘S)", "Save… (⌘S)"), #selector(saveTapped)))
             stack.addArrangedSubview(separator())
-            stack.addArrangedSubview(button("xmark", "취소 (Esc)", #selector(cancelTapped)))
-            let copy = button("checkmark", "복사하고 닫기 (↩︎ 또는 ⌘C)", #selector(copyTapped))
+            stack.addArrangedSubview(button("xmark", L("취소 (Esc)", "Cancel (Esc)"), #selector(cancelTapped)))
+            let copy = button("checkmark", L("복사하고 닫기 (↩︎ 또는 ⌘C)", "Copy and close (↩︎ or ⌘C)"), #selector(copyTapped))
             copy.contentTintColor = .systemGreen
             stack.addArrangedSubview(copy)
         } else {
-            let done = button("checkmark", "편집 완료", #selector(doneTapped))
+            let done = button("checkmark", L("편집 완료", "Done editing"), #selector(doneTapped))
             done.contentTintColor = .systemGreen
             stack.addArrangedSubview(done)
         }

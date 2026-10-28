@@ -1,4 +1,5 @@
 import AppKit
+import PolyMacCore
 import SwiftUI
 import UninstallerCore
 import UniformTypeIdentifiers
@@ -36,7 +37,7 @@ struct UninstallerView: View {
     private var sidebar: some View {
         VStack(spacing: 8) {
             Picker("", selection: $model.mode) {
-                ForEach(UninstallerModel.Mode.allCases) { Text($0.rawValue).tag($0) }
+                ForEach(UninstallerModel.Mode.allCases) { Text($0.title).tag($0) }
             }
             .pickerStyle(.segmented)
             .labelsHidden()
@@ -47,7 +48,7 @@ struct UninstallerView: View {
             }
 
             if model.mode == .apps {
-                TextField("앱 검색", text: $model.query)
+                TextField(L("앱 검색", "Search apps"), text: $model.query)
                     .textFieldStyle(.roundedBorder)
                 List(model.filteredApps, selection: $model.selectedAppID) { app in
                     HStack(spacing: 8) {
@@ -61,17 +62,17 @@ struct UninstallerView: View {
                     .tag(app.id)
                 }
                 .listStyle(.sidebar)
-                Text("앱을 이 창에 끌어다 놓아도 됩니다")
+                Text(L("앱을 이 창에 끌어다 놓아도 됩니다", "You can also drop an app on this window"))
                     .font(.caption).foregroundStyle(.secondary)
             } else {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("이미 지운 앱의 흔적").font(.headline)
-                    Text("앱은 지웠는데 설정·캐시·데이터가 남은 것을 찾습니다. 앱 ID(com.회사.앱) 형태의 이름 중 이 Mac에 그 앱이 없는 것만 보여 줍니다. macOS 기본 항목은 제외합니다.")
+                    Text(L("이미 지운 앱의 흔적", "Leftovers of removed apps")).font(.headline)
+                    Text(L("앱은 지웠는데 설정·캐시·데이터가 남은 것을 찾습니다. 앱 ID(com.회사.앱) 형태의 이름 중 이 Mac에 그 앱이 없는 것만 보여 줍니다. macOS 기본 항목은 제외합니다.", "Finds settings, caches and data left behind by apps you already removed. Only names shaped like an app ID (com.vendor.app) whose app is not on this Mac are shown. macOS items are excluded."))
                         .font(.caption).foregroundStyle(.secondary)
                     Button {
                         model.scanOrphans()
                     } label: {
-                        Label("다시 찾기", systemImage: "arrow.clockwise")
+                        Label(L("다시 찾기", "Scan Again"), systemImage: "arrow.clockwise")
                     }
                     .disabled(model.isScanning)
                     Spacer()
@@ -96,7 +97,7 @@ struct UninstallerView: View {
                         .sorted { LeftoverItem.Kind.allCases.firstIndex(of: $0.key)! < LeftoverItem.Kind.allCases.firstIndex(of: $1.key)! }
                         .map { (id: $0.key.rawValue, title: $0.key.title, note: $0.key.explanation, items: $0.value) })
                 } else {
-                    placeholder("왼쪽에서 지울 앱을 고르거나, 앱을 이 창에 끌어다 놓으세요.", symbol: "trash.square")
+                    placeholder(L("왼쪽에서 지울 앱을 고르거나, 앱을 이 창에 끌어다 놓으세요.", "Pick an app on the left, or drop one on this window."), symbol: "trash.square")
                 }
             } else {
                 selectionBar
@@ -114,12 +115,12 @@ struct UninstallerView: View {
                 .resizable().frame(width: 52, height: 52)
             VStack(alignment: .leading, spacing: 3) {
                 Text(app.name).font(.title2.weight(.semibold))
-                Text([app.version.map { "버전 \($0)" }, app.bundleID, app.teamID.map { "개발사 팀 \($0)" }].compactMap { $0 }.joined(separator: " · "))
+                Text([app.version.map { L("버전 \($0)", "Version \($0)") }, app.bundleID, app.teamID.map { L("개발사 팀 \($0)", "Team \($0)") }].compactMap { $0 }.joined(separator: " · "))
                     .font(.caption).foregroundStyle(.secondary)
-                Text("마지막 사용: " + (model.appLastUsed.map(dateText) ?? "기록 없음"))
+                Text(L("마지막 사용: ", "Last used: ") + (model.appLastUsed.map(dateText) ?? L("기록 없음", "unknown")))
                     .font(.caption).foregroundStyle(.secondary)
                 if model.isSelectedAppRunning {
-                    Label("지금 실행 중 — 지울 때 먼저 종료합니다", systemImage: "exclamationmark.triangle.fill")
+                    Label(L("지금 실행 중 — 지울 때 먼저 종료합니다", "Running now — it will be quit before removal"), systemImage: "exclamationmark.triangle.fill")
                         .font(.caption).foregroundStyle(.orange)
                 }
             }
@@ -131,13 +132,13 @@ struct UninstallerView: View {
     /// 전체 선택 · 전체 해제 · 유력만
     private var selectionBar: some View {
         HStack(spacing: 8) {
-            Button("전체 선택") { model.selectAll() }
-            Button("전체 해제") { model.deselectAll() }
-            Button("확실·유력만") { model.selectLikely() }
-                .help("이름만 비슷한 '추정' 항목은 빼고 고릅니다")
+            Button(L("전체 선택", "Select All")) { model.selectAll() }
+            Button(L("전체 해제", "Select None")) { model.deselectAll() }
+            Button(L("확실·유력만", "Certain & Likely Only")) { model.selectLikely() }
+                .help(L("이름만 비슷한 '추정' 항목은 빼고 고릅니다", "Selects everything except 'possible' items that only have a similar name"))
             Spacer()
             if model.mode == .orphans {
-                Text("\(model.vendorGroups.count)개 앱의 흔적").font(.caption).foregroundStyle(.secondary)
+                Text(L("\(model.vendorGroups.count)개 앱의 흔적", "Leftovers of \(model.vendorGroups.count) apps")).font(.caption).foregroundStyle(.secondary)
             }
         }
         .buttonStyle(.bordered)
@@ -152,11 +153,11 @@ struct UninstallerView: View {
             if model.isScanning {
                 VStack(spacing: 10) {
                     ProgressView()
-                    Text("찾는 중…").foregroundStyle(.secondary)
+                    Text(L("찾는 중…", "Searching…")).foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if groups.isEmpty {
-                placeholder(model.mode == .orphans ? "남아 있는 흔적이 없습니다" : "남은 파일이 없습니다", symbol: "checkmark.seal")
+                placeholder(model.mode == .orphans ? L("남아 있는 흔적이 없습니다", "No leftovers") : L("남은 파일이 없습니다", "No files left"), symbol: "checkmark.seal")
             } else {
                 List {
                     ForEach(groups, id: \.id) { g in
@@ -176,10 +177,10 @@ struct UninstallerView: View {
                                     }
                                 }
                                 Text(g.title).font(.headline)
-                                Text("\(g.items.count)개 · \(size(g.items.reduce(0) { $0 + (model.sizes[$1.id] ?? 0) }))")
+                                Text(L("\(g.items.count)개 · \(size(g.items.reduce(0) { $0 + (model.sizes[$1.id] ?? 0) }))", "\(g.items.count) items · \(size(g.items.reduce(0) { $0 + (model.sizes[$1.id] ?? 0) }))"))
                                     .font(.caption).foregroundStyle(.secondary)
                                 if let newest = g.items.compactMap({ model.modified[$0.id] }).max() {
-                                    Text("· 최근 수정 " + dateText(newest)).font(.caption).foregroundStyle(.secondary)
+                                    Text(L("· 최근 수정 ", "· modified ") + dateText(newest)).font(.caption).foregroundStyle(.secondary)
                                 }
                                 Spacer()
                             }
@@ -207,12 +208,12 @@ struct UninstallerView: View {
                 HStack(spacing: 6) {
                     if model.mode == .orphans, let id = model.orphanIDs[item.id], !id.contains(" ") { Text(id + " ·") }
                     Text(item.reason)
-                    if item.requiresAdmin { Label("암호 필요", systemImage: "lock.fill") }
-                    if let date = model.modified[item.id] { Text("· 수정 " + dateText(date)) }
+                    if item.requiresAdmin { Label(L("암호 필요", "Password"), systemImage: "lock.fill") }
+                    if let date = model.modified[item.id] { Text(L("· 수정 ", "· modified ") + dateText(date)) }
                 }
                 .font(.caption).foregroundStyle(.secondary)
                 if let user {
-                    Label("사용 중 (\(user)) — 지우지 않습니다. 그 프로그램을 끄고 다시 찾으세요", systemImage: "lock.circle")
+                    Label(L("사용 중 (\(user)) — 지우지 않습니다. 그 프로그램을 끄고 다시 찾으세요", "In use (\(user)) — won't be removed. Quit that program and scan again"), systemImage: "lock.circle")
                         .font(.caption).foregroundStyle(.orange)
                 }
             }
@@ -227,7 +228,7 @@ struct UninstallerView: View {
                 Image(systemName: "magnifyingglass")
             }
             .buttonStyle(.borderless)
-            .help("Finder에서 보기")
+            .help(L("Finder에서 보기", "Show in Finder"))
         }
         .padding(.vertical, 2)
     }
@@ -239,9 +240,9 @@ struct UninstallerView: View {
             .padding(.horizontal, 6).padding(.vertical, 2)
             .background(tint.opacity(0.18), in: Capsule())
             .foregroundStyle(tint)
-            .help(c == .exact ? "앱 ID와 정확히 일치 — 이 앱의 것이 확실합니다"
-                  : c == .likely ? "같은 개발사·설치 기록·앱 이름 등으로 이 앱의 것으로 보입니다"
-                  : "이름만 비슷합니다 — 확인하고 직접 고르세요")
+            .help(c == .exact ? L("앱 ID와 정확히 일치 — 이 앱의 것이 확실합니다", "Matches the app ID exactly — certainly this app's")
+                  : c == .likely ? L("같은 개발사·설치 기록·앱 이름 등으로 이 앱의 것으로 보입니다", "Same developer, install record or app name — very likely this app's")
+                  : L("이름만 비슷합니다 — 확인하고 직접 고르세요", "Only the name is similar — check before selecting"))
     }
 
     /// 휴지통으로 못 옮긴 항목 안내 — Finder에서 열어 직접 옮기게 한다
@@ -250,18 +251,18 @@ struct UninstallerView: View {
             HStack(alignment: .top, spacing: 10) {
                 Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("\(model.leftBehind.count)개를 휴지통으로 옮기지 못했습니다").font(.callout.weight(.semibold))
-                    Text("\"Finder에서 열기\"를 누르면 그 항목을 골라 둔 채로 Finder가 열립니다. 휴지통으로 끌어다 놓거나 ⌘⌫를 누르세요.")
+                    Text(L("\(model.leftBehind.count)개를 휴지통으로 옮기지 못했습니다", "\(model.leftBehind.count) item(s) could not be moved to the Trash")).font(.callout.weight(.semibold))
+                    Text(L("\"Finder에서 열기\"를 누르면 그 항목을 골라 둔 채로 Finder가 열립니다. 휴지통으로 끌어다 놓거나 ⌘⌫를 누르세요.", "\"Show in Finder\" opens Finder with them selected. Drag them to the Trash or press ⌘⌫."))
                         .font(.caption)
                     if model.leftBehindHasContainers {
-                        Text("Containers 안의 앱 데이터 폴더는 macOS가 폴더 자체를 지켜 Finder에서도 거절될 수 있습니다. 앱이 없으면 비어 있는 껍데기라 그냥 둬도 됩니다.")
+                        Text(L("Containers 안의 앱 데이터 폴더는 macOS가 폴더 자체를 지켜 Finder에서도 거절될 수 있습니다. 앱이 없으면 비어 있는 껍데기라 그냥 둬도 됩니다.", "macOS protects app data folders in Containers, so even Finder may refuse. If the app is gone it's an empty shell and can safely stay."))
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     Text(model.leftBehind.prefix(3).map { ($0.path as NSString).abbreviatingWithTildeInPath }.joined(separator: "\n"))
                         .font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled)
                 }
                 Spacer()
-                Button("Finder에서 열기") { model.revealLeftBehind() }
+                Button(L("Finder에서 열기", "Show in Finder")) { model.revealLeftBehind() }
             }
             .padding(10)
             .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
@@ -275,22 +276,22 @@ struct UninstallerView: View {
                 Text(status).font(.callout).foregroundStyle(.secondary).lineLimit(3)
             } else if model.isCheckingUse {
                 ProgressView().controlSize(.small)
-                Text("사용 중인 파일 확인 중…").font(.callout).foregroundStyle(.secondary)
+                Text(L("사용 중인 파일 확인 중…", "Checking for files in use…")).font(.callout).foregroundStyle(.secondary)
             }
             Spacer()
-            Text("선택 \(model.checkedItems.count)개 · \(size(model.checkedSize))")
+            Text(L("선택 \(model.checkedItems.count)개 · \(size(model.checkedSize))", "\(model.checkedItems.count) selected · \(size(model.checkedSize))"))
                 .font(.callout.monospacedDigit())
             Button(role: .destructive) {
                 model.askConfirm = true
             } label: {
-                if model.isDeleting { ProgressView().controlSize(.small) } else { Text("휴지통으로 이동") }
+                if model.isDeleting { ProgressView().controlSize(.small) } else { Text(L("휴지통으로 이동", "Move to Trash")) }
             }
             .keyboardShortcut(.delete, modifiers: .command)
             .disabled(model.checkedItems.isEmpty || model.isDeleting || model.isCheckingUse)
-            .confirmationDialog("선택한 \(model.checkedItems.count)개를 휴지통으로 옮길까요?", isPresented: $model.askConfirm) {
-                Button("휴지통으로 이동", role: .destructive) { model.deleteChecked() }
+            .confirmationDialog(L("선택한 \(model.checkedItems.count)개를 휴지통으로 옮길까요?", "Move the \(model.checkedItems.count) selected item(s) to the Trash?"), isPresented: $model.askConfirm) {
+                Button(L("휴지통으로 이동", "Move to Trash"), role: .destructive) { model.deleteChecked() }
             } message: {
-                Text("Finder 휴지통으로 옮기므로 \"되돌려 놓기\"로 복구할 수 있습니다." + (model.checkedItems.contains { $0.requiresAdmin } ? " 일부 항목은 관리자 암호를 묻습니다." : ""))
+                Text(L("Finder 휴지통으로 옮기므로 \"되돌려 놓기\"로 복구할 수 있습니다.", "Items go to the Finder Trash, so \"Put Back\" can restore them.") + (model.checkedItems.contains { $0.requiresAdmin } ? L(" 일부 항목은 관리자 암호를 묻습니다.", " Some items will ask for an administrator password.") : ""))
             }
         }
         .padding(12)

@@ -3,7 +3,7 @@ import Testing
 
 @MainActor
 private final class FakeModule: PolyMacModule {
-    static let descriptor = ModuleDescriptor(id: "fake", displayName: "Fake", permissions: [])
+    static let descriptor = ModuleDescriptor(id: "fake", displayName: ("가짜", "Fake"), summary: ("", ""), permissions: [])
     static var activations = 0
     init(context: ModuleContext) {}
     func activate() throws { Self.activations += 1 }
@@ -23,4 +23,12 @@ private final class FakeModule: PolyMacModule {
 
     registry.deactivate("fake")
     #expect(!registry.isActive("fake"))
+}
+
+@Test func displayNameFollowsLanguage() {
+    defer { L10n.override = nil }
+    L10n.override = .en
+    #expect(FakeModule.descriptor.displayName == "Fake")
+    L10n.override = .ko
+    #expect(FakeModule.descriptor.displayName == "가짜")
 }

@@ -36,14 +36,14 @@ public enum OCRRunner {
         do {
             let text = try await TextRecognizer.recognize(image).precomposedStringWithCanonicalMapping
             guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                Toast.show("글자를 찾지 못했습니다")
+                Toast.show(L("글자를 찾지 못했습니다", "No text found"))
                 return
             }
             PasteboardWriter.copy(text)
             let preview = text.count > 120 ? String(text.prefix(120)) + "…" : text
-            Toast.show("텍스트를 복사했습니다\n\(preview)", duration: 3)
+            Toast.show(L("텍스트를 복사했습니다\n\(preview)", "Text copied\n\(preview)"), duration: 3)
         } catch {
-            Toast.show("텍스트 추출 실패: \(error.localizedDescription)")
+            Toast.show(L("텍스트 추출 실패: \(error.localizedDescription)", "Text recognition failed: \(error.localizedDescription)"))
         }
     }
 }

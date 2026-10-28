@@ -7,7 +7,8 @@ import PolyMacCore
 public final class ClipboardModule: PolyMacModule {
     public static let descriptor = ModuleDescriptor(
         id: "clipboard",
-        displayName: "클립보드 히스토리",
+        displayName: ("클립보드 히스토리", "Clipboard History"),
+        summary: ("복사한 글·이미지를 기억했다가 다시 붙여넣기", "Remember copied text and images and paste them again"),
         permissions: []
     )
 
@@ -84,7 +85,7 @@ public final class ClipboardModule: PolyMacModule {
         expiryTimer = expiry
         didChange()
 
-        context.hotkey("showHistory", KeyCombo(kVK_ANSI_V, [.shift, .command]), "클립보드 히스토리 열기") { [weak self] in
+        context.hotkey("showHistory", KeyCombo(kVK_ANSI_V, [.shift, .command]), L("클립보드 히스토리 열기", "Open clipboard history")) { [weak self] in
             self?.showPopup()
         }
         // 창은 아직 만들지 않고 썸네일·앱 아이콘만 미리 (실행 직후를 무겁게 하지 않게 조금 뒤에)
@@ -107,26 +108,26 @@ public final class ClipboardModule: PolyMacModule {
     }
 
     public func menuItems() -> [NSMenuItem] {
-        let open = NSMenuItem(title: "히스토리 열기", action: #selector(openFromMenu), keyEquivalent: "")
-        let pause = NSMenuItem(title: "기록 일시정지", action: #selector(togglePause), keyEquivalent: "")
+        let open = NSMenuItem(title: L("히스토리 열기", "Open History"), action: #selector(openFromMenu), keyEquivalent: "")
+        let pause = NSMenuItem(title: L("기록 일시정지", "Pause Recording"), action: #selector(togglePause), keyEquivalent: "")
         pause.state = isPaused ? .on : .off
 
-        let capacityItem = NSMenuItem(title: "보관 개수: \(capacity)개", action: nil, keyEquivalent: "")
+        let capacityItem = NSMenuItem(title: L("보관 개수: \(capacity)개", "Keep: \(capacity) items"), action: nil, keyEquivalent: "")
         let sub = NSMenu()
         for n in Self.capacityChoices {
-            let item = NSMenuItem(title: "\(n)개", action: #selector(setCapacity(_:)), keyEquivalent: "")
+            let item = NSMenuItem(title: L("\(n)개", "\(n) items"), action: #selector(setCapacity(_:)), keyEquivalent: "")
             item.target = self
             item.tag = n
             item.state = n == capacity ? .on : .off
             sub.addItem(item)
         }
         sub.addItem(.separator())
-        let note = NSMenuItem(title: "고정한 항목은 개수에 포함되지 않습니다", action: nil, keyEquivalent: "")
+        let note = NSMenuItem(title: L("고정한 항목은 개수에 포함되지 않습니다", "Pinned items don't count toward the limit"), action: nil, keyEquivalent: "")
         note.isEnabled = false
         sub.addItem(note)
         capacityItem.submenu = sub
 
-        let retentionItem = NSMenuItem(title: "보관 기간: \(Self.retentionTitle(retentionDays))", action: nil, keyEquivalent: "")
+        let retentionItem = NSMenuItem(title: L("보관 기간: \(Self.retentionTitle(retentionDays))", "Keep for: \(Self.retentionTitle(retentionDays))"), action: nil, keyEquivalent: "")
         let retentionMenu = NSMenu()
         for days in Self.retentionChoices {
             let item = NSMenuItem(title: Self.retentionTitle(days), action: #selector(setRetention(_:)), keyEquivalent: "")
@@ -136,15 +137,15 @@ public final class ClipboardModule: PolyMacModule {
             retentionMenu.addItem(item)
         }
         retentionMenu.addItem(.separator())
-        let retentionNote = NSMenuItem(title: "기간이 지나거나 개수를 넘으면 오래된 것부터 지웁니다 (고정 항목 제외)", action: nil, keyEquivalent: "")
+        let retentionNote = NSMenuItem(title: L("기간이 지나거나 개수를 넘으면 오래된 것부터 지웁니다 (고정 항목 제외)", "Oldest items are removed past the limit or period (pinned items stay)"), action: nil, keyEquivalent: "")
         retentionNote.isEnabled = false
         retentionMenu.addItem(retentionNote)
         retentionItem.submenu = retentionMenu
 
         let imageCount = items.filter(\.isImage).count
-        let stats = NSMenuItem(title: "기록 \(items.count)개 (이미지 \(imageCount)개)", action: nil, keyEquivalent: "")
+        let stats = NSMenuItem(title: L("기록 \(items.count)개 (이미지 \(imageCount)개)", "\(items.count) items (\(imageCount) images)"), action: nil, keyEquivalent: "")
         stats.isEnabled = false
-        let clear = NSMenuItem(title: "기록 지우기 (고정 항목 제외)", action: #selector(clearUnpinned), keyEquivalent: "")
+        let clear = NSMenuItem(title: L("기록 지우기 (고정 항목 제외)", "Clear History (keeps pinned)"), action: #selector(clearUnpinned), keyEquivalent: "")
         return [open, pause, capacityItem, retentionItem, stats, clear].map { $0.target = $0.target ?? self; return $0 }
     }
 
@@ -165,7 +166,7 @@ public final class ClipboardModule: PolyMacModule {
             guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
             guard bytes <= maxTextBytes else {
                 context.logger.info("clipboard text skipped: \(bytes) bytes")
-                context.toast("20 MB가 넘는 텍스트는 클립보드 기록에 남기지 않았습니다")
+                context.toast(L("20 MB가 넘는 텍스트는 클립보드 기록에 남기지 않았습니다", "Text over 20 MB was not saved to clipboard history"))
                 return
             }
             if bytes > inlineTextBytes {
@@ -295,13 +296,13 @@ public final class ClipboardModule: PolyMacModule {
                 if pasteNow {
                     self.pasteIntoFrontApp()
                 } else if item.isImage {
-                    self.context.toast("이미지를 클립보드에 복사했습니다")
+                    self.context.toast(L("이미지를 클립보드에 복사했습니다", "Image copied to the clipboard"))
                 } else if item.isLargeText {
                     let size = ByteCountFormatter.string(fromByteCount: Int64(item.textBytes ?? 0), countStyle: .file)
-                    self.context.toast("긴 텍스트 전체(\(size))를 클립보드에 복사했습니다")
+                    self.context.toast(L("긴 텍스트 전체(\(size))를 클립보드에 복사했습니다", "Copied the full long text (\(size)) to the clipboard"))
                 } else {
                     let preview = item.text.count > 60 ? String(item.text.prefix(60)) + "…" : item.text
-                    self.context.toast("클립보드에 복사했습니다\n\(preview)")
+                    self.context.toast(L("클립보드에 복사했습니다\n\(preview)", "Copied to the clipboard\n\(preview)"))
                 }
             },
             togglePin: { [weak self] id in self?.togglePin(id) },
@@ -325,7 +326,7 @@ public final class ClipboardModule: PolyMacModule {
         }
         let url = imageDirectory.appendingPathComponent(file)
         guard let png = try? Data(contentsOf: url) else {
-            context.toast("이미지 파일을 찾지 못했습니다")
+            context.toast(L("이미지 파일을 찾지 못했습니다", "Image file not found"))
             return
         }
         let pb = NSPasteboard.general
@@ -338,7 +339,7 @@ public final class ClipboardModule: PolyMacModule {
     /// 앞의 앱에 바로 ⌘V (⇧↩︎)
     private func pasteIntoFrontApp() {
         guard Permissions.accessibility else {
-            context.toast("복사했습니다 — ⌘V로 붙여넣으세요\n(자동 붙여넣기는 손쉬운 사용 권한이 필요합니다)")
+            context.toast(L("복사했습니다 — ⌘V로 붙여넣으세요\n(자동 붙여넣기는 손쉬운 사용 권한이 필요합니다)", "Copied — press ⌘V to paste\n(auto-paste needs Accessibility permission)"))
             return
         }
         // 창이 닫히고 원래 앱으로 포커스가 돌아간 뒤 ⌘V
@@ -375,23 +376,23 @@ public final class ClipboardModule: PolyMacModule {
 
     @objc private func togglePause() {
         isPaused.toggle()
-        context.toast(isPaused ? "클립보드 기록을 일시정지했습니다" : "클립보드 기록을 다시 시작합니다")
+        context.toast(isPaused ? L("클립보드 기록을 일시정지했습니다", "Clipboard recording paused") : L("클립보드 기록을 다시 시작합니다", "Clipboard recording resumed"))
     }
 
     @objc private func setCapacity(_ sender: NSMenuItem) {
         UserDefaults.standard.set(sender.tag, forKey: Self.capacityKey)
         didChange()
-        context.toast("클립보드 보관 개수: \(sender.tag)개")
+        context.toast(L("클립보드 보관 개수: \(sender.tag)개", "Clipboard keeps \(sender.tag) items"))
     }
 
     private static func retentionTitle(_ days: Int) -> String {
-        days == 0 ? "제한 없음" : "\(days)일"
+        days == 0 ? L("제한 없음", "No limit") : L("\(days)일", "\(days) days")
     }
 
     @objc private func setRetention(_ sender: NSMenuItem) {
         UserDefaults.standard.set(sender.tag, forKey: Self.retentionKey)
         didChange()
-        context.toast("클립보드 보관 기간: \(Self.retentionTitle(sender.tag))")
+        context.toast(L("클립보드 보관 기간: \(Self.retentionTitle(sender.tag))", "Clipboard keeps items for: \(Self.retentionTitle(sender.tag))"))
     }
 
     @objc private func clearUnpinned() {
@@ -399,7 +400,7 @@ public final class ClipboardModule: PolyMacModule {
         items.removeAll { !$0.isPinned }
         deleteFiles(of: removed)
         scheduleSave()
-        context.toast("기록을 지웠습니다")
+        context.toast(L("기록을 지웠습니다", "History cleared"))
     }
 
     // MARK: - 저장 (0600, 로컬만)
