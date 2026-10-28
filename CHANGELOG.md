@@ -3,6 +3,9 @@
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
 [2026-10-28 10:28]
+- [Changed] - 저장소: 위 수정(커밋 963d32d)을 PR #3 브랜치에 push
+
+[2026-10-28 10:28]
 - [Added] - Sources/UninstallerModule/UninstallerView.swift, UninstallerModel.swift: 휴지통으로 못 옮긴 항목 안내 상자 — "Finder에서 열기"로 그 항목을 골라 둔 채 Finder를 열고 휴지통으로 옮기는 방법 안내, Containers 폴더는 macOS가 폴더 자체를 지킨다는 설명
 - [Fixed] - Sources/PolyMacCore/Toast.swift: 알림 문구가 흰 글자 고정이라 라이트 모드에서 잘 안 보이던 문제 — 시스템 모드를 따르는 글자색·박스(popover 재질, 테두리)
 
