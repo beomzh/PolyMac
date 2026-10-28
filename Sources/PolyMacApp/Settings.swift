@@ -175,11 +175,13 @@ struct SettingsView: View {
     @ObservedObject var model: SettingsModel
 
     var body: some View {
-        NavigationSplitView {
+        // 설정 창의 사이드바는 접지 않는다 — 접기 버튼이 있으면 접었을 때 툴바 오른쪽으로 옮겨 가 헷갈린다
+        NavigationSplitView(columnVisibility: .constant(.all)) {
             List(SettingsWindow.Tab.allCases, selection: Binding(get: { model.tab }, set: { if let t = $0 { model.tab = t } })) { tab in
                 Label(tab.title, systemImage: tab.symbol).tag(tab)
             }
             .navigationSplitViewColumnWidth(min: 150, ideal: 170, max: 220)
+            .toolbar(removing: .sidebarToggle)
         } detail: {
             VStack(spacing: 0) {
                 switch model.tab {

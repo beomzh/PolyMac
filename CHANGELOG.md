@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 10:52]
+- [Fixed] - Sources/PolyMacApp/Settings.swift: 환경 설정 사이드바를 접으면 여는 버튼이 툴바 오른쪽 위로 옮겨 가던 문제 — 사이드바를 항상 펼치고 접기 버튼 제거
+
 [2026-10-28 10:46]
 - [Changed] - 저장소: 위 변경(커밋 2d016a3)을 push, PR #4 생성
 
