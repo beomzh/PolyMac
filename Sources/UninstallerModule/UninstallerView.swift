@@ -91,16 +91,16 @@ struct UninstallerView: View {
                 if let app = model.selectedApp {
                     appHeader(app)
                     Divider()
+                    selectionBar
                     itemList(groups: Dictionary(grouping: model.items, by: \.kind)
                         .sorted { LeftoverItem.Kind.allCases.firstIndex(of: $0.key)! < LeftoverItem.Kind.allCases.firstIndex(of: $1.key)! }
-                        .map { (title: $0.key.title, note: $0.key.explanation, items: $0.value, group: nil as LeftoverScanner.OrphanGroup?) })
+                        .map { (id: $0.key.rawValue, title: $0.key.title, note: $0.key.explanation, items: $0.value) })
                 } else {
                     placeholder("왼쪽에서 지울 앱을 고르거나, 앱을 이 창에 끌어다 놓으세요.", symbol: "trash.square")
                 }
             } else {
-                itemList(groups: model.orphanGroups.map { g in
-                    (title: g.bundleID, note: g.items.first?.reason ?? "", items: g.items, group: g)
-                })
+                selectionBar
+                itemList(groups: model.vendorGroups.map { (id: $0.id, title: $0.title, note: $0.note, items: $0.items) })
             }
             Divider()
             footer
@@ -127,7 +127,26 @@ struct UninstallerView: View {
         .padding(16)
     }
 
-    private func itemList(groups: [(title: String, note: String, items: [LeftoverItem], group: LeftoverScanner.OrphanGroup?)]) -> some View {
+    /// 전체 선택 · 전체 해제 · 유력만
+    private var selectionBar: some View {
+        HStack(spacing: 8) {
+            Button("전체 선택") { model.selectAll() }
+            Button("전체 해제") { model.deselectAll() }
+            Button("확실·유력만") { model.selectLikely() }
+                .help("이름만 비슷한 '추정' 항목은 빼고 고릅니다")
+            Spacer()
+            if model.mode == .orphans {
+                Text("\(model.vendorGroups.count)개 앱의 흔적").font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .disabled(model.isScanning || model.currentItems.isEmpty)
+    }
+
+    private func itemList(groups: [(id: String, title: String, note: String, items: [LeftoverItem])]) -> some View {
         Group {
             if model.isScanning {
                 VStack(spacing: 10) {
@@ -139,21 +158,28 @@ struct UninstallerView: View {
                 placeholder(model.mode == .orphans ? "남아 있는 흔적이 없습니다" : "남은 파일이 없습니다", symbol: "checkmark.seal")
             } else {
                 List {
-                    ForEach(groups, id: \.title) { g in
+                    ForEach(groups, id: \.id) { g in
                         Section {
                             ForEach(g.items) { item in row(item) }
                         } header: {
                             HStack(alignment: .firstTextBaseline) {
-                                if let orphan = g.group {
-                                    Toggle("", isOn: Binding(
-                                        get: { Set(orphan.items.map(\.id)).isSubset(of: model.checked) },
-                                        set: { _ in model.toggleGroup(orphan) }
-                                    ))
-                                    .toggleStyle(.checkbox).labelsHidden()
+                                // 묶음(앱·종류) 단위로 한 번에 선택·해제. 일부만 고른 상태는 "–"로
+                                Toggle("", isOn: Binding(
+                                    get: { model.isAllChecked(g.items) },
+                                    set: { _ in model.toggleItems(g.items) }
+                                ))
+                                .toggleStyle(.checkbox).labelsHidden()
+                                .overlay {
+                                    if model.isPartlyChecked(g.items) {
+                                        Image(systemName: "minus").font(.system(size: 9, weight: .bold)).allowsHitTesting(false)
+                                    }
                                 }
                                 Text(g.title).font(.headline)
                                 Text("\(g.items.count)개 · \(size(g.items.reduce(0) { $0 + (model.sizes[$1.id] ?? 0) }))")
                                     .font(.caption).foregroundStyle(.secondary)
+                                if let newest = g.items.compactMap({ model.modified[$0.id] }).max() {
+                                    Text("· 최근 수정 " + dateText(newest)).font(.caption).foregroundStyle(.secondary)
+                                }
                                 Spacer()
                             }
                             if !g.note.isEmpty {
@@ -178,6 +204,7 @@ struct UninstallerView: View {
                     .lineLimit(1).truncationMode(.middle)
                     .foregroundStyle(user == nil ? .primary : .secondary)
                 HStack(spacing: 6) {
+                    if model.mode == .orphans, let id = model.orphanIDs[item.id], !id.contains(" ") { Text(id + " ·") }
                     Text(item.reason)
                     if item.requiresAdmin { Label("암호 필요", systemImage: "lock.fill") }
                     if let date = model.modified[item.id] { Text("· 수정 " + dateText(date)) }

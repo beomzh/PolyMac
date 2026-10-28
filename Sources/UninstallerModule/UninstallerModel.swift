@@ -164,8 +164,67 @@ final class UninstallerModel: ObservableObject {
     }
 
     func toggleGroup(_ group: LeftoverScanner.OrphanGroup) {
-        let ids = Set(group.items.map(\.id))
-        if ids.isSubset(of: checked) { checked.subtract(ids) } else { checked.formUnion(ids) }
+        toggleItems(group.items)
+    }
+
+    // MARK: - 한꺼번에 고르기
+
+    /// 사용 중인 항목은 고를 수 없으니 셈에서도 뺀다
+    private func selectable(_ list: [LeftoverItem]) -> [String] { list.filter { inUse[$0.id] == nil }.map(\.id) }
+
+    func isAllChecked(_ list: [LeftoverItem]) -> Bool {
+        let ids = selectable(list)
+        return !ids.isEmpty && Set(ids).isSubset(of: checked)
+    }
+
+    func isPartlyChecked(_ list: [LeftoverItem]) -> Bool {
+        let ids = selectable(list)
+        return !ids.isEmpty && !Set(ids).isDisjoint(with: checked) && !Set(ids).isSubset(of: checked)
+    }
+
+    /// 묶음 전체 선택 ↔ 해제
+    func toggleItems(_ list: [LeftoverItem]) {
+        let ids = selectable(list)
+        if Set(ids).isSubset(of: checked) { checked.subtract(ids) } else { checked.formUnion(ids) }
+    }
+
+    func selectAll() { checked = Set(selectable(currentItems)) }
+    func deselectAll() { checked = [] }
+    /// 확실·유력만 (추정은 빼고)
+    func selectLikely() { checked = Set(selectable(currentItems.filter { $0.confidence.selectedByDefault })) }
+
+    /// 남은 흔적을 회사(앱 ID 앞 두 부분) 단위로 묶어 보여 준다 — Riot처럼 ID가 여러 개인 앱도 한 묶음
+    struct VendorGroup: Identifiable {
+        let id: String
+        let title: String
+        let note: String
+        let items: [LeftoverItem]
+    }
+
+    var vendorGroups: [VendorGroup] {
+        var order: [String] = []
+        var merged: [String: (ids: [String], items: [LeftoverItem])] = [:]
+        for group in orphanGroups {
+            // 이름으로 찾은 묶음·업데이트 잔여물은 그대로, 앱 ID 묶음은 회사 단위로
+            let key = group.bundleID.contains(" ") ? group.bundleID : LeftoverScanner.vendorKey(group.bundleID)
+            if merged[key] == nil { order.append(key) }
+            merged[key, default: ([], [])].ids.append(group.bundleID)
+            merged[key, default: ([], [])].items.append(contentsOf: group.items)
+        }
+        return order.map { key in
+            let entry = merged[key]!
+            let isID = !key.contains(" ")
+            let title = isID ? (key.split(separator: ".").last.map(String.init) ?? key) : key
+            let note = isID
+                ? "앱 ID " + (entry.ids.count == 1 ? entry.ids[0] : "\(entry.ids[0]) 외 \(entry.ids.count - 1)개")
+                : (entry.items.first?.reason ?? "")
+            return VendorGroup(id: key, title: title, note: note, items: entry.items)
+        }
+    }
+
+    /// 남은 흔적 항목 → 그 항목을 찾은 앱 ID
+    var orphanIDs: [String: String] {
+        Dictionary(orphanGroups.flatMap { g in g.items.map { ($0.id, g.bundleID) } }, uniquingKeysWith: { a, _ in a })
     }
 
     // MARK: - 삭제

@@ -2,6 +2,12 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 10:04]
+- [Fixed] - Sources/UninstallerCore/LeftoverScanner.swift: 설치된 Discord의 업데이터(com.discord.discord.ShipIt)가 흔적으로 잡히던 문제 — 앱 ID가 달라도(com.hnc.Discord) ID 속 이름이 설치된 앱 이름과 겹치면 제외, macOS·공용 구성요소(org.cups, org.swift, org.sparkle-project, org.jcef, org.chromium, com.github.electron) 제외
+- [Added] - Sources/UninstallerModule: 전체 선택·전체 해제·확실·유력만 버튼, 남은 흔적을 회사 단위로 묶어 묶음째 선택(일부 선택 표시), 항목마다 찾은 앱 ID·묶음 최근 수정일
+- [Added] - Tests/UninstallerCoreTests: 업데이터 ID가 다른 설치 앱·공용 구성요소 제외 테스트 (총 23개)
+- [Changed] - docs/UNINSTALLER.md: 제외 조건·묶는 방식
+
 [2026-10-28 09:47]
 - [Changed] - 저장소: 아래 변경(커밋 e5aa717)을 브랜치 fix/uninstaller-finder-clipboard로 push하고 PR #1 생성 — 이번부터 main 직접 push 대신 브랜치+PR
 

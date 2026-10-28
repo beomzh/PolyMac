@@ -135,6 +135,21 @@ private let app = AppBundleInfo(url: URL(fileURLWithPath: "/Applications/Foo Bar
     #expect(!all.contains("Zoom") && !all.contains("Zoom Data") && !all.contains("SC Info") && !all.contains("AddressBook"))
 }
 
+@Test func updaterWithDifferentIDOfInstalledAppIsNotOrphan() throws {
+    // Discord: 앱은 com.hnc.Discord, 업데이터는 com.discord.discord.ShipIt
+    let (root, locations) = try makeFakeLibrary([
+        "Preferences": ["com.discord.discord.ShipIt.plist", "com.gone.Forgotten.plist", "org.cups.PrintingPrefs.plist", "org.sparkle-project.Sparkle.plist"],
+    ])
+    defer { try? FileManager.default.removeItem(at: root) }
+    let groups = LeftoverScanner.orphans(locations: locations, isInstalled: { _ in false },
+                                         installedIDs: ["com.hnc.Discord"], installedNames: ["Discord"])
+    let ids = groups.map(\.bundleID)
+    #expect(!ids.contains("com.discord.discord.ShipIt"))
+    #expect(!ids.contains("org.cups.PrintingPrefs"))       // macOS 프린터 시스템
+    #expect(!ids.contains("org.sparkle-project.Sparkle"))  // 공용 업데이트 구성요소
+    #expect(ids.contains("com.gone.Forgotten"))
+}
+
 @Test func systemAppsAreProtected() {
     #expect(AppBundleInfo(url: URL(fileURLWithPath: "/System/Applications/Notes.app"), bundleID: "com.apple.Notes", name: "Notes").isSystemApp)
     #expect(!app.isSystemApp)
