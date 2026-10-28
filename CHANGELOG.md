@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 15:16]
+- [Changed] - feat/normalize-folders: push 후 PR #7 생성 (자소분리 검사 폴더 지정)
+
 [2026-10-28 15:15]
 - [Added] - Sources/NormalizeModule/NormalizeFolders.swift `NormalizeFolders`: 자소분리 검사 폴더 목록을 변수 normalize.folders(끈 폴더는 normalize.disabledFolders)로 저장, 예전 normalize.extraFolders 이어받기, 홈 폴더 안의 실제 폴더만 허용(홈 전체·~/Library 거부) — 다운로드·데스크탑 고정 + 추가만 되던 것을 전체 지정 가능하게
 - [Changed] - Sources/NormalizeModule/NormalizeModule.swift: 새 목록 사용, 목록이 바뀌면 감시 다시 시작, 폴더가 없으면 감시하지 않음
