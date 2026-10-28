@@ -12,7 +12,8 @@ import os
 final class FinderKeyTap: @unchecked Sendable {
     private struct State {
         var finderIsFrontmost = false
-        var cutPending = false
+        /// 잘라내기 직전의 클립보드 변경 번호. 붙여넣을 때 "Finder의 복사 한 번"만 늘었으면 그대로 잘라낸 파일이다.
+        var cutChangeCount: Int?
         var cut: KeyCombo? = KeyCombo(kVK_ANSI_X, [.command])
         var paste: KeyCombo? = KeyCombo(kVK_ANSI_V, [.command])
         var tap: CFMachPort?
@@ -26,17 +27,15 @@ final class FinderKeyTap: @unchecked Sendable {
 
     init(onCut: @escaping @Sendable () -> Void) {
         self.onCut = onCut
-        // Finder가 응답하지 않아도 키 입력을 0.1초 넘게 붙잡지 않는다 (기본값은 6초)
-        AXUIElementSetMessagingTimeout(systemWide, 0.1)
+        // Finder가 응답하지 않아도 키 입력을 0.25초 넘게 붙잡지 않는다 (기본값은 6초)
+        AXUIElementSetMessagingTimeout(systemWide, 0.25)
     }
 
     var isRunning: Bool { state.withLock { $0.tap != nil } }
 
+    /// 다른 앱을 잠깐 다녀와도 잘라내기는 유지한다 (그 사이 다른 걸 복사했으면 붙여넣을 때 클립보드 번호로 알아챈다)
     func setFinderFrontmost(_ value: Bool) {
-        state.withLock {
-            $0.finderIsFrontmost = value
-            if !value { $0.cutPending = false }
-        }
+        state.withLock { $0.finderIsFrontmost = value }
     }
 
     /// 단축키 설정에서 바꾼 잘라내기·붙여넣기 조합 (nil = 사용 안 함)
@@ -44,7 +43,7 @@ final class FinderKeyTap: @unchecked Sendable {
         state.withLock {
             $0.cut = cut
             $0.paste = paste
-            $0.cutPending = false
+            $0.cutChangeCount = nil
         }
     }
 
@@ -79,7 +78,7 @@ final class FinderKeyTap: @unchecked Sendable {
 
     func stop() {
         let (tap, runLoop) = state.withLock { s -> (CFMachPort?, CFRunLoop?) in
-            defer { s.tap = nil; s.runLoop = nil; s.cutPending = false }
+            defer { s.tap = nil; s.runLoop = nil; s.cutChangeCount = nil }
             return (s.tap, s.runLoop)
         }
         if let tap {
@@ -108,23 +107,35 @@ final class FinderKeyTap: @unchecked Sendable {
 
         let pressed = KeyCombo(Int(event.getIntegerValueField(.keyboardEventKeycode)), Self.modifiers(mods))
         let isCopy = pressed == KeyCombo(kVK_ANSI_C, [.command])
-        guard pressed == cut || pressed == paste || isCopy, !isEditingText() else { return pass }
+        guard pressed == cut || pressed == paste || isCopy else { return pass }
+        if isEditingText() {
+            logger.notice("cut/paste key passed through: text editing in Finder")
+            return pass
+        }
 
         let base = event.flags.subtracting(modifierMask)
         if pressed == cut {
             // Finder의 "복사"(⌘C)로 바꾸고, 다음 붙여넣기를 "이동"으로 바꿀 준비
+            let count = NSPasteboard.general.changeCount
             rewrite(event, keyCode: kVK_ANSI_C, character: 0x63, flags: base.union(.maskCommand))
-            state.withLock { $0.cutPending = true }
+            state.withLock { $0.cutChangeCount = count }
+            logger.notice("cut in Finder: sent as copy")
             onCut()
         } else if pressed == paste {
-            let pending = state.withLock { s -> Bool in
-                defer { s.cutPending = false }
-                return s.cutPending
+            let cutAt = state.withLock { s -> Int? in
+                defer { s.cutChangeCount = nil }
+                return s.cutChangeCount
             }
-            // 잘라내기 대기 중이면 Finder의 "여기로 항목 이동"(⌥⌘V)
-            if pending { rewrite(event, keyCode: kVK_ANSI_V, character: 0x76, flags: base.union([.maskCommand, .maskAlternate])) }
+            // 잘라낸 뒤 클립보드가 Finder의 복사로 한 번만 바뀌었으면 "여기로 항목 이동"(⌥⌘V)
+            let now = NSPasteboard.general.changeCount
+            if let cutAt, now == cutAt + 1 {
+                rewrite(event, keyCode: kVK_ANSI_V, character: 0x76, flags: base.union([.maskCommand, .maskAlternate]))
+                logger.notice("paste in Finder: sent as move")
+            } else if cutAt != nil {
+                logger.notice("paste in Finder: clipboard changed after cut — normal paste")
+            }
         } else {
-            state.withLock { $0.cutPending = false } // 그냥 복사하면 잘라내기 취소
+            state.withLock { $0.cutChangeCount = nil } // 그냥 복사하면 잘라내기 취소
         }
         return pass
     }

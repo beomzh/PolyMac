@@ -87,6 +87,13 @@ public final class ClipboardModule: PolyMacModule {
         context.hotkey("showHistory", KeyCombo(kVK_ANSI_V, [.shift, .command]), "클립보드 히스토리 열기") { [weak self] in
             self?.showPopup()
         }
+        // 창은 아직 만들지 않고 썸네일·앱 아이콘만 미리 (실행 직후를 무겁게 하지 않게 조금 뒤에)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.panel.prepare(items: self.items, imageDirectory: self.imageDirectory, textDirectory: self.textDirectory)
+            }
+        }
     }
 
     public func deactivate() {
@@ -94,7 +101,7 @@ public final class ClipboardModule: PolyMacModule {
         timer = nil
         expiryTimer?.invalidate()
         expiryTimer = nil
-        panel.close()
+        panel.tearDown()
         context.unregisterHotkeys()
         saveNow()
     }
@@ -280,7 +287,8 @@ public final class ClipboardModule: PolyMacModule {
     private let panel = ClipboardPanelController()
 
     private func showPopup() {
-        panel.show(items: items, imageDirectory: imageDirectory, textDirectory: textDirectory, callbacks: .init(
+        if !panel.isPrepared { panel.prepare(items: items, imageDirectory: imageDirectory, textDirectory: textDirectory) }
+        panel.show(callbacks: .init(
             choose: { [weak self] item, pasteNow in
                 guard let self else { return }
                 self.copyToPasteboard(item)

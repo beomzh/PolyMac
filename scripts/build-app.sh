@@ -57,7 +57,7 @@ if [[ "${1:-}" == "--install" ]]; then
     rm -rf /Applications/PolyMac.app
     cp -R "$APP" /Applications/PolyMac.app
     open /Applications/PolyMac.app
-    echo "✅ 설치 완료 — 메뉴바의 ▦ 아이콘을 확인하세요"
+    echo "✅ 설치 완료 — 메뉴바의 PolyMac 아이콘(큐브)을 확인하세요"
 else
     echo "✅ $APP"
 fi

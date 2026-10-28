@@ -4,7 +4,8 @@ import PolyMacCore
 import SwiftUI
 
 /// 클립보드 히스토리 창. 평소에는 좁은 목록만, ⌘→ 또는 오른쪽 위 버튼으로 미리보기 패널을 옆으로 펼친다.
-/// 앞에 있던 앱의 포커스를 빼앗지 않는 패널이라 ⇧↩︎로 그 앱에 바로 붙여넣을 수 있다. 닫으면 창을 버린다.
+/// 앞에 있던 앱의 포커스를 빼앗지 않는 패널이라 ⇧↩︎로 그 앱에 바로 붙여넣을 수 있다.
+/// 창과 화면은 처음 열 때 한 번만 만들고 닫을 때는 숨기기만 한다 — 다시 열 때 바로 뜨게 (측정: 새로 만들면 약 100 ms)
 @MainActor
 final class ClipboardPanelController {
     struct Callbacks {
@@ -23,13 +24,55 @@ final class ClipboardPanelController {
     private var keyMonitor: Any?
     private var resignObserver: NSObjectProtocol?
     private var model: ClipboardPanelModel?
+    private var callbacks: Callbacks?
 
-    func show(items: [ClipboardItem], imageDirectory: URL, textDirectory: URL, callbacks: Callbacks) {
-        guard panel == nil else { close(); return }
+    var isOpen: Bool { panel?.isVisible == true }
+    var isPrepared: Bool { model != nil }
+
+    /// 모듈이 켜질 때: 화면은 아직 만들지 않고 목록·썸네일·앱 아이콘만 미리 준비
+    func prepare(items: [ClipboardItem], imageDirectory: URL, textDirectory: URL) {
         let model = ClipboardPanelModel(items: items, imageDirectory: imageDirectory, textDirectory: textDirectory,
                                         previewOpen: UserDefaults.standard.bool(forKey: Self.previewKey))
         self.model = model
+        model.prefetch()
+    }
 
+    func show(callbacks: Callbacks) {
+        guard let model else { return }
+        if isOpen { close(); return }
+        self.callbacks = callbacks
+        model.reset()
+        let panel = self.panel ?? makePanel(model)
+        self.panel = panel
+        var frame = panel.frame
+        frame.size = NSSize(width: width(model.previewOpen), height: Self.height)
+        // 마우스가 있는 화면, 마우스 근처 (Maccy처럼)
+        let mouse = NSEvent.mouseLocation
+        let screen = NSScreen.screens.first { $0.frame.contains(mouse) } ?? NSScreen.main
+        if let visible = screen?.visibleFrame {
+            frame.origin.x = min(max(mouse.x - Self.listWidth / 2, visible.minX + 8), visible.maxX - frame.width - 8)
+            frame.origin.y = min(max(mouse.y - Self.height + 40, visible.minY + 8), visible.maxY - Self.height - 8)
+        }
+        panel.setFrame(frame, display: false)
+        panel.makeKeyAndOrderFront(nil)
+
+        // 목록 이동·복사 키는 검색창이 먹기 전에 가로챈다
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            // 로컬 모니터는 메인 스레드에서 불린다
+            nonisolated(unsafe) let event = event
+            let handled = MainActor.assumeIsolated { () -> Bool in
+                guard let self, let callbacks = self.callbacks, event.window === self.panel else { return false }
+                return self.handle(event, callbacks)
+            }
+            return handled ? nil : event
+        }
+        // 다른 곳을 클릭하면 닫는다
+        resignObserver = NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: panel, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.close() }
+        }
+    }
+
+    private func makePanel(_ model: ClipboardPanelModel) -> NSPanel {
         let panel = KeyablePanel(contentRect: NSRect(origin: .zero, size: NSSize(width: width(model.previewOpen), height: Self.height)),
                                  styleMask: [.titled, .fullSizeContentView, .nonactivatingPanel],
                                  backing: .buffered, defer: false)
@@ -54,53 +97,38 @@ final class ClipboardPanelController {
             panel.setFrame(frame, display: true, animate: false)
         }
         panel.contentView = NSHostingView(rootView: ClipboardPanelView(model: model, onPick: { [weak self] item in
-            self?.close()
-            callbacks.choose(item, false)
+            guard let self else { return }
+            let callbacks = self.callbacks
+            self.close()
+            callbacks?.choose(item, false)
         }))
-
-        // 마우스가 있는 화면, 마우스 근처 (Maccy처럼)
-        let mouse = NSEvent.mouseLocation
-        let screen = NSScreen.screens.first { $0.frame.contains(mouse) } ?? NSScreen.main
-        if let visible = screen?.visibleFrame {
-            let x = min(max(mouse.x - Self.listWidth / 2, visible.minX + 8), visible.maxX - width(model.previewOpen) - 8)
-            let y = min(max(mouse.y - Self.height + 40, visible.minY + 8), visible.maxY - Self.height - 8)
-            panel.setFrameOrigin(NSPoint(x: x, y: y))
-        }
-        panel.makeKeyAndOrderFront(nil)
-        self.panel = panel
-
-        // 목록 이동·복사 키는 검색창이 먹기 전에 가로챈다
-        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            // 로컬 모니터는 메인 스레드에서 불린다
-            nonisolated(unsafe) let event = event
-            let handled = MainActor.assumeIsolated { () -> Bool in
-                guard let self, event.window === self.panel else { return false }
-                return self.handle(event, callbacks)
-            }
-            return handled ? nil : event
-        }
-        // 다른 곳을 클릭하면 닫는다
-        resignObserver = NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: panel, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.close() }
-        }
+        return panel
     }
 
     private func width(_ previewOpen: Bool) -> CGFloat {
         Self.listWidth + (previewOpen ? Self.previewWidth : 0)
     }
 
+    /// 숨기기만 한다 (다음에 바로 뜨게)
     func close() {
         if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
         keyMonitor = nil
         if let resignObserver { NotificationCenter.default.removeObserver(resignObserver) }
         resignObserver = nil
         panel?.orderOut(nil)
+    }
+
+    /// 모듈을 끌 때 창까지 버린다
+    func tearDown() {
+        close()
+        panel?.contentView = nil
         panel = nil
         model = nil
     }
 
     func update(items: [ClipboardItem]) {
         model?.items = items
+        model?.prefetch()
     }
 
     private func handle(_ event: NSEvent, _ callbacks: Callbacks) -> Bool {
@@ -180,6 +208,21 @@ final class ClipboardPanelModel: ObservableObject {
         selectedID = filtered.first?.id
     }
 
+    /// 창을 열 때마다: 검색어 지우고 맨 위 항목 선택
+    func reset() {
+        if !query.isEmpty { query = "" }
+        selectedID = filtered.first?.id
+    }
+
+    /// 목록용 썸네일을 미리 만들어 둔다 (창을 열 때 회색 자리가 보이지 않게). 아이콘·앱 이름도 미리 찾는다.
+    func prefetch() {
+        for item in items where item.isImage { _ = thumbnail(item) }
+        let apps = Set(items.compactMap(\.sourceApp))
+        DispatchQueue.main.async {
+            for id in apps { _ = AppInfo.icon(for: id); _ = AppInfo.name(for: id) }
+        }
+    }
+
     func setPreview(_ open: Bool) {
         guard open != previewOpen else { return }
         previewOpen = open
@@ -243,10 +286,17 @@ final class ClipboardPanelModel: ObservableObject {
         return result
     }
 
+    private func pruneThumbnails() {
+        let live = Set(items.compactMap(\.imageFile))
+        thumbnails = thumbnails.filter { key, _ in live.contains(String(key.split(separator: "@").first ?? "")) }
+        loadingThumbnails = loadingThumbnails.filter { live.contains(String($0.split(separator: "@").first ?? "")) }
+    }
+
     /// 목록·미리보기용 축소 이미지. 처음엔 nil을 돌려주고 백그라운드에서 읽어 오면 다시 그려진다
     /// (원본 전체를 메모리에 올리지 않게 ImageIO 축소본, 창을 닫으면 버림)
     func thumbnail(_ item: ClipboardItem, maxPixel: Int = 240) -> NSImage? {
         guard let file = item.imageFile else { return nil }
+        if thumbnails.count > 300 { pruneThumbnails() }
         let key = "\(file)@\(maxPixel)"
         if let cached = thumbnails[key] { return cached }
         guard loadingThumbnails.insert(key).inserted else { return nil }

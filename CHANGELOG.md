@@ -2,6 +2,20 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 09:44]
+- [Added] - Sources/UninstallerCore/LeftoverScanner.swift: 찾는 위치 확대 (충돌 기록, /var/folders 캐시·임시, 플러그인·확장 폴더, /Library/Logs), 앱이 든 폴더(다른 앱 없을 때) 폴더째 후보
+- [Added] - Sources/UninstallerCore/InUseChecker.swift: 실행 파일이 안에 있거나 파일을 연 프로그램이 있는 항목을 "사용 중"으로 표시·삭제 제외 (proc_pidpath, lsof)
+- [Added] - Sources/UninstallerModule: 항목별 마지막 수정일·앱 마지막 사용일 표시, Finder가 못 옮긴 항목(다른 앱 샌드박스 데이터)은 NSWorkspace.recycle로 재시도하고 남은 이유 표시
+- [Fixed] - Sources/FinderModule/FinderKeyTap.swift: 다른 앱을 거치면 잘라내기가 풀리던 문제 — 클립보드 변경 번호로 판단, Finder 응답 대기 0.1→0.25초, 통과 단계 로그(키 내용 없음)
+- [Fixed] - Sources/ClipboardModule: 창을 열 때마다 새로 만들던 것(약 100 ms)을 한 번 만들어 재사용, 썸네일·앱 아이콘을 미리 준비
+- [Added] - docs/UNINSTALLER.md, .github/pull_request_template.md: 앱 삭제 판단 기준 문서, PR 템플릿
+- [Changed] - CONTRIBUTING.md, docs/RELEASING.md, docs/ARCHITECTURE.md, README.md, docs/CONCEPT.md, docs/REFERENCES.md: 브랜치+PR 흐름, 버전별 변경 추적 규칙, 모듈별 사용 기술·OCR 설명, 잘라내기 사용 순서, 위치 이동 시 영향, md 이모지 제거
+- [Changed] - scripts/build-app.sh: 설치 완료 문구
+
+[2026-10-27 17:17]
+- [Added] - Sources/UninstallerCore: /Users/Shared 탐색, 이름형 폴더("Riot Games" 등)를 지운 앱 묶음에 붙이기(유력)·공유 폴더 이름 묶음(추정), macOS 업데이트가 옮겨 둔 Relocated Items(추정), 설치된 앱 이름·회사와 겹치면 제외, 묶음 안 정렬
+- [Added] - Tests/UninstallerCoreTests: 이름형 폴더 묶기 테스트 (총 22개)
+
 [2026-10-27 17:06]
 - [Changed] - 저장소: 창 닫기 키·⌘Q·캡처 ⌘C 수정(아래 항목)을 커밋 04c948d로 main에 push
 
