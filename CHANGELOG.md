@@ -2,6 +2,12 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 14:34]
+- [Added] - Sources/UninstallerCore/LeftoverItem.swift, Sources/UninstallerModule/UninstallerModel.swift: 설치 기록(pkg)은 휴지통 대신 pkgutil --forget(관리자 암호 한 번), 패키지 ID는 영문·숫자·.-_만 허용
+- [Added] - Sources/UninstallerModule/UninstallerModel.swift, UninstallerView.swift: "목록 저장…" — 지우기 전 고른 항목(없으면 전체)을 .tsv로
+- [Added] - Tests/UninstallerCoreTests: 설치 기록 ID 검사 테스트
+- [Changed] - README.md, docs/UNINSTALLER.md: 설치 기록 정리·목록 저장 안내
+
 [2026-10-28 14:32]
 - [Added] - Sources/ClipboardModule/ClipboardItem.swift, ClipboardModule.swift, ClipboardPanel.swift: Finder에서 복사한 파일·폴더 기록(경로만, 고르면 다시 파일로 들어가 Finder ⌘V), 목록·미리보기에 파일 표시
 - [Added] - Sources/ClipboardModule/ClipboardModule.swift: 기록하지 않을 앱 — 메뉴에서 앞에 있는 앱을 바로 제외·다시 포함

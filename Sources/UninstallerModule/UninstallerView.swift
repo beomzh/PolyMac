@@ -281,6 +281,9 @@ struct UninstallerView: View {
             Spacer()
             Text(L("선택 \(model.checkedItems.count)개 · \(size(model.checkedSize))", "\(model.checkedItems.count) selected · \(size(model.checkedSize))"))
                 .font(.callout.monospacedDigit())
+            Button(L("목록 저장…", "Export List…")) { model.exportList() }
+                .help(L("지우기 전에 고른 항목(없으면 전체)의 경로·크기·이유를 표 파일로 남깁니다", "Save paths, sizes and reasons of the selected items (or all) as a table before removing"))
+                .disabled(model.currentItems.isEmpty)
             Button(role: .destructive) {
                 model.askConfirm = true
             } label: {
