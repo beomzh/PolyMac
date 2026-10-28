@@ -3,6 +3,9 @@
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
 [2026-10-28 15:28]
+- [Changed] - feat/normalize-folders: PR #7에 자동 정리 "모든 파일" 조건 push
+
+[2026-10-28 15:28]
 - [Added] - Sources/OrganizeModule/OrganizeRule.swift `Condition.allFiles`, RuleEngine.swift `evaluate`: 자동 정리 조건 "모든 파일" — 감시 폴더의 파일 전체에 동작을 걸 수 있게 (빈 조건 규칙은 여전히 아무 파일과도 맞지 않음, 다운로드 중·폴더 제외)
 - [Added] - Sources/OrganizeModule/RuleRows.swift, OrganizeEditor.swift: 편집 화면 조건 목록 맨 위에 "모든 파일"과 주의 설명
 - [Added] - Tests/OrganizeModuleTests/RuleRowsTests.swift: 모든 파일·빈 조건·다운로드 중 파일 테스트
