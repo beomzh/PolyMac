@@ -44,7 +44,7 @@ public enum OCRRunner {
             }
             PasteboardWriter.copy(text)
             let preview = text.count > 120 ? String(text.prefix(120)) + "…" : text
-            Toast.show(L("텍스트를 복사했습니다\n\(preview)", "Text copied\n\(preview)"), duration: 3)
+            Toast.show(L("텍스트를 클립보드에 복사했습니다", "Text copied to the clipboard"), content: preview, duration: 3)
         } catch {
             Toast.show(L("텍스트 추출 실패: \(error.localizedDescription)", "Text recognition failed: \(error.localizedDescription)"))
         }

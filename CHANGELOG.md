@@ -2,6 +2,46 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 15:10]
+- [Changed] - CHANGELOG.md: PR #5 머지 후 main을 feat/toast-style에 합침 — 두 브랜치 기록 모두 유지
+
+[2026-10-28 15:09]
+- [Changed] - feat/toast-style: PR #6에 알림 제목·내용 상자 분리 push
+
+[2026-10-28 15:09]
+- [Changed] - Sources/PolyMacCore/Toast.swift `Toast.show(_:content:)`: 안내 첫 줄은 가운데·굵게, 다음 줄은 가운데 보조 설명, 추출한 글 같은 내용은 아래 별도 상자(왼쪽 정렬, 6줄) — 안내와 내용이 섞여 보이던 문제
+- [Changed] - Sources/OCRModule/TextRecognizer.swift `OCRRunner.recognizeAndCopy`: 미리보기를 내용 상자로 분리, 문구 "텍스트를 클립보드에 복사했습니다"
+- [Changed] - Sources/PolyMacApp/Settings.swift `NotificationsPane`: 미리보기에 내용 상자도 함께 표시
+
+[2026-10-28 15:02]
+- [Changed] - feat/toast-style: PR #6에 한글 입력 캡처 단축키 수정·알림 위치·시간·끄기 push
+
+[2026-10-28 15:02]
+- [Fixed] - Sources/PolyMacCore/KeyInput.swift `NSEvent.latinKey`: 한글 입력 상태에서 캡처 단축키(R·A·P·T·F·C 등)가 "ㄱ" 같은 한글로 들어와 동작하지 않던 문제 — 글자 대신 자판 위치로 판단
+- [Fixed] - Sources/PolyMacCore/SelectionView.swift, Sources/CaptureModule/PinPanel.swift, Sources/ClipboardModule/ClipboardPanel.swift: 키 판단을 `latinKey`로
+- [Added] - Sources/PolyMacCore/ToastStyle.swift `ToastPosition`, `isEnabled`, `seconds`: 알림 위치 7곳, 표시 시간(1~10초, 오래 뜨는 안내는 같은 비율), 알림 끄기
+- [Changed] - Sources/PolyMacCore/Toast.swift `Toast.show`: 꺼져 있으면 띄우지 않고, 위치·시간 적용
+- [Added] - Sources/PolyMacApp/Settings.swift `NotificationsPane`: 알림 보이기·위치·표시 시간
+- [Added] - Tests/PolyMacCoreTests/ToastStyleTests.swift: 위치·시간·끄기, 한글 입력 키 판단 테스트
+- [Changed] - README.md: 알림 탭 설명, 한글 입력에서도 캡처 단축키 동작 안내
+
+[2026-10-28 14:53]
+- [Changed] - feat/toast-style: PR #6에 알림 색 견본·직접 고르기 push
+
+[2026-10-28 14:53]
+- [Changed] - Sources/PolyMacApp/Settings.swift `NotificationsPane`, `ColorChoiceRow`: 글자색·배경색을 "시스템 설정 따르기" 토글 뒤에 숨기지 않고 [시스템] [견본 6개] [직접 고르기]를 한 줄에 항상 보이게 — 직접 고르기가 없는 것처럼 보이던 문제
+- [Changed] - README.md: 알림 탭 설명에 견본·직접 고르기 추가
+
+[2026-10-28 14:47]
+- [Changed] - feat/toast-style: push 후 PR #6 생성 (환경 설정 알림 모양)
+
+[2026-10-28 14:46]
+- [Added] - Sources/PolyMacCore/ToastStyle.swift `ToastStyle`: 안내 알림의 글자색·배경색(미지정 시 라이트·다크 모드 따름)·글자 크기·최대 너비·여백을 UserDefaults(toast.*)에 저장, 범위 밖 값과 잘못된 색은 보정
+- [Changed] - Sources/PolyMacCore/Toast.swift `Toast.show`: 저장된 모양을 적용, 배경색을 직접 정하면 단색 박스, 미리보기용 `show(_:duration:style:)` 추가
+- [Added] - Sources/PolyMacApp/Settings.swift `NotificationsPane`: 환경 설정 › 알림 탭 — 색 고르기, 크기 슬라이더, 바꾸면 바로 미리보기, 기본값으로
+- [Added] - Tests/PolyMacCoreTests/ToastStyleTests.swift: 색 변환·저장·보정 테스트
+- [Changed] - README.md: 환경 설정 탭 표에 알림 탭 추가
+
 [2026-10-28 15:22]
 - [Changed] - feat/remaining-features: push 후 PR #5 생성 (캡처 도구, Finder 우클릭, 클립보드 파일, 설치 기록, OCR 줄바꿈, 가장자리 배치, 자동 정리 편집)
 

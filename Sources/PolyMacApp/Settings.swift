@@ -22,12 +22,13 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
     private var model: SettingsModel?
 
     enum Tab: String, CaseIterable, Identifiable {
-        case features, language, shortcuts, permissions
+        case features, language, notifications, shortcuts, permissions
         var id: String { rawValue }
         var title: String {
             switch self {
             case .features: return L("기능", "Features")
             case .language: return L("언어", "Language")
+            case .notifications: return L("알림", "Notifications")
             case .shortcuts: return L("단축키", "Shortcuts")
             case .permissions: return L("권한", "Permissions")
             }
@@ -36,6 +37,7 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
             switch self {
             case .features: return "square.grid.2x2"
             case .language: return "globe"
+            case .notifications: return "text.bubble"
             case .shortcuts: return "command"
             case .permissions: return "lock.shield"
             }
@@ -187,6 +189,7 @@ struct SettingsView: View {
                 switch model.tab {
                 case .features: FeaturesPane(model: model)
                 case .language: LanguagePane(model: model)
+                case .notifications: NotificationsPane()
                 case .shortcuts: ShortcutSettingsView(model: model.shortcuts)
                 case .permissions: PermissionsPane(model: model)
                 }
@@ -259,6 +262,147 @@ private struct LanguagePane: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+/// 안내 토스트 켜기·위치·표시 시간·글자색·배경색·글자 크기·알림창 크기. 바꾸면 바로 저장하고 미리보기를 띄운다.
+private struct NotificationsPane: View {
+    @State private var style = ToastStyle.current
+
+    private var sample: String {
+        L("텍스트를 클립보드에 복사했습니다", "Text copied to the clipboard")
+    }
+
+    /// 미리보기에서 안내 문구와 내용 상자가 어떻게 나뉘는지 함께 보여준다
+    private var sampleContent: String {
+        L("맥에서 만든 한글 파일명이 윈도우에서 깨지는 문제…", "Recognized text appears here, separate from the notice…")
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(L("알림 보이기", "Show notifications"), isOn: $style.isEnabled)
+                Picker(L("위치", "Position"), selection: $style.position) {
+                    ForEach(ToastPosition.allCases, id: \.self) { Text(Self.title($0)).tag($0) }
+                }
+                .disabled(!style.isEnabled)
+                LabeledContent(L("표시 시간", "Display time")) {
+                    HStack {
+                        Slider(value: $style.seconds, in: ToastStyle.secondsRange, step: 0.5).frame(minWidth: 180)
+                        Text(L("\(style.seconds.formatted())초", "\(style.seconds.formatted()) s")).monospacedDigit().frame(width: 56, alignment: .trailing)
+                    }
+                }
+                .disabled(!style.isEnabled)
+            } header: {
+                Text(L("알림", "Notifications"))
+            } footer: {
+                Text(style.isEnabled
+                     ? L("실패·권한 안내처럼 원래 더 오래 뜨는 알림은 같은 비율로 길어집니다.",
+                         "Messages that normally stay longer (errors, permission notices) scale by the same ratio.")
+                     : L("모든 안내 알림이 꺼집니다 — 권한이 필요하거나 동작이 실패해도 알림이 뜨지 않습니다. 미리보기는 그대로 볼 수 있습니다.",
+                         "All notifications are hidden, including permission and error notices. Preview still works."))
+                    .font(.caption).foregroundStyle(style.isEnabled ? Color.secondary : Color.orange)
+            }
+            Section {
+                ColorChoiceRow(title: L("글자색", "Text color"), hex: $style.textColor, fallback: .labelColor,
+                               swatches: ["#FFFFFF", "#000000", "#8E8E93", "#FFD60A", "#0A84FF", "#FF453A"], opacity: false)
+                ColorChoiceRow(title: L("배경색", "Background"), hex: $style.backgroundColor, fallback: .windowBackgroundColor,
+                               swatches: ["#1E1E1EE6", "#FFFFFFF2", "#0A84FFE6", "#30D158E6", "#FF9F0AE6", "#FF453AE6"], opacity: true)
+            } header: {
+                Text(L("색", "Colors"))
+            } footer: {
+                Text(L("\"시스템\"은 라이트·다크 모드에 맞춰 바뀝니다. 견본이나 직접 고른 색은 모드와 관계없이 그대로입니다.",
+                       "\"System\" adapts to light and dark mode. A swatch or a color you pick stays the same in both."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Section(L("크기", "Size")) {
+                slider(L("글자 크기", "Font size"), value: $style.fontSize, range: ToastStyle.fontSizes, step: 1, unit: "pt")
+                slider(L("알림창 최대 너비", "Maximum width"), value: $style.maxWidth, range: ToastStyle.maxWidths, step: 20, unit: "pt")
+                slider(L("안쪽 여백", "Padding"), value: $style.padding, range: ToastStyle.paddings, step: 1, unit: "pt")
+            }
+            Section {
+                HStack {
+                    Button(L("미리보기", "Preview")) { Toast.show(sample, content: sampleContent, duration: style.seconds, style: style) }
+                    Spacer()
+                    Button(L("기본값으로", "Restore Defaults")) { style = ToastStyle() }
+                        .disabled(style == ToastStyle())
+                }
+            }
+        }
+        .formStyle(.grouped)
+        .onChange(of: style) { _, new in
+            new.save()
+            Toast.show(sample, content: sampleContent, duration: new.seconds, style: new)
+        }
+    }
+
+    private static func title(_ position: ToastPosition) -> String {
+        switch position {
+        case .bottomCenter: return L("아래 가운데 (기본)", "Bottom center (default)")
+        case .bottomLeft: return L("왼쪽 아래", "Bottom left")
+        case .bottomRight: return L("오른쪽 아래", "Bottom right")
+        case .center: return L("화면 가운데", "Center")
+        case .topCenter: return L("위 가운데", "Top center")
+        case .topLeft: return L("왼쪽 위", "Top left")
+        case .topRight: return L("오른쪽 위", "Top right")
+        }
+    }
+
+    private func slider(_ title: String, value: Binding<Double>, range: ClosedRange<Double>, step: Double, unit: String) -> some View {
+        LabeledContent(title) {
+            HStack {
+                Slider(value: value, in: range, step: step).frame(minWidth: 180)
+                Text("\(Int(value.wrappedValue)) \(unit)").monospacedDigit().frame(width: 56, alignment: .trailing)
+            }
+        }
+    }
+}
+
+/// 색 한 줄: [시스템] [견본…] [직접 고르기]. 고른 칸에 테두리를 두른다.
+private struct ColorChoiceRow: View {
+    let title: String
+    @Binding var hex: String?
+    /// "시스템"일 때 쓰는 동적 색 (칸 안에 현재 모드로 그려 보여준다)
+    let fallback: NSColor
+    let swatches: [String]
+    let opacity: Bool
+
+    private var isCustom: Bool { hex != nil && !swatches.contains(hex!) }
+
+    var body: some View {
+        LabeledContent(title) {
+            HStack(spacing: 6) {
+                chip(Color(nsColor: fallback), selected: hex == nil, help: L("시스템 설정 따르기", "Follow system")) { hex = nil }
+                    .overlay(Text("A").font(.caption2.bold()).foregroundStyle(.secondary).allowsHitTesting(false))
+                Divider().frame(height: 18)
+                ForEach(swatches, id: \.self) { value in
+                    if let color = ToastStyle.color(hex: value) {
+                        chip(Color(nsColor: color), selected: hex == value, help: value) { hex = value }
+                    }
+                }
+                Divider().frame(height: 18)
+                ColorPicker("", selection: Binding(
+                    get: { Color(nsColor: hex.flatMap(ToastStyle.color(hex:)) ?? fallback) },
+                    set: { hex = ToastStyle.hex(NSColor($0)) }
+                ), supportsOpacity: opacity)
+                .labelsHidden()
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.accentColor, lineWidth: isCustom ? 2 : 0).padding(-3))
+                .help(L("직접 고르기", "Choose a color"))
+                Text(L("직접 고르기", "Custom")).font(.caption).foregroundStyle(isCustom ? .primary : .secondary)
+            }
+        }
+    }
+
+    private func chip(_ color: Color, selected: Bool, help: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            RoundedRectangle(cornerRadius: 5)
+                .fill(color)
+                .frame(width: 22, height: 22)
+                .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.primary.opacity(0.25), lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: 7).stroke(Color.accentColor, lineWidth: selected ? 2 : 0).padding(-3))
+        }
+        .buttonStyle(.plain)
+        .help(help)
     }
 }
 
