@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 15:18]
+- [Changed] - docs/ROADMAP.md: 체크 항목을 실제 구현 상태로 갱신, 남은 일은 별도 줄로 분리
+
 [2026-10-28 15:10]
 - [Added] - Sources/OrganizeModule/OrganizeEditor.swift: 자동 정리 규칙 편집 창 — 규칙 목록(켜기·추가·삭제·순서), 조건·동작 편집, 감시 폴더 추가·끄기, 미리보기 모드·기다릴 시간, 빈 값 검사 후 저장
 - [Added] - Sources/OrganizeModule/RuleRows.swift: 조건·동작을 편집용 줄로 바꾸고 되돌리기, 파일 종류 이름, 중복 이름 판정("이름 (1).pdf", "이름 2.pdf")
