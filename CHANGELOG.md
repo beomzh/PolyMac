@@ -3,6 +3,9 @@
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
 [2026-10-28 15:32]
+- [Changed] - feat/normalize-folders: PR #7에 규칙 편집 입력란 수정 push
+
+[2026-10-28 15:32]
 - [Fixed] - Sources/OrganizeModule/OrganizeEditor.swift `InputBox`, `ConditionEditor`, `ActionEditor`: 규칙 편집의 조건·동작·이름 입력란이 grouped Form 기본 모양(테두리 없음, 자리표시 글이 왼쪽 이름표로 빠짐)이라 칸으로 보이지 않던 문제 — 테두리 칸 + 칸 안 자리표시 글 + 왼쪽 정렬, 숫자 칸에 MB·일 단위 표시
 
 [2026-10-28 15:28]
