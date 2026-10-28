@@ -199,6 +199,8 @@ public enum AnnotationRenderer {
             .font: NSFont.systemFont(ofSize: 15, weight: .bold), .foregroundColor: textColor,
         ])
         let line = CTLineCreateWithAttributedString(attributed)
+        // 글자 영역은 현재 글자 위치 기준으로 재므로, 앞 표시가 옮겨 둔 위치를 먼저 원점으로 돌린다
+        ctx.textPosition = .zero
         let bounds = CTLineGetImageBounds(line, ctx)
         ctx.textPosition = CGPoint(x: center.x - bounds.width / 2 - bounds.minX, y: center.y - bounds.height / 2 - bounds.minY)
         CTLineDraw(line, ctx)

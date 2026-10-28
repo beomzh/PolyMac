@@ -2,6 +2,10 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 16:10]
+- [Fixed] - Sources/PolyMacCore/Annotation.swift `drawNumber`: 번호 스탬프 2번부터 숫자가 동그라미 밖 엉뚱한 곳에 그려지던 문제 — CTLineGetImageBounds가 앞 표시가 남긴 글자 위치 기준으로 재서 그만큼 밀림, 재기 전에 글자 위치를 원점으로
+- [Added] - Tests/PolyMacCoreTests/AnnotationTests.swift `everyNumberIsDrawnInsideItsCircle`: 번호 여러 개가 각자 동그라미 안에 그려지는지
+
 [2026-10-28 16:02]
 - [Changed] - feat/organize-background-quarters: PR #8 생성 push
 

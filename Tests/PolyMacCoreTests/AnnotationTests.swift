@@ -54,3 +54,25 @@ private func pixel(_ data: [UInt8], _ x: Int, _ yFromTop: Int) -> [UInt8] {
     let image = noiseImage()
     #expect(pixels(AnnotationRenderer.composite(image, scale: 1, annotations: [one, two, text])) != pixels(image))
 }
+
+/// 두 번째 이후 번호도 자기 동그라미 안에 숫자가 그려진다 (앞 표시의 글자 위치에 끌려가지 않게)
+@Test @MainActor func everyNumberIsDrawnInsideItsCircle() {
+    let ctx = CGContext(data: nil, width: 100, height: 100, bitsPerComponent: 8, bytesPerRow: 0,
+                        space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    ctx.setFillColor(.black)
+    ctx.fill(CGRect(x: 0, y: 0, width: 100, height: 100))
+    let black = ctx.makeImage()!
+    var marks: [Annotation] = []
+    for center in [CGPoint(x: 20, y: 20), CGPoint(x: 50, y: 50), CGPoint(x: 80, y: 80)] {
+        var mark = Annotation(tool: .number, start: center, color: NSColor(srgbRed: 0, green: 0, blue: 0.6, alpha: 1))
+        mark.number = Annotation.nextNumber(after: marks)
+        marks.append(mark)
+    }
+    let data = pixels(AnnotationRenderer.composite(black, scale: 1, annotations: marks))
+    for mark in marks {
+        let cx = Int(mark.points[0].x), cyFromTop = 100 - Int(mark.points[0].y)
+        // 테두리(반지름 12~14)를 뺀 안쪽에 흰 글자 픽셀이 있어야 한다
+        let hasDigit = (-7...7).contains { dx in (-7...7).contains { dy in pixel(data, cx + dx, cyFromTop + dy)[0] > 180 } }
+        #expect(hasDigit, "number \(mark.number ?? 0) is not inside its circle")
+    }
+}
