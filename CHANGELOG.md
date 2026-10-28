@@ -2,6 +2,13 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 11:00]
+- [Removed] - README.md: "같은 일을 하는 앱 끄기" 안내 단계
+- [Added] - Sources/PolyMacCore/Annotation.swift: 표시 도구 글자(E)·모자이크(M)·번호(N), 글자 입력 칸(↩ 확정·Esc 취소), 모자이크는 원본을 10pt 칸으로 뭉갬
+- [Changed] - Sources/PolyMacCore/SelectionView.swift, Sources/CaptureModule/PinPanel.swift: 캡처 화면·핀 표시 편집에서 새 도구 사용, 단축키 안내에 E M N
+- [Fixed] - Sources/PolyMacCore/RegionCapture.swift: 글자 입력 중 Esc가 캡처 전체를 취소하지 않게
+- [Added] - Tests/PolyMacCoreTests/AnnotationTests.swift: 모자이크·번호·글자 렌더링 테스트
+
 [2026-10-28 10:52]
 - [Fixed] - Sources/PolyMacApp/Settings.swift: 환경 설정 사이드바를 접으면 여는 버튼이 툴바 오른쪽 위로 옮겨 가던 문제 — 사이드바를 항상 펼치고 접기 버튼 제거
 

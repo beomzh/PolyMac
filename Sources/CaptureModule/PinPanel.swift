@@ -31,7 +31,7 @@ final class PinPanel: NSPanel {
     }
 
     private let image: CGImage
-    private let scale: CGFloat
+    fileprivate let scale: CGFloat
     private let baseSize: NSSize
     private var zoom: CGFloat = 1
     fileprivate var annotations: [Annotation]
@@ -239,6 +239,7 @@ private final class PinCanvasView: NSView {
     weak var pin: PinPanel?
     private let image: CGImage
     private var drawing: Annotation?
+    private var textInput: AnnotationTextInput?
 
     init(frame: NSRect, image: CGImage) {
         self.image = image
@@ -253,7 +254,8 @@ private final class PinCanvasView: NSView {
         ctx.draw(image, in: bounds)
         ctx.saveGState()
         ctx.scaleBy(x: pin.displayFactor, y: pin.displayFactor)
-        AnnotationRenderer.draw(pin.annotations + (drawing.map { [$0] } ?? []), in: ctx)
+        AnnotationRenderer.draw(pin.annotations + (drawing.map { [$0] } ?? []), in: ctx,
+                                source: .init(image: image, scale: pin.scale))
         ctx.restoreGState()
     }
 
@@ -291,8 +293,28 @@ private final class PinCanvasView: NSView {
     override func mouseDown(with event: NSEvent) {
         window?.makeKey()
         window?.makeFirstResponder(self)
+        if let input = textInput, input.isActive {
+            input.commit()
+            return
+        }
         if let pin, let tool = pin.markupBar?.selectedTool {
-            drawing = Annotation(tool: tool, start: basePoint(event), color: pin.markupBar?.color ?? .systemRed)
+            let color = pin.markupBar?.color ?? .systemRed
+            if tool == .text {
+                let anchor = basePoint(event)
+                textInput = AnnotationTextInput(in: self, at: convert(event.locationInWindow, from: nil), color: color,
+                                                zoom: pin.displayFactor) { [weak self] text in
+                    guard let self else { return }
+                    var a = Annotation(tool: .text, start: anchor, color: color)
+                    a.text = text
+                    if a.isMeaningful { self.pin?.annotations.append(a) }
+                    self.textInput = nil
+                    self.window?.makeFirstResponder(self)
+                    self.needsDisplay = true
+                }
+                return
+            }
+            drawing = Annotation(tool: tool, start: basePoint(event), color: color)
+            if tool == .number { drawing?.number = Annotation.nextNumber(after: pin.annotations) }
             return
         }
         if event.clickCount == 2 {

@@ -3,13 +3,16 @@ import PolyMacL10n
 
 /// 캡처 위에 그리는 표시 도구.
 public enum AnnotationTool: String, CaseIterable, Sendable {
-    case rectangle, arrow, pen
+    case rectangle, arrow, pen, text, mosaic, number
 
     var symbol: String {
         switch self {
         case .rectangle: return "rectangle"
         case .arrow: return "arrow.up.right"
         case .pen: return "scribble"
+        case .text: return "textformat"
+        case .mosaic: return "checkerboard.rectangle"
+        case .number: return "1.circle"
         }
     }
 
@@ -18,8 +21,14 @@ public enum AnnotationTool: String, CaseIterable, Sendable {
         case .rectangle: return L("사각형 (R)", "Rectangle (R)")
         case .arrow: return L("화살표 (A)", "Arrow (A)")
         case .pen: return L("펜 (P)", "Pen (P)")
+        case .text: return L("글자 (E) — 클릭한 곳에 입력, ↩ 확정", "Text (E) — click to type, ↩ to finish")
+        case .mosaic: return L("모자이크 (M) — 가릴 곳을 드래그", "Mosaic (M) — drag over what to hide")
+        case .number: return L("번호 (N) — 클릭할 때마다 1, 2, 3…", "Number (N) — each click adds 1, 2, 3…")
         }
     }
+
+    /// 드래그하지 않고 클릭 한 번으로 놓는 도구
+    public var placesOnClick: Bool { self == .text || self == .number }
 }
 
 /// 표시 하나. 좌표는 캡처 영역 왼쪽 아래 기준 포인트 — 이미지에 굽지 않고 따로 들고 있어 나중에 다시 고칠 수 있다.
@@ -29,6 +38,10 @@ public struct Annotation {
     public var points: [CGPoint]
     public var color: NSColor
     public var lineWidth: CGFloat
+    /// 글자 도구의 내용 (points[0]이 첫 줄의 왼쪽 위)
+    public var text: String?
+    /// 번호 도구의 숫자 (points[0]이 동그라미 가운데)
+    public var number: Int?
 
     public init(tool: AnnotationTool, start: CGPoint, color: NSColor, lineWidth: CGFloat = 3) {
         self.tool = tool
@@ -37,19 +50,59 @@ public struct Annotation {
         self.lineWidth = lineWidth
     }
 
-    public mutating func extend(to point: CGPoint) {
-        if tool == .pen { points.append(point) } else { points[1] = point }
+    /// 다음 번호 — 이미 놓인 번호 중 가장 큰 것 + 1
+    public static func nextNumber(after annotations: [Annotation]) -> Int {
+        (annotations.compactMap(\.number).max() ?? 0) + 1
     }
 
-    /// 클릭만 하고 끌지 않은 표시는 버린다
+    public mutating func extend(to point: CGPoint) {
+        switch tool {
+        case .pen: points.append(point)
+        case .text, .number: points = [point, point] // 누른 채 끌면 놓을 자리를 옮긴다
+        default: points[1] = point
+        }
+    }
+
+    /// 클릭만 하고 끌지 않은 표시는 버린다 (글자·번호는 클릭으로 놓는다)
     public var isMeaningful: Bool {
         guard let first = points.first, let last = points.last else { return false }
-        return tool == .pen ? points.count > 2 : hypot(last.x - first.x, last.y - first.y) > 3
+        switch tool {
+        case .pen: return points.count > 2
+        case .text: return !(text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case .number: return number != nil
+        default: return hypot(last.x - first.x, last.y - first.y) > 3
+        }
+    }
+
+    /// 사각형·모자이크의 영역
+    var rect: CGRect {
+        let a = points[0], b = points[points.count - 1]
+        return CGRect(x: min(a.x, b.x), y: min(a.y, b.y), width: abs(b.x - a.x), height: abs(b.y - a.y))
     }
 }
 
+private extension NSColor {
+    /// 밝기 0~1 (시스템 색처럼 HSB로 바로 못 읽는 색도)
+    var brightness: CGFloat { usingColorSpace(.sRGB)?.brightnessComponent ?? 0 }
+}
+
 public enum AnnotationRenderer {
-    public static func draw(_ annotations: [Annotation], in ctx: CGContext) {
+    /// 글자 크기 (포인트)
+    public static let fontSize: CGFloat = 20
+
+    /// 모자이크가 가릴 원본 그림: 표시 좌표 (0,0)이 그림의 어디(포인트, 왼쪽 아래 기준)에 해당하는지
+    public struct Source {
+        public let image: CGImage
+        public let scale: CGFloat
+        public let origin: CGPoint
+        public init(image: CGImage, scale: CGFloat, origin: CGPoint = .zero) {
+            self.image = image
+            self.scale = scale
+            self.origin = origin
+        }
+    }
+
+    public static func draw(_ annotations: [Annotation], in ctx: CGContext, source: Source? = nil) {
         for a in annotations where a.points.count >= 2 {
             ctx.saveGState()
             ctx.setStrokeColor(a.color.cgColor)
@@ -77,9 +130,78 @@ public enum AnnotationRenderer {
             case .pen:
                 ctx.addLines(between: a.points)
                 ctx.strokePath()
+            case .mosaic:
+                drawMosaic(a.rect, source: source, in: ctx)
+            case .text:
+                drawText(a.text ?? "", at: start, color: a.color, in: ctx)
+            case .number:
+                drawNumber(a.number ?? 0, at: start, color: a.color, in: ctx)
             }
             ctx.restoreGState()
         }
+    }
+
+    /// 원본을 큰 칸으로 줄였다 늘려 알아볼 수 없게. 원본이 없으면 회색으로 덮는다.
+    private static func drawMosaic(_ rect: CGRect, source: Source?, in ctx: CGContext) {
+        guard rect.width >= 1, rect.height >= 1 else { return }
+        guard let source else {
+            ctx.setFillColor(NSColor.gray.cgColor)
+            ctx.fill(rect)
+            return
+        }
+        let s = source.scale
+        let pixel = CGRect(x: (rect.minX + source.origin.x) * s,
+                           y: CGFloat(source.image.height) - (rect.maxY + source.origin.y) * s,
+                           width: rect.width * s, height: rect.height * s).integral
+        guard let piece = source.image.cropping(to: pixel) else { return }
+        let block: CGFloat = 10 // 칸 하나의 크기 (포인트)
+        let w = max(1, Int(rect.width / block)), h = max(1, Int(rect.height / block))
+        guard let space = CGColorSpace(name: CGColorSpace.sRGB),
+              let small = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0,
+                                    space: space, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        else { return }
+        small.interpolationQuality = .medium
+        small.draw(piece, in: CGRect(x: 0, y: 0, width: w, height: h))
+        guard let tiles = small.makeImage() else { return }
+        ctx.saveGState()
+        ctx.interpolationQuality = .none
+        ctx.draw(tiles, in: rect)
+        ctx.restoreGState()
+    }
+
+    /// 여러 줄 글자. 바탕과 상관없이 보이게 반대색 테두리를 두른다.
+    private static func drawText(_ text: String, at topLeft: CGPoint, color: NSColor, in ctx: CGContext) {
+        let font = NSFont.systemFont(ofSize: fontSize, weight: .semibold)
+        let outline = color.brightness > 0.6 ? NSColor.black : NSColor.white
+        var y = topLeft.y
+        for line in text.components(separatedBy: "\n") {
+            y -= font.ascender
+            let attributed = NSAttributedString(string: line, attributes: [
+                .font: font, .foregroundColor: color, .strokeColor: outline, .strokeWidth: -3,
+            ])
+            let ctLine = CTLineCreateWithAttributedString(attributed)
+            ctx.textPosition = CGPoint(x: topLeft.x, y: y)
+            CTLineDraw(ctLine, ctx)
+            y -= -font.descender + font.leading + 2
+        }
+    }
+
+    /// 색 동그라미 안의 흰 숫자
+    private static func drawNumber(_ number: Int, at center: CGPoint, color: NSColor, in ctx: CGContext) {
+        let radius: CGFloat = 13
+        ctx.setFillColor(color.cgColor)
+        ctx.fillEllipse(in: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
+        ctx.setStrokeColor(NSColor.white.cgColor)
+        ctx.setLineWidth(2)
+        ctx.strokeEllipse(in: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
+        let textColor = color.brightness > 0.75 ? NSColor.black : NSColor.white
+        let attributed = NSAttributedString(string: "\(number)", attributes: [
+            .font: NSFont.systemFont(ofSize: 15, weight: .bold), .foregroundColor: textColor,
+        ])
+        let line = CTLineCreateWithAttributedString(attributed)
+        let bounds = CTLineGetImageBounds(line, ctx)
+        ctx.textPosition = CGPoint(x: center.x - bounds.width / 2 - bounds.minX, y: center.y - bounds.height / 2 - bounds.minY)
+        CTLineDraw(line, ctx)
     }
 
     /// 픽셀 이미지 위에 표시를 합성한 새 이미지. 표시가 없으면 원본 그대로.
@@ -91,7 +213,7 @@ public enum AnnotationRenderer {
         else { return image }
         ctx.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
         ctx.scaleBy(x: scale, y: scale)
-        draw(annotations, in: ctx)
+        draw(annotations, in: ctx, source: Source(image: image, scale: scale))
         return ctx.makeImage() ?? image
     }
 }
@@ -273,5 +395,66 @@ private final class SwatchButton: NSButton {
         NSBezierPath(ovalIn: dot).fill()
         NSColor.black.withAlphaComponent(0.3).setStroke()
         NSBezierPath(ovalIn: dot).stroke()
+    }
+}
+
+
+/// 글자 도구의 입력 칸 — 클릭한 자리에 띄우고 ↩로 확정, Esc로 취소, 다른 곳을 누르면 확정
+@MainActor
+public final class AnnotationTextInput: NSObject, NSTextFieldDelegate {
+    private let field: NSTextField
+    private var onCommit: ((String) -> Void)?
+    private var finished = false
+
+    /// point: view 좌표의 첫 줄 왼쪽 위, zoom: 화면에 보이는 배율(핀 확대 등)
+    public init(in view: NSView, at point: NSPoint, color: NSColor, zoom: CGFloat = 1, onCommit: @escaping (String) -> Void) {
+        let font = NSFont.systemFont(ofSize: AnnotationRenderer.fontSize * zoom, weight: .semibold)
+        let height = ceil(font.ascender - font.descender + font.leading) + 4
+        field = NSTextField(frame: NSRect(x: point.x - 2, y: point.y - height + 2, width: 240, height: height))
+        self.onCommit = onCommit
+        super.init()
+        field.font = font
+        field.textColor = color
+        field.backgroundColor = NSColor.black.withAlphaComponent(0.35)
+        field.drawsBackground = true
+        field.isBordered = false
+        field.focusRingType = .none
+        field.placeholderString = L("글자 입력 후 ↩", "Type, then ↩")
+        field.delegate = self
+        view.addSubview(field)
+        view.window?.makeFirstResponder(field)
+    }
+
+    public var isActive: Bool { !finished }
+
+    /// 입력 중인 내용을 확정하고 칸을 닫는다
+    public func commit() {
+        guard !finished else { return }
+        finished = true
+        let text = field.stringValue
+        field.removeFromSuperview()
+        let callback = onCommit
+        onCommit = nil
+        callback?(text)
+    }
+
+    public func cancel() {
+        guard !finished else { return }
+        field.stringValue = ""
+        commit()
+    }
+
+    public func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
+        switch selector {
+        case #selector(NSResponder.insertNewline(_:)): commit(); return true
+        case #selector(NSResponder.cancelOperation(_:)): cancel(); return true
+        default: return false
+        }
+    }
+
+    // 글자 수에 맞춰 칸을 넓힌다
+    public func controlTextDidChange(_ obj: Notification) {
+        let width = max(240, field.attributedStringValue.size().width + 24)
+        field.setFrameSize(NSSize(width: width, height: field.frame.height))
     }
 }
