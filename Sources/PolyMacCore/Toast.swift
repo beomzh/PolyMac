@@ -8,25 +8,40 @@ public enum Toast {
     private static var hideWork: DispatchWorkItem?
 
     public static func show(_ message: String, duration: TimeInterval = 2) {
+        show(message, duration: duration, style: .current)
+    }
+
+    /// style: 환경 설정 미리보기처럼 저장 전 모양으로 띄울 때
+    public static func show(_ message: String, duration: TimeInterval = 2, style: ToastStyle) {
+        let style = style.clamped
+        let pad = CGFloat(style.padding)
         let label = NSTextField(wrappingLabelWithString: message)
-        label.font = .systemFont(ofSize: 13, weight: .medium)
-        // 시스템 라이트·다크 모드를 따르는 글자색 — 흰 글자가 밝은 배경에 묻히지 않게
-        label.textColor = .labelColor
+        label.font = .systemFont(ofSize: CGFloat(style.fontSize), weight: .medium)
+        // 정하지 않았으면 시스템 라이트·다크 모드를 따르는 글자색 — 흰 글자가 밝은 배경에 묻히지 않게
+        label.textColor = style.textColor.flatMap(ToastStyle.color(hex:)) ?? .labelColor
         label.maximumNumberOfLines = 4
         label.lineBreakMode = .byTruncatingTail
-        label.preferredMaxLayoutWidth = 420
+        label.preferredMaxLayoutWidth = CGFloat(style.maxWidth)
         let textSize = label.fittingSize
-        let size = NSSize(width: textSize.width + 28, height: textSize.height + 20)
+        let size = NSSize(width: textSize.width + pad * 2 + 4, height: textSize.height + pad * 2)
 
         let panel = panel ?? makePanel()
         self.panel = panel
 
-        let background = NSVisualEffectView(frame: NSRect(origin: .zero, size: size))
-        // 메뉴·팝오버와 같은 재질: 라이트 모드는 밝은 박스, 다크 모드는 어두운 박스
-        background.material = .popover
-        background.blendingMode = .behindWindow
-        background.state = .active
-        background.wantsLayer = true
+        let background: NSView
+        if let fill = style.backgroundColor.flatMap(ToastStyle.color(hex:)) {
+            background = NSView(frame: NSRect(origin: .zero, size: size))
+            background.wantsLayer = true
+            background.layer?.backgroundColor = fill.cgColor
+        } else {
+            let effect = NSVisualEffectView(frame: NSRect(origin: .zero, size: size))
+            // 메뉴·팝오버와 같은 재질: 라이트 모드는 밝은 박스, 다크 모드는 어두운 박스
+            effect.material = .popover
+            effect.blendingMode = .behindWindow
+            effect.state = .active
+            effect.wantsLayer = true
+            background = effect
+        }
         background.layer?.cornerRadius = 10
         background.layer?.masksToBounds = true
         background.layer?.borderWidth = 1
@@ -34,7 +49,7 @@ public enum Toast {
         NSApp.effectiveAppearance.performAsCurrentDrawingAppearance {
             background.layer?.borderColor = NSColor.separatorColor.cgColor
         }
-        label.frame = NSRect(x: 14, y: 10, width: textSize.width, height: textSize.height)
+        label.frame = NSRect(x: pad + 2, y: pad, width: textSize.width, height: textSize.height)
         background.addSubview(label)
         panel.contentView = background
 

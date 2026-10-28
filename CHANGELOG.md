@@ -2,6 +2,13 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 14:46]
+- [Added] - Sources/PolyMacCore/ToastStyle.swift `ToastStyle`: 안내 알림의 글자색·배경색(미지정 시 라이트·다크 모드 따름)·글자 크기·최대 너비·여백을 UserDefaults(toast.*)에 저장, 범위 밖 값과 잘못된 색은 보정
+- [Changed] - Sources/PolyMacCore/Toast.swift `Toast.show`: 저장된 모양을 적용, 배경색을 직접 정하면 단색 박스, 미리보기용 `show(_:duration:style:)` 추가
+- [Added] - Sources/PolyMacApp/Settings.swift `NotificationsPane`: 환경 설정 › 알림 탭 — 색 고르기, 크기 슬라이더, 바꾸면 바로 미리보기, 기본값으로
+- [Added] - Tests/PolyMacCoreTests/ToastStyleTests.swift: 색 변환·저장·보정 테스트
+- [Changed] - README.md: 환경 설정 탭 표에 알림 탭 추가
+
 [2026-10-28 10:52]
 - [Fixed] - Sources/PolyMacApp/Settings.swift: 환경 설정 사이드바를 접으면 여는 버튼이 툴바 오른쪽 위로 옮겨 가던 문제 — 사이드바를 항상 펼치고 접기 버튼 제거
 

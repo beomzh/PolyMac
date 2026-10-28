@@ -22,12 +22,13 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
     private var model: SettingsModel?
 
     enum Tab: String, CaseIterable, Identifiable {
-        case features, language, shortcuts, permissions
+        case features, language, notifications, shortcuts, permissions
         var id: String { rawValue }
         var title: String {
             switch self {
             case .features: return L("기능", "Features")
             case .language: return L("언어", "Language")
+            case .notifications: return L("알림", "Notifications")
             case .shortcuts: return L("단축키", "Shortcuts")
             case .permissions: return L("권한", "Permissions")
             }
@@ -36,6 +37,7 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
             switch self {
             case .features: return "square.grid.2x2"
             case .language: return "globe"
+            case .notifications: return "text.bubble"
             case .shortcuts: return "command"
             case .permissions: return "lock.shield"
             }
@@ -187,6 +189,7 @@ struct SettingsView: View {
                 switch model.tab {
                 case .features: FeaturesPane(model: model)
                 case .language: LanguagePane(model: model)
+                case .notifications: NotificationsPane()
                 case .shortcuts: ShortcutSettingsView(model: model.shortcuts)
                 case .permissions: PermissionsPane(model: model)
                 }
@@ -259,6 +262,82 @@ private struct LanguagePane: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+/// 안내 토스트의 글자색·배경색·글자 크기·알림창 크기. 바꾸면 바로 저장하고 미리보기를 띄운다.
+private struct NotificationsPane: View {
+    @State private var style = ToastStyle.current
+
+    private var sample: String {
+        L("캡처를 클립보드에 복사했습니다\n알림 문구는 이렇게 보입니다", "Copied the capture to the clipboard\nNotifications look like this")
+    }
+
+    /// nil(시스템 색)과 직접 고른 색을 오가는 바인딩
+    private func colorBinding(_ keyPath: WritableKeyPath<ToastStyle, String?>, fallback: NSColor) -> Binding<Color> {
+        Binding(
+            get: { Color(nsColor: style[keyPath: keyPath].flatMap(ToastStyle.color(hex:)) ?? fallback) },
+            set: { style[keyPath: keyPath] = ToastStyle.hex(NSColor($0)) }
+        )
+    }
+
+    private func systemBinding(_ keyPath: WritableKeyPath<ToastStyle, String?>, fallback: NSColor) -> Binding<Bool> {
+        Binding(
+            get: { style[keyPath: keyPath] == nil },
+            set: { useSystem in
+                var resolved = fallback
+                NSApp.effectiveAppearance.performAsCurrentDrawingAppearance { resolved = fallback.usingColorSpace(.sRGB) ?? fallback }
+                style[keyPath: keyPath] = useSystem ? nil : ToastStyle.hex(resolved)
+            }
+        )
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(L("글자색: 시스템 설정 따르기", "Text color: follow system"), isOn: systemBinding(\.textColor, fallback: .labelColor))
+                if style.textColor != nil {
+                    ColorPicker(L("글자색", "Text color"), selection: colorBinding(\.textColor, fallback: .labelColor), supportsOpacity: false)
+                }
+                Toggle(L("배경색: 시스템 설정 따르기", "Background: follow system"), isOn: systemBinding(\.backgroundColor, fallback: .windowBackgroundColor))
+                if style.backgroundColor != nil {
+                    ColorPicker(L("배경색", "Background color"), selection: colorBinding(\.backgroundColor, fallback: .windowBackgroundColor), supportsOpacity: true)
+                }
+            } header: {
+                Text(L("색", "Colors"))
+            } footer: {
+                Text(L("\"시스템 설정 따르기\"는 라이트·다크 모드에 맞춰 바뀝니다. 직접 고른 색은 모드와 관계없이 그대로입니다.",
+                       "\"Follow system\" adapts to light and dark mode. A color you pick stays the same in both."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Section(L("크기", "Size")) {
+                slider(L("글자 크기", "Font size"), value: $style.fontSize, range: ToastStyle.fontSizes, step: 1, unit: "pt")
+                slider(L("알림창 최대 너비", "Maximum width"), value: $style.maxWidth, range: ToastStyle.maxWidths, step: 20, unit: "pt")
+                slider(L("안쪽 여백", "Padding"), value: $style.padding, range: ToastStyle.paddings, step: 1, unit: "pt")
+            }
+            Section {
+                HStack {
+                    Button(L("미리보기", "Preview")) { Toast.show(sample, duration: 3, style: style) }
+                    Spacer()
+                    Button(L("기본값으로", "Restore Defaults")) { style = ToastStyle() }
+                        .disabled(style == ToastStyle())
+                }
+            }
+        }
+        .formStyle(.grouped)
+        .onChange(of: style) { _, new in
+            new.save()
+            Toast.show(sample, duration: 2, style: new)
+        }
+    }
+
+    private func slider(_ title: String, value: Binding<Double>, range: ClosedRange<Double>, step: Double, unit: String) -> some View {
+        LabeledContent(title) {
+            HStack {
+                Slider(value: value, in: range, step: step).frame(minWidth: 180)
+                Text("\(Int(value.wrappedValue)) \(unit)").monospacedDigit().frame(width: 56, alignment: .trailing)
+            }
+        }
     }
 }
 
