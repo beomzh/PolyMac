@@ -212,6 +212,7 @@ public enum LeftoverScanner {
                                fileManager: FileManager = .default) -> [OrphanGroup] {
         var groups: [String: [LeftoverItem]] = [:]
         let installedVendors = Set(installedIDs.map(vendor))
+        let installedKeys = installedNameKeys(installedIDs: installedIDs, installedNames: installedNames)
         // 지금 등록된 백그라운드 항목이 실행하는 파일 (관리자 권한 도우미 등) — 쓰이는 중이니 흔적이 아니다
         let launchDirs = locations.filter { [.launchAgent, .launchDaemon].contains($0.kind) }.map(\.directory)
         let referenced = Set(launchDirs.flatMap { dir in
@@ -220,9 +221,13 @@ public enum LeftoverScanner {
         for location in locations where location.kind != .logs {
             guard let names = try? fileManager.contentsOfDirectory(atPath: location.directory.path) else { continue }
             for name in names where !name.hasPrefix(".") {
-                guard let id = bundleIDLike(withoutHostSuffix(strippedName(name))), !id.lowercased().hasPrefix("com.apple."),
+                guard let id = bundleIDLike(withoutHostSuffix(strippedName(name))),
+                      !sharedComponentPrefixes.contains(where: { id.lowercased().hasPrefix($0) }),
                       !belongsToInstalled(id, installedIDs),
-                      !parentIDs(of: id).contains(where: isInstalled) // com.foo.App.ShipIt → com.foo.App이 설치돼 있으면 그 앱의 것
+                      !parentIDs(of: id).contains(where: isInstalled), // com.foo.App.ShipIt → com.foo.App이 설치돼 있으면 그 앱의 것
+                      // ID 속 이름이 설치된 앱 이름과 겹치면 그 앱의 것일 수 있다
+                      // (Discord: 앱 com.hnc.Discord, 업데이터 com.discord.discord.ShipIt — ID로는 관계가 안 보인다)
+                      !nameKeys(id).contains(where: { relatesToInstalled($0, installedKeys) })
                 else { continue }
                 let url = location.directory.appendingPathComponent(name)
                 if referenced.contains(url.path) { continue }
@@ -263,12 +268,8 @@ public enum LeftoverScanner {
     /// 설치된 앱의 이름·회사와 겹치는 폴더는 항상 뺀다.
     static func addNamedLeftovers(to groups: inout [String: [LeftoverItem]], locations: [Location],
                                   installedIDs: Set<String>, installedNames: Set<String>, fileManager: FileManager) {
-        let installedKeys = installedNames.map(normalized).filter { $0.count >= 4 }
-            + installedIDs.flatMap(nameKeys)
-        // 설치된 앱 쪽은 더 넓게 본다 — 애매하면 흔적에서 빼는 게 안전 ("Zoom Data" ~ zoom)
-        func relatesToInstalled(_ n: String) -> Bool {
-            installedKeys.contains { k in n == k || (k.count >= 4 && n.hasPrefix(k)) || (n.count >= 4 && k.hasPrefix(n)) }
-        }
+        let installedKeys = installedNameKeys(installedIDs: installedIDs, installedNames: installedNames)
+        func relatesToInstalled(_ n: String) -> Bool { Self.relatesToInstalled(n, installedKeys) }
         // 이미 찾은 앱 ID 묶음의 이름 열쇠
         var keyToGroup: [(key: String, group: String)] = groups.keys.flatMap { id in nameKeys(id).map { ($0, id) } }
         let nameLocations = locations.filter { [.appSupport, .caches, .logs, .sharedData].contains($0.kind) }
@@ -312,6 +313,30 @@ public enum LeftoverScanner {
                     requiresAdmin: location.requiresAdmin))
             }
         }
+    }
+
+    /// macOS 구성요소이거나 여러 앱이 함께 쓰는 구성요소 — 그 이름의 앱이 없어도 흔적이 아니다
+    public static let sharedComponentPrefixes: [String] = [
+        "com.apple.",            // macOS
+        "org.cups.",             // macOS 프린터 시스템
+        "org.swift.",            // Swift 도구 (Xcode·Command Line Tools)
+        "org.sparkle-project.",  // 여러 앱이 쓰는 자동 업데이트
+        "org.jcef.",             // 앱 안의 웹 화면 (JetBrains 등)
+        "org.chromium.",         // 앱 안의 웹 화면
+        "com.github.electron",   // Electron 기반 앱 공용
+    ]
+
+    /// 회사 단위 묶음 열쇠: "com.riotgames.RiotGames.RiotClient" → "com.riotgames"
+    public static func vendorKey(_ id: String) -> String { vendor(id) }
+
+    /// 설치된 앱의 이름·ID 각 부분을 정규화한 열쇠 (4자 이상)
+    static func installedNameKeys(installedIDs: Set<String>, installedNames: Set<String>) -> [String] {
+        installedNames.map(normalized).filter { $0.count >= 4 } + installedIDs.flatMap(nameKeys)
+    }
+
+    /// 설치된 앱 쪽은 더 넓게 본다 — 애매하면 흔적에서 빼는 게 안전 ("Zoom Data" ~ zoom, "discord" ~ Discord)
+    static func relatesToInstalled(_ n: String, _ installedKeys: [String]) -> Bool {
+        installedKeys.contains { k in n == k || (k.count >= 4 && n.hasPrefix(k)) || (n.count >= 4 && k.hasPrefix(n)) }
     }
 
     /// /Users/Shared에 원래 있는 macOS 폴더

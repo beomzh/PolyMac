@@ -61,6 +61,11 @@ final class UninstallerModel: ObservableObject {
 
     // MARK: - 불러오기
 
+    /// 설치된 앱 목록을 다 읽었는지. 흔적 스캔은 이게 끝난 뒤에만 한다 —
+    /// 빈 목록으로 판단하면 쓰고 있는 앱(Chrome 등)의 데이터를 흔적으로 잘못 고른다.
+    private var appsLoaded = false
+    private var orphanScanRequested = false
+
     func loadApps() {
         Task.detached(priority: .userInitiated) {
             let found = Self.installedApps()
@@ -68,6 +73,8 @@ final class UninstallerModel: ObservableObject {
             await MainActor.run {
                 self.apps = found
                 self.receipts = receipts
+                self.appsLoaded = true
+                if self.orphanScanRequested { self.scanOrphans() }
             }
         }
     }
@@ -113,9 +120,25 @@ final class UninstallerModel: ObservableObject {
         checked = []
         status = nil
         isScanning = true
-        let installedIDs = Set(apps.map(\.bundleID))
-        let installedNames = Set(apps.map(\.name))
+        // 설치된 앱 목록이 아직이면 다 읽은 뒤 이어서 한다
+        guard appsLoaded else {
+            orphanScanRequested = true
+            return
+        }
+        orphanScanRequested = false
+        let listed = apps
         Task.detached(priority: .userInitiated) {
+            // /Applications만이 아니라 Spotlight가 아는 이 Mac의 모든 앱 + 지금 실행 중인 앱
+            let known = Self.allKnownApps()
+            let installedIDs = Set(listed.map(\.bundleID)).union(known.ids)
+            let installedNames = Set(listed.map(\.name)).union(known.names)
+            guard !installedIDs.isEmpty else {
+                await MainActor.run {
+                    self.isScanning = false
+                    self.status = "설치된 앱 목록을 읽지 못해 흔적 찾기를 멈췄습니다 (쓰고 있는 앱의 데이터를 잘못 고를 수 있어서)"
+                }
+                return
+            }
             let groups = LeftoverScanner.orphans(locations: LeftoverScanner.standardLocations(),
                                                  isInstalled: Self.isInstalledAnywhere,
                                                  installedIDs: installedIDs, installedNames: installedNames)
@@ -164,8 +187,67 @@ final class UninstallerModel: ObservableObject {
     }
 
     func toggleGroup(_ group: LeftoverScanner.OrphanGroup) {
-        let ids = Set(group.items.map(\.id))
-        if ids.isSubset(of: checked) { checked.subtract(ids) } else { checked.formUnion(ids) }
+        toggleItems(group.items)
+    }
+
+    // MARK: - 한꺼번에 고르기
+
+    /// 사용 중인 항목은 고를 수 없으니 셈에서도 뺀다
+    private func selectable(_ list: [LeftoverItem]) -> [String] { list.filter { inUse[$0.id] == nil }.map(\.id) }
+
+    func isAllChecked(_ list: [LeftoverItem]) -> Bool {
+        let ids = selectable(list)
+        return !ids.isEmpty && Set(ids).isSubset(of: checked)
+    }
+
+    func isPartlyChecked(_ list: [LeftoverItem]) -> Bool {
+        let ids = selectable(list)
+        return !ids.isEmpty && !Set(ids).isDisjoint(with: checked) && !Set(ids).isSubset(of: checked)
+    }
+
+    /// 묶음 전체 선택 ↔ 해제
+    func toggleItems(_ list: [LeftoverItem]) {
+        let ids = selectable(list)
+        if Set(ids).isSubset(of: checked) { checked.subtract(ids) } else { checked.formUnion(ids) }
+    }
+
+    func selectAll() { checked = Set(selectable(currentItems)) }
+    func deselectAll() { checked = [] }
+    /// 확실·유력만 (추정은 빼고)
+    func selectLikely() { checked = Set(selectable(currentItems.filter { $0.confidence.selectedByDefault })) }
+
+    /// 남은 흔적을 회사(앱 ID 앞 두 부분) 단위로 묶어 보여 준다 — Riot처럼 ID가 여러 개인 앱도 한 묶음
+    struct VendorGroup: Identifiable {
+        let id: String
+        let title: String
+        let note: String
+        let items: [LeftoverItem]
+    }
+
+    var vendorGroups: [VendorGroup] {
+        var order: [String] = []
+        var merged: [String: (ids: [String], items: [LeftoverItem])] = [:]
+        for group in orphanGroups {
+            // 이름으로 찾은 묶음·업데이트 잔여물은 그대로, 앱 ID 묶음은 회사 단위로
+            let key = group.bundleID.contains(" ") ? group.bundleID : LeftoverScanner.vendorKey(group.bundleID)
+            if merged[key] == nil { order.append(key) }
+            merged[key, default: ([], [])].ids.append(group.bundleID)
+            merged[key, default: ([], [])].items.append(contentsOf: group.items)
+        }
+        return order.map { key in
+            let entry = merged[key]!
+            let isID = !key.contains(" ")
+            let title = isID ? (key.split(separator: ".").last.map(String.init) ?? key) : key
+            let note = isID
+                ? "앱 ID " + (entry.ids.count == 1 ? entry.ids[0] : "\(entry.ids[0]) 외 \(entry.ids.count - 1)개")
+                : (entry.items.first?.reason ?? "")
+            return VendorGroup(id: key, title: title, note: note, items: entry.items)
+        }
+    }
+
+    /// 남은 흔적 항목 → 그 항목을 찾은 앱 ID
+    var orphanIDs: [String: String] {
+        Dictionary(orphanGroups.flatMap { g in g.items.map { ($0.id, g.bundleID) } }, uniquingKeysWith: { a, _ in a })
     }
 
     // MARK: - 삭제
@@ -245,6 +327,44 @@ final class UninstallerModel: ObservableObject {
                              version: bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
                              teamID: teamID(url),
                              executableName: bundle.object(forInfoDictionaryKey: "CFBundleExecutable") as? String)
+    }
+
+    /// 이 Mac에 있는 모든 앱(Spotlight 기준, 휴지통 제외)과 지금 실행 중인 앱의 ID·이름.
+    /// 앱 ID·이름은 Spotlight가 이미 갖고 있어 함께 받는다 (앱을 하나씩 열어 읽으면 수백 개에 수십 초 걸린다).
+    nonisolated static func allKnownApps() -> (ids: Set<String>, names: Set<String>) {
+        var ids = Set<String>(), names = Set<String>()
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/mdfind")
+        process.arguments = ["-attr", "kMDItemCFBundleIdentifier", "-attr", "kMDItemDisplayName",
+                             "kMDItemContentType == 'com.apple.application-bundle'"]
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = Pipe()
+        if (try? process.run()) != nil {
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            process.waitUntilExit()
+            // "경로   kMDItemCFBundleIdentifier = 앱ID   kMDItemDisplayName = 이름.app"
+            for line in String(decoding: data, as: UTF8.self).split(separator: "\n").map(String.init)
+            where !line.contains("/.Trash/") && !line.hasPrefix("/System/") {
+                if let id = attribute("kMDItemCFBundleIdentifier", in: line), id != "(null)" { ids.insert(id) }
+                if let name = attribute("kMDItemDisplayName", in: line), name != "(null)" {
+                    names.insert(name.hasSuffix(".app") ? String(name.dropLast(4)) : name)
+                }
+            }
+        }
+        for app in NSWorkspace.shared.runningApplications {
+            if let id = app.bundleIdentifier { ids.insert(id) }
+            if let name = app.localizedName { names.insert(name) }
+        }
+        return (ids, names)
+    }
+
+    /// mdfind -attr 출력 한 줄에서 "이름 = 값" (다음 속성 전까지)
+    nonisolated static func attribute(_ key: String, in line: String) -> String? {
+        guard let range = line.range(of: "   \(key) = ") else { return nil }
+        let rest = line[range.upperBound...]
+        let end = rest.range(of: "   kMDItem")?.lowerBound ?? rest.endIndex
+        return String(rest[..<end]).trimmingCharacters(in: .whitespaces)
     }
 
     /// Spotlight가 기록한 마지막 실행 시각

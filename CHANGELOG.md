@@ -2,6 +2,24 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 10:11]
+- [Changed] - 저장소: 아래 수정(커밋 02e2b6e)을 PR #2 브랜치에 push
+
+[2026-10-28 10:10]
+- [Fixed] - Sources/UninstallerModule/UninstallerModel.swift: 흔적 찾기를 설치된 앱 목록을 다 읽기 전에 시작해, 쓰고 있는 Chrome의 데이터(Application Support/Google 등)를 "유력"으로 고르던 문제 — 목록을 다 읽은 뒤에만 시작, 못 읽으면 멈춤
+- [Changed] - Sources/UninstallerModule/UninstallerModel.swift: "설치된 앱"에 Spotlight가 아는 모든 앱과 실행 중인 앱 추가, 앱 ID·이름을 Spotlight 속성으로 받아 29초 → 0.15초
+- [Added] - Tests/UninstallerCoreTests: Chrome·Drive가 설치돼 있으면 Google 폴더·업데이터 제외 테스트 (총 24개)
+- [Changed] - docs/UNINSTALLER.md: "설치된 앱"의 범위
+
+[2026-10-28 10:05]
+- [Changed] - 저장소: 아래 변경(커밋 683394b)을 브랜치 fix/uninstaller-installed-app-names로 push하고 PR #2 생성
+
+[2026-10-28 10:04]
+- [Fixed] - Sources/UninstallerCore/LeftoverScanner.swift: 설치된 Discord의 업데이터(com.discord.discord.ShipIt)가 흔적으로 잡히던 문제 — 앱 ID가 달라도(com.hnc.Discord) ID 속 이름이 설치된 앱 이름과 겹치면 제외, macOS·공용 구성요소(org.cups, org.swift, org.sparkle-project, org.jcef, org.chromium, com.github.electron) 제외
+- [Added] - Sources/UninstallerModule: 전체 선택·전체 해제·확실·유력만 버튼, 남은 흔적을 회사 단위로 묶어 묶음째 선택(일부 선택 표시), 항목마다 찾은 앱 ID·묶음 최근 수정일
+- [Added] - Tests/UninstallerCoreTests: 업데이터 ID가 다른 설치 앱·공용 구성요소 제외 테스트 (총 23개)
+- [Changed] - docs/UNINSTALLER.md: 제외 조건·묶는 방식
+
 [2026-10-28 09:47]
 - [Changed] - 저장소: 아래 변경(커밋 e5aa717)을 브랜치 fix/uninstaller-finder-clipboard로 push하고 PR #1 생성 — 이번부터 main 직접 push 대신 브랜치+PR
 

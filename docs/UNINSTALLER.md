@@ -56,6 +56,14 @@
 
 ## 4. 이미 지운 앱의 흔적 — 등급
 
+### 4-0. "설치된 앱"의 범위
+
+흔적 판단의 기준이 되는 "설치된 앱"은 다음을 모두 합친 것이다. **이 목록을 다 읽기 전에는 흔적 찾기를 시작하지 않고, 읽지 못하면 멈춘다** (빈 목록으로 판단하면 쓰고 있는 앱의 데이터를 흔적으로 잘못 고른다).
+
+- `/Applications`, `~/Applications` (두 단계 아래 폴더까지)
+- Spotlight가 아는 이 Mac의 모든 앱 (`kMDItemContentType == com.apple.application-bundle`, 휴지통·`/System` 제외) — 다운로드 폴더 등 다른 위치의 앱, 앱 안에 숨은 앱(예: `~/Library/Application Support/discord/…/Discord.app`)까지
+- 지금 실행 중인 앱
+
 ### 4-1. 앱 ID 형태 이름
 
 이름이 앱 ID처럼 생긴 항목만 후보로 본다.
@@ -68,7 +76,9 @@
 
 | 제외 조건 | 이유 |
 |---|---|
-| `com.apple.`으로 시작 | macOS 자체 |
+| `com.apple.`, `org.cups.`, `org.swift.`으로 시작 | macOS 자체 (프린터 시스템, Swift 도구 포함) |
+| `org.sparkle-project.`, `org.jcef.`, `org.chromium.`, `com.github.electron`으로 시작 | 여러 앱이 함께 쓰는 구성요소 (자동 업데이트, 앱 안의 웹 화면) |
+| ID 속 이름(4-2의 이름 열쇠)이 설치된 앱의 이름·ID와 관계있음 | ID가 달라도 그 앱의 것일 수 있음 — 예: Discord는 앱이 `com.hnc.Discord`, 업데이터가 `com.discord.discord.ShipIt` |
 | 설치된 앱의 ID이거나 그 하위 (`com.foo.App.ShipIt`) | 설치된 앱의 업데이터·도우미 |
 | 상위 ID(`com.foo.App`)의 앱이 이 Mac에 있음 (LaunchServices 기준, 휴지통 제외) | 같음 |
 | 백그라운드 항목인데 실행할 프로그램이 아직 있음 | 앱 없이 설치되는 서비스(보안 프로그램 등) |
@@ -103,6 +113,10 @@
 예: 설치된 `zoom.us`(ID `us.zoom.xos`) → `Zoom Data` 제외.
 
 `/Users/Shared`에 원래 있는 `SC Info`, `adi`, `Library`, `Shared Items`는 제외.
+
+## 4-3. 화면에서 묶는 방식
+
+"남은 흔적"은 회사 단위(앱 ID 앞 두 부분, 예: `com.riotgames`)로 한 묶음에 보여 준다. 한 회사가 여러 ID를 쓰는 경우(런처·게임·도우미)도 한 번에 고르거나 뺄 수 있다. 이름으로 찾은 묶음과 업데이트 잔여물은 따로 묶는다.
 
 ## 5. 지울 때
 
