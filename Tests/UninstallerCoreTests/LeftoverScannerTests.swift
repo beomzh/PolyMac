@@ -164,6 +164,23 @@ private let app = AppBundleInfo(url: URL(fileURLWithPath: "/Applications/Foo Bar
     #expect(groups.isEmpty)
 }
 
+@Test func groupsAreTitledByAppNotCompany() {
+    func item(_ path: String) -> LeftoverItem { LeftoverItem(url: URL(fileURLWithPath: path), kind: .caches, confidence: .likely, reason: "") }
+    // 회사(ameba·alanyan)가 아니라 앱 이름
+    #expect(LeftoverScanner.appTitle(forID: "com.ameba.TRex", items: [item("/C/com.ameba.TRex")]) == "TRex")
+    #expect(LeftoverScanner.appTitle(forID: "com.alanyan.BatteryMac.BigSurWidget", items: []) == "BatteryMac")
+    // 사람이 지은 폴더 이름이 있으면 그걸로
+    #expect(LeftoverScanner.appTitle(forID: "com.nexon.maplestory.kr.v1",
+                                     items: [item("/AS/MapleStory"), item("/C/com.nexon.maplestory.kr.v1")]) == "MapleStory")
+    // 일반적인 조각은 회사 이름을 붙이고, 소문자뿐이면 첫 글자 대문자
+    #expect(LeftoverScanner.appTitle(forID: "net.battle.app", items: []) == "Battle App")
+    #expect(LeftoverScanner.appTitle(forID: "com.vercel.cli", items: []) == "Vercel Cli")
+    #expect(LeftoverScanner.appTitle(forID: "com.jetbrains.intellij.ce", items: []) == "Intellij")
+    // 도우미·위젯은 같은 앱으로
+    #expect(LeftoverScanner.appKey("com.alanyan.BatteryMac.BigSurWidget") == LeftoverScanner.appKey("com.alanyan.BatteryMac"))
+    #expect(LeftoverScanner.appKey("com.riotgames.RiotGames.RiotClient") != LeftoverScanner.appKey("com.riotgames.LeagueofLegends.LeagueClient"))
+}
+
 @Test func systemAppsAreProtected() {
     #expect(AppBundleInfo(url: URL(fileURLWithPath: "/System/Applications/Notes.app"), bundleID: "com.apple.Notes", name: "Notes").isSystemApp)
     #expect(!app.isSystemApp)

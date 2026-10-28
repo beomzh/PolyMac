@@ -329,6 +329,33 @@ public enum LeftoverScanner {
     /// 회사 단위 묶음 열쇠: "com.riotgames.RiotGames.RiotClient" → "com.riotgames"
     public static func vendorKey(_ id: String) -> String { vendor(id) }
 
+    /// 앱 단위 묶음 열쇠 — 앱 ID 앞 세 부분. 도우미·위젯도 같은 앱으로 묶인다.
+    /// "com.alanyan.BatteryMac.BigSurWidget" → "com.alanyan.batterymac"
+    public static func appKey(_ id: String) -> String {
+        let parts = id.split(separator: ".")
+        return (parts.count >= 3 ? parts.prefix(3).joined(separator: ".") : id).lowercased()
+    }
+
+    /// 지운 앱의 보여 줄 이름. 앱이 이미 없어 진짜 이름을 물어볼 수 없으므로
+    /// 남은 폴더 중 사람이 지은 이름("MapleStory")이 앱 ID의 앱 부분과 같으면 그 이름, 아니면 앱 부분("TRex")
+    public static func appTitle(forID id: String, items: [LeftoverItem]) -> String {
+        let parts = id.split(separator: ".").map(String.init)
+        let component = parts.count >= 3 ? parts[2] : (parts.last ?? id)
+        let key = normalized(component)
+        let human = items.map { strippedName($0.url.lastPathComponent) }
+            .first { bundleIDLike($0) == nil && normalized($0) == key }
+        if let human { return human }
+        // 소문자뿐인 ID 조각은 첫 글자만 대문자로: "intellij" → "Intellij"
+        func display(_ s: String) -> String { s == s.lowercased() ? s.prefix(1).uppercased() + s.dropFirst() : s }
+        // "app"·"cli"처럼 그것만으로는 무슨 앱인지 모르는 조각은 회사 이름을 앞에: "Battle App"
+        let generic: Set<String> = ["app", "cli", "ui", "client", "helper", "agent", "browser", "launcher",
+                                    "bootstrapper", "installer", "desktop", "mac", "macos", "osx"]
+        if parts.count >= 3, generic.contains(component.lowercased()) || component.count <= 3 {
+            return display(parts[1]) + " " + display(component)
+        }
+        return display(component)
+    }
+
     /// 설치된 앱의 이름·ID 각 부분을 정규화한 열쇠 (4자 이상)
     static func installedNameKeys(installedIDs: Set<String>, installedNames: Set<String>) -> [String] {
         installedNames.map(normalized).filter { $0.count >= 4 } + installedIDs.flatMap(nameKeys)

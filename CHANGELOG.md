@@ -2,6 +2,12 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 10:16]
+- [Fixed] - Sources/UninstallerModule/UninstallerModel.swift: "남은 흔적" 묶음 제목이 앱 이름 대신 회사 이름(TRex → ameba, BatteryMac → alanyan)으로 나오던 문제 — 앱 단위(ID 앞 세 부분)로 묶고 앱 이름을 제목으로, 회사·앱 ID는 설명 줄로
+- [Added] - Sources/UninstallerCore/LeftoverScanner.swift: appKey(앱 단위 열쇠), appTitle(남은 폴더의 사람이 지은 이름 → ID의 앱 부분 → 일반 조각이면 회사 이름 붙임)
+- [Added] - Tests/UninstallerCoreTests/LeftoverScannerTests.swift: 앱 이름 제목·앱 단위 묶음 테스트 (총 25개)
+- [Changed] - docs/UNINSTALLER.md: 4-3 화면에서 묶는 방식, 제목 정하는 순서
+
 [2026-10-28 10:11]
 - [Changed] - 저장소: 아래 수정(커밋 02e2b6e)을 PR #2 브랜치에 push
 

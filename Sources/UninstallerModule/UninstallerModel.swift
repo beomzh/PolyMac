@@ -216,7 +216,7 @@ final class UninstallerModel: ObservableObject {
     /// 확실·유력만 (추정은 빼고)
     func selectLikely() { checked = Set(selectable(currentItems.filter { $0.confidence.selectedByDefault })) }
 
-    /// 남은 흔적을 회사(앱 ID 앞 두 부분) 단위로 묶어 보여 준다 — Riot처럼 ID가 여러 개인 앱도 한 묶음
+    /// 남은 흔적을 앱 단위(앱 ID 앞 세 부분)로 묶어 보여 준다 — 도우미·위젯 ID도 같은 앱 묶음
     struct VendorGroup: Identifiable {
         let id: String
         let title: String
@@ -228,21 +228,25 @@ final class UninstallerModel: ObservableObject {
         var order: [String] = []
         var merged: [String: (ids: [String], items: [LeftoverItem])] = [:]
         for group in orphanGroups {
-            // 이름으로 찾은 묶음·업데이트 잔여물은 그대로, 앱 ID 묶음은 회사 단위로
-            let key = group.bundleID.contains(" ") ? group.bundleID : LeftoverScanner.vendorKey(group.bundleID)
+            // 이름으로 찾은 묶음·업데이트 잔여물은 그대로, 앱 ID 묶음은 앱 단위로
+            let key = group.bundleID.contains(" ") ? group.bundleID : LeftoverScanner.appKey(group.bundleID)
             if merged[key] == nil { order.append(key) }
             merged[key, default: ([], [])].ids.append(group.bundleID)
             merged[key, default: ([], [])].items.append(contentsOf: group.items)
         }
         return order.map { key in
             let entry = merged[key]!
-            let isID = !key.contains(" ")
-            let title = isID ? (key.split(separator: ".").last.map(String.init) ?? key) : key
-            let note = isID
-                ? "앱 ID " + (entry.ids.count == 1 ? entry.ids[0] : "\(entry.ids[0]) 외 \(entry.ids.count - 1)개")
-                : (entry.items.first?.reason ?? "")
-            return VendorGroup(id: key, title: title, note: note, items: entry.items)
+            guard !key.contains(" ") else {
+                return VendorGroup(id: key, title: key, note: entry.items.first?.reason ?? "", items: entry.items)
+            }
+            // 가장 짧은 ID(보통 앱 본체)로 이름을 정한다
+            let mainID = entry.ids.min { $0.count < $1.count } ?? entry.ids[0]
+            let company = mainID.split(separator: ".").dropFirst().first.map(String.init) ?? ""
+            let ids = entry.ids.count == 1 ? mainID : "\(mainID) 외 \(entry.ids.count - 1)개"
+            return VendorGroup(id: key, title: LeftoverScanner.appTitle(forID: mainID, items: entry.items),
+                               note: "회사 \(company) · 앱 ID \(ids)", items: entry.items)
         }
+        .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
     }
 
     /// 남은 흔적 항목 → 그 항목을 찾은 앱 ID
