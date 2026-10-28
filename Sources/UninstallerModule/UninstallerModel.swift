@@ -33,6 +33,8 @@ final class UninstallerModel: ObservableObject {
     @Published private(set) var isScanning = false
     @Published private(set) var isDeleting = false
     @Published var status: String?
+    /// 휴지통으로 옮기지 못한 항목 — Finder에서 열어 직접 옮기도록 안내한다
+    @Published private(set) var leftBehind: [URL] = []
     @Published var askConfirm = false
 
     private var receipts: [String] = []
@@ -94,6 +96,7 @@ final class UninstallerModel: ObservableObject {
         items = []
         checked = []
         status = nil
+        leftBehind = []
         inUse = [:]
         appLastUsed = Self.lastUsed(app.url)
         guard !app.isSystemApp, app.bundleID != Bundle.main.bundleIdentifier else {
@@ -119,6 +122,7 @@ final class UninstallerModel: ObservableObject {
         orphanGroups = []
         checked = []
         status = nil
+        leftBehind = []
         isScanning = true
         // 설치된 앱 목록이 아직이면 다 읽은 뒤 이어서 한다
         guard appsLoaded else {
@@ -216,7 +220,7 @@ final class UninstallerModel: ObservableObject {
     /// 확실·유력만 (추정은 빼고)
     func selectLikely() { checked = Set(selectable(currentItems.filter { $0.confidence.selectedByDefault })) }
 
-    /// 남은 흔적을 회사(앱 ID 앞 두 부분) 단위로 묶어 보여 준다 — Riot처럼 ID가 여러 개인 앱도 한 묶음
+    /// 남은 흔적을 앱 단위(앱 ID 앞 세 부분)로 묶어 보여 준다 — 도우미·위젯 ID도 같은 앱 묶음
     struct VendorGroup: Identifiable {
         let id: String
         let title: String
@@ -228,21 +232,25 @@ final class UninstallerModel: ObservableObject {
         var order: [String] = []
         var merged: [String: (ids: [String], items: [LeftoverItem])] = [:]
         for group in orphanGroups {
-            // 이름으로 찾은 묶음·업데이트 잔여물은 그대로, 앱 ID 묶음은 회사 단위로
-            let key = group.bundleID.contains(" ") ? group.bundleID : LeftoverScanner.vendorKey(group.bundleID)
+            // 이름으로 찾은 묶음·업데이트 잔여물은 그대로, 앱 ID 묶음은 앱 단위로
+            let key = group.bundleID.contains(" ") ? group.bundleID : LeftoverScanner.appKey(group.bundleID)
             if merged[key] == nil { order.append(key) }
             merged[key, default: ([], [])].ids.append(group.bundleID)
             merged[key, default: ([], [])].items.append(contentsOf: group.items)
         }
         return order.map { key in
             let entry = merged[key]!
-            let isID = !key.contains(" ")
-            let title = isID ? (key.split(separator: ".").last.map(String.init) ?? key) : key
-            let note = isID
-                ? "앱 ID " + (entry.ids.count == 1 ? entry.ids[0] : "\(entry.ids[0]) 외 \(entry.ids.count - 1)개")
-                : (entry.items.first?.reason ?? "")
-            return VendorGroup(id: key, title: title, note: note, items: entry.items)
+            guard !key.contains(" ") else {
+                return VendorGroup(id: key, title: key, note: entry.items.first?.reason ?? "", items: entry.items)
+            }
+            // 가장 짧은 ID(보통 앱 본체)로 이름을 정한다
+            let mainID = entry.ids.min { $0.count < $1.count } ?? entry.ids[0]
+            let company = mainID.split(separator: ".").dropFirst().first.map(String.init) ?? ""
+            let ids = entry.ids.count == 1 ? mainID : "\(mainID) 외 \(entry.ids.count - 1)개"
+            return VendorGroup(id: key, title: LeftoverScanner.appTitle(forID: mainID, items: entry.items),
+                               note: "회사 \(company) · 앱 ID \(ids)", items: entry.items)
         }
+        .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
     }
 
     /// 남은 흔적 항목 → 그 항목을 찾은 앱 ID
@@ -276,21 +284,23 @@ final class UninstallerModel: ObservableObject {
             AppPaths.appendLine("\(Date())  휴지통으로 \(moved)개 이동, 실패 \(failed.count)개: " + targets.map(\.url.path).joined(separator: " | "),
                                 to: AppPaths.dataDirectory.appendingPathComponent("uninstall-log.txt"))
             isDeleting = false
+            leftBehind = failed
             let size = ByteCountFormatter.string(fromByteCount: freed, countStyle: .file)
             status = failed.isEmpty
                 ? "휴지통으로 \(moved)개(\(size))를 옮겼습니다. Finder 휴지통에서 \"되돌려 놓기\"로 복구할 수 있습니다."
-                : "\(moved)개를 옮겼고 \(failed.count)개는 옮기지 못했습니다 — " + failed.prefix(3).map(Self.whyLeft).joined(separator: " · ")
+                : "\(moved)개를 옮겼고 \(failed.count)개는 옮기지 못했습니다."
             if mode == .apps, let app = selectedApp {
                 if !FileManager.default.fileExists(atPath: app.url.path) {
                     apps.removeAll { $0.id == app.id }
-                    items = items.filter { failed.contains($0.url) }
+                    items = LeftoverScanner.stillPresent(items)
                     checked = []
                 } else {
                     scan(app)
                 }
             } else {
+                // 휴지통으로 간 것만 뺀다 — 고르지 않은 항목·옮기지 못한 항목은 그대로
                 orphanGroups = orphanGroups.compactMap { g in
-                    let left = g.items.filter { failed.contains($0.url) }
+                    let left = LeftoverScanner.stillPresent(g.items)
                     return left.isEmpty ? nil : LeftoverScanner.OrphanGroup(bundleID: g.bundleID, items: left)
                 }
                 checked = []
@@ -374,12 +384,17 @@ final class UninstallerModel: ObservableObject {
     }
 
     /// 남은 이유를 사람이 알아보게
-    static func whyLeft(_ url: URL) -> String {
-        let path = (url.path as NSString).abbreviatingWithTildeInPath
-        if url.path.contains("/Library/Containers/") || url.path.contains("/Library/Group Containers/") {
-            return "\(path) (macOS가 다른 앱 데이터로 보호 — 허용 창에서 허용하거나 Finder에서 직접 휴지통으로)"
-        }
-        return path
+    /// 못 옮긴 항목을 Finder에서 골라 둔 채로 연다
+    func revealLeftBehind() {
+        let present = leftBehind.filter { (try? FileManager.default.attributesOfItem(atPath: $0.path)) != nil }
+        leftBehind = present
+        guard !present.isEmpty else { status = "남은 항목이 없습니다 — 이미 휴지통으로 옮겨졌습니다"; return }
+        NSWorkspace.shared.activateFileViewerSelecting(present)
+    }
+
+    /// 못 옮긴 항목 중 macOS가 폴더 자체를 지키는 앱 데이터 폴더(Containers)가 있는지
+    var leftBehindHasContainers: Bool {
+        leftBehind.contains { $0.path.contains("/Library/Containers/") || $0.path.contains("/Library/Group Containers/") }
     }
 
     /// NSWorkspace로 휴지통 이동 (Finder가 못 옮긴 항목용). 남은 경로를 돌려준다.

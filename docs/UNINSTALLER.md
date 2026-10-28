@@ -116,7 +116,13 @@
 
 ## 4-3. 화면에서 묶는 방식
 
-"남은 흔적"은 회사 단위(앱 ID 앞 두 부분, 예: `com.riotgames`)로 한 묶음에 보여 준다. 한 회사가 여러 ID를 쓰는 경우(런처·게임·도우미)도 한 번에 고르거나 뺄 수 있다. 이름으로 찾은 묶음과 업데이트 잔여물은 따로 묶는다.
+"남은 흔적"은 앱 단위(앱 ID 앞 세 부분, 예: `com.ameba.TRex`)로 한 묶음에 보여 준다. 같은 앱의 도우미·위젯 ID(`com.alanyan.BatteryMac.BigSurWidget`)도 그 앱 묶음에 들어가고, 한 회사의 서로 다른 앱(`com.riotgames.RiotGames`, `com.riotgames.LeagueofLegends`)은 따로 묶는다. 이름으로 찾은 묶음과 업데이트 잔여물은 따로 묶는다.
+
+묶음 제목은 앱 이름이다. 앱이 이미 지워져 진짜 이름을 물어볼 곳이 없으므로 다음 순서로 정한다. 회사 이름과 앱 ID는 제목 아래 설명 줄에 보여 준다.
+
+1. 남은 폴더 중 사람이 지은 이름이 앱 ID의 앱 부분과 같으면 그 이름 (`com.nexon.maplestory` → `Application Support/MapleStory` → "MapleStory")
+2. 아니면 앱 ID의 앱 부분 (`com.ameba.TRex` → "TRex"). 소문자뿐이면 첫 글자만 대문자로
+3. 앱 부분이 `app`·`cli`처럼 일반적이거나 3자 이하면 회사 이름을 앞에 붙인다 (`net.battle.app` → "Battle App")
 
 ## 5. 지울 때
 

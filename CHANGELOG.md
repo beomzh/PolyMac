@@ -2,6 +2,30 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 10:28]
+- [Changed] - 저장소: 위 수정(커밋 963d32d)을 PR #3 브랜치에 push
+
+[2026-10-28 10:28]
+- [Added] - Sources/UninstallerModule/UninstallerView.swift, UninstallerModel.swift: 휴지통으로 못 옮긴 항목 안내 상자 — "Finder에서 열기"로 그 항목을 골라 둔 채 Finder를 열고 휴지통으로 옮기는 방법 안내, Containers 폴더는 macOS가 폴더 자체를 지킨다는 설명
+- [Fixed] - Sources/PolyMacCore/Toast.swift: 알림 문구가 흰 글자 고정이라 라이트 모드에서 잘 안 보이던 문제 — 시스템 모드를 따르는 글자색·박스(popover 재질, 테두리)
+
+[2026-10-28 10:19]
+- [Changed] - 저장소: 위 수정(커밋 3611435)을 PR #3 브랜치에 push
+
+[2026-10-28 10:19]
+- [Fixed] - Sources/UninstallerModule/UninstallerModel.swift: 남은 흔적에서 하나를 지우면 고르지 않은 다른 묶음까지 목록에서 사라져 "다시 찾기"가 필요하던 문제 — 디스크에 아직 있는 항목은 목록에 그대로 둠 (앱 모드도 같음)
+- [Added] - Sources/UninstallerCore/LeftoverScanner.swift: stillPresent(지운 뒤 남은 항목, 링크는 따라가지 않음)
+- [Added] - Tests/UninstallerCoreTests/LeftoverScannerTests.swift: 지운 항목만 목록에서 빠지는지 테스트 (총 26개)
+
+[2026-10-28 10:16]
+- [Changed] - 저장소: 위 수정(커밋 88d76b8)을 push, PR #3 생성
+
+[2026-10-28 10:16]
+- [Fixed] - Sources/UninstallerModule/UninstallerModel.swift: "남은 흔적" 묶음 제목이 앱 이름 대신 회사 이름(TRex → ameba, BatteryMac → alanyan)으로 나오던 문제 — 앱 단위(ID 앞 세 부분)로 묶고 앱 이름을 제목으로, 회사·앱 ID는 설명 줄로
+- [Added] - Sources/UninstallerCore/LeftoverScanner.swift: appKey(앱 단위 열쇠), appTitle(남은 폴더의 사람이 지은 이름 → ID의 앱 부분 → 일반 조각이면 회사 이름 붙임)
+- [Added] - Tests/UninstallerCoreTests/LeftoverScannerTests.swift: 앱 이름 제목·앱 단위 묶음 테스트 (총 25개)
+- [Changed] - docs/UNINSTALLER.md: 4-3 화면에서 묶는 방식, 제목 정하는 순서
+
 [2026-10-28 10:11]
 - [Changed] - 저장소: 아래 수정(커밋 02e2b6e)을 PR #2 브랜치에 push
 
