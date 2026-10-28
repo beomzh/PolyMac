@@ -280,7 +280,7 @@ private final class PinCanvasView: NSView {
         case 53, 51, 117:
             if pin?.isEditingMarkup == true, event.keyCode == 53 { pin?.endEditing() } else { pin?.closePin() }
         default:
-            if event.modifierFlags.contains(.command), event.charactersIgnoringModifiers == "c" {
+            if event.modifierFlags.contains(.command), event.latinKey == "c" {
                 pin?.copyFromKeyboard()
             } else {
                 super.keyDown(with: event)

@@ -152,7 +152,7 @@ final class ClipboardPanelController {
         default:
             break
         }
-        guard cmd, let key = event.charactersIgnoringModifiers?.lowercased() else { return false }
+        guard cmd, let key = event.latinKey else { return false }
         if key == "p", let id = model.selected?.id {
             callbacks.togglePin(id)
             model.togglePin(id)

@@ -574,7 +574,7 @@ final class SelectionView: NSView {
         onActivity?()
         if event.keyCode == 53 { onFinish?(nil); return } // Esc
         let cmd = event.modifierFlags.contains(.command)
-        let key = event.charactersIgnoringModifiers?.lowercased()
+        let key = event.latinKey
         if cmd, key == "a" {
             reset()
             selection = bounds

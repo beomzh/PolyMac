@@ -8,11 +8,13 @@ public enum Toast {
     private static var hideWork: DispatchWorkItem?
 
     public static func show(_ message: String, duration: TimeInterval = 2) {
-        show(message, duration: duration, style: .current)
+        let style = ToastStyle.current
+        guard style.isEnabled else { return }
+        show(message, duration: style.duration(for: duration), style: style)
     }
 
-    /// style: 환경 설정 미리보기처럼 저장 전 모양으로 띄울 때
-    public static func show(_ message: String, duration: TimeInterval = 2, style: ToastStyle) {
+    /// style: 환경 설정 미리보기처럼 저장 전 모양으로 띄울 때. 알림을 꺼 두었어도 띄우고, duration은 그대로 쓴다.
+    public static func show(_ message: String, duration: TimeInterval, style: ToastStyle) {
         let style = style.clamped
         let pad = CGFloat(style.padding)
         let label = NSTextField(wrappingLabelWithString: message)
@@ -55,7 +57,7 @@ public enum Toast {
 
         let screen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
         let visible = screen?.visibleFrame ?? .zero
-        panel.setFrame(NSRect(x: visible.midX - size.width / 2, y: visible.minY + 80, width: size.width, height: size.height), display: true)
+        panel.setFrame(NSRect(origin: style.position.origin(for: size, in: visible), size: size), display: true)
         panel.alphaValue = 1
         panel.orderFrontRegardless()
 

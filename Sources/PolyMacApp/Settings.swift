@@ -265,7 +265,7 @@ private struct LanguagePane: View {
     }
 }
 
-/// 안내 토스트의 글자색·배경색·글자 크기·알림창 크기. 바꾸면 바로 저장하고 미리보기를 띄운다.
+/// 안내 토스트 켜기·위치·표시 시간·글자색·배경색·글자 크기·알림창 크기. 바꾸면 바로 저장하고 미리보기를 띄운다.
 private struct NotificationsPane: View {
     @State private var style = ToastStyle.current
 
@@ -275,6 +275,29 @@ private struct NotificationsPane: View {
 
     var body: some View {
         Form {
+            Section {
+                Toggle(L("알림 보이기", "Show notifications"), isOn: $style.isEnabled)
+                Picker(L("위치", "Position"), selection: $style.position) {
+                    ForEach(ToastPosition.allCases, id: \.self) { Text(Self.title($0)).tag($0) }
+                }
+                .disabled(!style.isEnabled)
+                LabeledContent(L("표시 시간", "Display time")) {
+                    HStack {
+                        Slider(value: $style.seconds, in: ToastStyle.secondsRange, step: 0.5).frame(minWidth: 180)
+                        Text(L("\(style.seconds.formatted())초", "\(style.seconds.formatted()) s")).monospacedDigit().frame(width: 56, alignment: .trailing)
+                    }
+                }
+                .disabled(!style.isEnabled)
+            } header: {
+                Text(L("알림", "Notifications"))
+            } footer: {
+                Text(style.isEnabled
+                     ? L("실패·권한 안내처럼 원래 더 오래 뜨는 알림은 같은 비율로 길어집니다.",
+                         "Messages that normally stay longer (errors, permission notices) scale by the same ratio.")
+                     : L("모든 안내 알림이 꺼집니다 — 권한이 필요하거나 동작이 실패해도 알림이 뜨지 않습니다. 미리보기는 그대로 볼 수 있습니다.",
+                         "All notifications are hidden, including permission and error notices. Preview still works."))
+                    .font(.caption).foregroundStyle(style.isEnabled ? Color.secondary : Color.orange)
+            }
             Section {
                 ColorChoiceRow(title: L("글자색", "Text color"), hex: $style.textColor, fallback: .labelColor,
                                swatches: ["#FFFFFF", "#000000", "#8E8E93", "#FFD60A", "#0A84FF", "#FF453A"], opacity: false)
@@ -294,7 +317,7 @@ private struct NotificationsPane: View {
             }
             Section {
                 HStack {
-                    Button(L("미리보기", "Preview")) { Toast.show(sample, duration: 3, style: style) }
+                    Button(L("미리보기", "Preview")) { Toast.show(sample, duration: style.seconds, style: style) }
                     Spacer()
                     Button(L("기본값으로", "Restore Defaults")) { style = ToastStyle() }
                         .disabled(style == ToastStyle())
@@ -304,7 +327,19 @@ private struct NotificationsPane: View {
         .formStyle(.grouped)
         .onChange(of: style) { _, new in
             new.save()
-            Toast.show(sample, duration: 2, style: new)
+            Toast.show(sample, duration: new.seconds, style: new)
+        }
+    }
+
+    private static func title(_ position: ToastPosition) -> String {
+        switch position {
+        case .bottomCenter: return L("아래 가운데 (기본)", "Bottom center (default)")
+        case .bottomLeft: return L("왼쪽 아래", "Bottom left")
+        case .bottomRight: return L("오른쪽 아래", "Bottom right")
+        case .center: return L("화면 가운데", "Center")
+        case .topCenter: return L("위 가운데", "Top center")
+        case .topLeft: return L("왼쪽 위", "Top left")
+        case .topRight: return L("오른쪽 위", "Top right")
         }
     }
 
