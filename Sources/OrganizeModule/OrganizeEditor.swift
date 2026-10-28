@@ -311,6 +311,11 @@ private struct ConditionEditor: View {
                 }
             case .sizeGreaterThan, .sizeLessThan, .addedMoreThan, .notOpenedFor:
                 TextField("", value: $row.number, format: .number).frame(width: 100)
+            case .allFiles:
+                Text(L("감시 폴더 바로 아래의 모든 파일 (다운로드 중인 파일·폴더 제외). 다른 조건과 \"모두 맞을 때\"로 묶으면 그 조건만 남습니다.",
+                       "Every file directly in the watched folders (except downloads in progress and folders). Combined with \"All match\", only the other conditions matter."))
+                    .font(.caption)
+                    .foregroundStyle(.orange)
             case .isDuplicate:
                 Text(L("\"이름 (1).pdf\"처럼 번호가 붙었고 원래 파일과 내용이 똑같을 때", "Numbered copies like \"name (1).pdf\" whose content equals the original"))
                     .font(.caption)

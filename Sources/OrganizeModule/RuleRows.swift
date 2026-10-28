@@ -4,7 +4,7 @@ import PolyMacCore
 /// 편집 화면에서 다루기 쉬운 조건 한 줄. Condition(중첩 enum)과 서로 바꾼다.
 public struct ConditionRow: Identifiable, Equatable, Sendable {
     public enum Kind: String, CaseIterable, Sendable {
-        case fileExtension, kind, name, sourceDomain, sizeGreaterThan, sizeLessThan, addedMoreThan, notOpenedFor, isDuplicate
+        case allFiles, fileExtension, kind, name, sourceDomain, sizeGreaterThan, sizeLessThan, addedMoreThan, notOpenedFor, isDuplicate
     }
 
     public var id = UUID()
@@ -46,6 +46,8 @@ public struct ConditionRow: Identifiable, Equatable, Sendable {
             kind = .notOpenedFor; number = days
         case .isDuplicate:
             kind = .isDuplicate
+        case .allFiles:
+            kind = .allFiles
         }
     }
 
@@ -75,6 +77,8 @@ public struct ConditionRow: Identifiable, Equatable, Sendable {
             base = .notOpenedFor(days: max(number, 0))
         case .isDuplicate:
             base = .isDuplicate
+        case .allFiles:
+            base = .allFiles
         }
         guard let base else { return nil }
         return negated ? .not(condition: base) : base
@@ -91,6 +95,7 @@ public struct ConditionRow: Identifiable, Equatable, Sendable {
         case .addedMoreThan: return L("받은 지 (일) 지남", "Added more than (days) ago")
         case .notOpenedFor: return L("안 연 지 (일) 지남", "Not opened for (days)")
         case .isDuplicate: return L("같은 내용의 파일이 이미 있음", "Same file already exists")
+        case .allFiles: return L("모든 파일", "All files")
         }
     }
 }

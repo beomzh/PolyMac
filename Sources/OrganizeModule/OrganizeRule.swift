@@ -20,6 +20,8 @@ public indirect enum Condition: Codable, Sendable, Equatable {
     case addedMoreThan(days: Double)
     case notOpenedFor(days: Double)
     case isDuplicate
+    /// 감시 폴더의 모든 파일 (다운로드 중인 파일·폴더는 엔진이 먼저 거른다). 조건 없는 규칙과 달리 직접 골라야 한다.
+    case allFiles
     case not(condition: Condition)
 }
 
