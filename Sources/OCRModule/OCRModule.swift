@@ -32,7 +32,31 @@ public final class OCRModule: PolyMacModule {
     public func menuItems() -> [NSMenuItem] {
         let item = NSMenuItem(title: L("클립보드 이미지에서 텍스트 추출", "Extract Text from Clipboard Image"), action: #selector(recognizeFromMenu), keyEquivalent: "")
         item.target = self
-        return [item]
+        let lines = NSMenuItem(title: L("줄바꿈: ", "Line breaks: ") + Self.title(OCRLineMode.current), action: nil, keyEquivalent: "")
+        let sub = NSMenu()
+        for mode in OCRLineMode.allCases {
+            let option = NSMenuItem(title: Self.title(mode), action: #selector(setLineMode(_:)), keyEquivalent: "")
+            option.target = self
+            option.representedObject = mode.rawValue
+            option.state = mode == OCRLineMode.current ? .on : .off
+            sub.addItem(option)
+        }
+        lines.submenu = sub
+        return [item, lines]
+    }
+
+    private static func title(_ mode: OCRLineMode) -> String {
+        switch mode {
+        case .keep: return L("보이는 줄 그대로", "Keep lines as shown")
+        case .paragraphs: return L("문단으로 잇기", "Join into paragraphs")
+        case .singleLine: return L("한 줄로", "Single line")
+        }
+    }
+
+    @objc private func setLineMode(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let mode = OCRLineMode(rawValue: raw) else { return }
+        OCRLineMode.current = mode
+        context.toast(L("텍스트 추출 줄바꿈: ", "Text recognition line breaks: ") + Self.title(mode))
     }
 
     @objc private func recognizeFromMenu() { recognizeClipboardImage() }

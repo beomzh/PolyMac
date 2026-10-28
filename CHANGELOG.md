@@ -2,6 +2,13 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 14:40]
+- [Added] - Sources/OCRModule/LineJoiner.swift: 텍스트 추출 줄바꿈 정리 — 보이는 줄 그대로 / 문단으로 잇기(줄 간격·들여쓰기·짧은 줄로 문단 판단) / 한 줄로, 영어 줄 끝 하이픈 잇기
+- [Changed] - Sources/OCRModule/TextRecognizer.swift: 인식한 줄의 위치를 함께 넘겨 줄바꿈 방법대로 합침
+- [Added] - Sources/OCRModule/OCRModule.swift: 메뉴 › 줄바꿈 하위 메뉴 (UserDefaults ocr.lineMode)
+- [Added] - Package.swift, Tests/OCRModuleTests: 줄바꿈 정리 테스트
+- [Changed] - README.md: OCR 줄바꿈 안내, 개발 현황 표(OCR 줄바꿈·Core 환경설정) 갱신
+
 [2026-10-28 14:34]
 - [Added] - Sources/UninstallerCore/LeftoverItem.swift, Sources/UninstallerModule/UninstallerModel.swift: 설치 기록(pkg)은 휴지통 대신 pkgutil --forget(관리자 암호 한 번), 패키지 ID는 영문·숫자·.-_만 허용
 - [Added] - Sources/UninstallerModule/UninstallerModel.swift, UninstallerView.swift: "목록 저장…" — 지우기 전 고른 항목(없으면 전체)을 .tsv로

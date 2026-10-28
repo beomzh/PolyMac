@@ -5,7 +5,8 @@ import Vision
 /// Apple Vision 온디바이스 OCR. 네트워크를 쓰지 않는다.
 public enum TextRecognizer {
     /// QR·바코드 내용이 있으면 먼저, 그 뒤에 인식한 글자를 줄 단위로.
-    public static func recognize(_ image: CGImage, languages: [String] = ["ko-KR", "en-US"]) async throws -> String {
+    public static func recognize(_ image: CGImage, languages: [String] = ["ko-KR", "en-US"],
+                                 lineMode: OCRLineMode = .current) async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 let textRequest = VNRecognizeTextRequest()
@@ -17,9 +18,11 @@ public enum TextRecognizer {
                 do {
                     try handler.perform([textRequest, barcodeRequest])
                     let codes = (barcodeRequest.results ?? []).compactMap(\.payloadStringValue)
-                    let lines = (textRequest.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+                    let lines = (textRequest.results ?? []).compactMap { observation in
+                        observation.topCandidates(1).first.map { LineJoiner.Line(text: $0.string, box: observation.boundingBox) }
+                    }
                     var parts = codes
-                    if !lines.isEmpty { parts.append(lines.joined(separator: "\n")) }
+                    if !lines.isEmpty { parts.append(LineJoiner.join(lines, mode: lineMode)) }
                     continuation.resume(returning: parts.joined(separator: "\n"))
                 } catch {
                     continuation.resume(throwing: error)
