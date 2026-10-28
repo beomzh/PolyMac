@@ -13,7 +13,7 @@ public final class WindowModule: PolyMacModule {
     )
 
     enum Action: String {
-        case left, right, top, bottom, maximize, center, nextDisplay, previousDisplay, undo
+        case left, right, top, bottom, topLeft, topRight, bottomLeft, bottomRight, maximize, center, nextDisplay, previousDisplay, undo
     }
 
     private let context: ModuleContext
@@ -33,11 +33,16 @@ public final class WindowModule: PolyMacModule {
         if !Permissions.accessibility { Permissions.requestAccessibility() }
 
         // Spectacle 기본 단축키와 같게
-        let bindings: [(KeyCombo, Action, String)] = [
+        // 4분의 1은 기본 단축키 없음 — 환경 설정 › 단축키에서 지정하면 동작
+        let bindings: [(KeyCombo?, Action, String)] = [
             (KeyCombo(kVK_LeftArrow, [.option, .command]), .left, L("왼쪽 절반 (반복: ⅓ → ⅔)", "Left half (repeat: ⅓ → ⅔)")),
             (KeyCombo(kVK_RightArrow, [.option, .command]), .right, L("오른쪽 절반 (반복: ⅓ → ⅔)", "Right half (repeat: ⅓ → ⅔)")),
             (KeyCombo(kVK_UpArrow, [.option, .command]), .top, L("위쪽 절반", "Top half")),
             (KeyCombo(kVK_DownArrow, [.option, .command]), .bottom, L("아래쪽 절반", "Bottom half")),
+            (nil, .topLeft, L("왼쪽 위 4분의 1", "Top-left quarter")),
+            (nil, .topRight, L("오른쪽 위 4분의 1", "Top-right quarter")),
+            (nil, .bottomLeft, L("왼쪽 아래 4분의 1", "Bottom-left quarter")),
+            (nil, .bottomRight, L("오른쪽 아래 4분의 1", "Bottom-right quarter")),
             (KeyCombo(kVK_ANSI_F, [.option, .command]), .maximize, L("최대화", "Maximize")),
             (KeyCombo(kVK_ANSI_C, [.option, .command]), .center, L("가운데", "Center")),
             (KeyCombo(kVK_RightArrow, [.control, .option, .command]), .nextDisplay, L("다음 디스플레이", "Next display")),
@@ -132,6 +137,11 @@ public final class WindowModule: PolyMacModule {
             return CGRect(x: area.minX, y: area.minY, width: area.width, height: area.height / 2)
         case .bottom:
             return CGRect(x: area.minX, y: area.minY + area.height / 2, width: area.width, height: area.height / 2)
+        case .topLeft, .topRight, .bottomLeft, .bottomRight:
+            let w = area.width / 2, h = area.height / 2
+            let x = action == .topLeft || action == .bottomLeft ? area.minX : area.maxX - w
+            let y = action == .topLeft || action == .topRight ? area.minY : area.minY + h
+            return CGRect(x: x, y: y, width: w, height: h)
         case .maximize:
             return area
         case .center:

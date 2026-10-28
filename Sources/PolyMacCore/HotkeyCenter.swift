@@ -99,7 +99,8 @@ public final class HotkeyCenter {
         public var id: String { key }
         public let name: String
         public let owner: String
-        public let defaultCombo: KeyCombo
+        /// nil = 기본으로 꺼 둔 단축키 (사용자가 직접 지정해야 동작)
+        public let defaultCombo: KeyCombo?
         /// nil = 사용자가 끈 단축키
         public let combo: KeyCombo?
         /// combo가 있는데 false면 다른 앱이 이미 같은 조합을 쓰고 있다.
@@ -112,7 +113,7 @@ public final class HotkeyCenter {
         let key: String
         let name: String
         let owner: String
-        let defaultCombo: KeyCombo
+        let defaultCombo: KeyCombo?
         let handler: @MainActor () -> Void
         /// 전역 등록 없이 조합만 관리하는 단축키 (Finder 잘라내기처럼 특정 앱 안에서 직접 처리)
         var onLocalChange: (@MainActor (KeyCombo?) -> Void)?
@@ -140,7 +141,7 @@ public final class HotkeyCenter {
         }
     }
 
-    public func register(key: String, defaultCombo: KeyCombo, name: String, owner: String, handler: @escaping @MainActor () -> Void) {
+    public func register(key: String, defaultCombo: KeyCombo?, name: String, owner: String, handler: @escaping @MainActor () -> Void) {
         installHandlerIfNeeded()
         if entries[key] == nil { order.append(key) }
         unregisterRef(key)
@@ -213,7 +214,7 @@ public final class HotkeyCenter {
 
     // MARK: - 내부
 
-    private func storedCombo(for key: String, default defaultCombo: KeyCombo) -> KeyCombo? {
+    private func storedCombo(for key: String, default defaultCombo: KeyCombo?) -> KeyCombo? {
         guard let stored = UserDefaults.standard.string(forKey: "hotkey.\(key)") else { return defaultCombo }
         if stored == "none" { return nil }
         return KeyCombo(storageString: stored) ?? defaultCombo

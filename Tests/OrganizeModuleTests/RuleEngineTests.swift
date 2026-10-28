@@ -69,3 +69,20 @@ private func settings(_ rules: [OrganizeRule]) -> OrganizeSettings {
     let decoded = try JSONDecoder().decode(OrganizeSettings.self, from: JSONEncoder().encode(s))
     #expect(decoded == s)
 }
+
+@Test func waitsForRecentlyModifiedOrBusyFiles() {
+    let s = settings([OrganizeRule(name: "all", conditions: [.allFiles], actions: [.trash])])
+    // 오래전에 받았어도 방금 덮어쓰거나 고쳐 저장했으면 기다린다
+    #expect(RuleEngine.plan(for: FileFacts(name: "a.pdf", size: 9, addedAt: daysAgo(30), modifiedAt: now.addingTimeInterval(-2)), settings: s, now: now).isEmpty)
+    #expect(RuleEngine.plan(for: FileFacts(name: "a.pdf", size: 9, addedAt: daysAgo(30), isBusy: true), settings: s, now: now).isEmpty)
+    #expect(!RuleEngine.plan(for: FileFacts(name: "a.pdf", size: 9, addedAt: daysAgo(30), modifiedAt: daysAgo(1)), settings: s, now: now).isEmpty)
+}
+
+@Test func needsOnlyWhatEnabledRulesUse() {
+    #expect(RuleEngine.needs(settings([OrganizeRule(name: "pdf", conditions: [.fileExtension(extensions: ["pdf"])], actions: [.trash])])) == .init())
+    let s = settings([
+        OrganizeRule(name: "dup", conditions: [.not(condition: .isDuplicate)], actions: [.trash]),
+        OrganizeRule(name: "site", isEnabled: false, conditions: [.sourceDomain(domains: ["a.com"])], actions: [.trash]),
+    ])
+    #expect(RuleEngine.needs(s) == .init(spotlight: false, duplicate: true))
+}

@@ -2,6 +2,18 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 16:01]
+- [Changed] - Sources/OrganizeModule/OrganizeModule.swift `scan`, `pendingPlans`: 폴더 검사를 백그라운드로 옮김(큰 파일 내용 비교·Spotlight 조회 동안 메뉴·단축키가 멈추지 않게), 검사 중 새 요청은 겹쳐 돌지 않고 끝난 뒤 한 번 더
+- [Added] - Sources/OrganizeModule/OrganizeModule.swift `FileStamp`, `executeAll`: 옮기기 직전 크기·수정 시각·파일 번호를 다시 비교해 검사 뒤 바뀐(복사·덮어쓰기 중) 파일은 건너뛰고 나중에 재검사
+- [Changed] - Sources/OrganizeModule/OrganizeModule.swift `facts`: 켜진 규칙이 안 쓰는 Spotlight·중복 비교는 읽지 않음, Finder 복사 중 표시(생성일 1984-01-24) 감지
+- [Added] - Sources/OrganizeModule/RuleEngine.swift `FileFacts.modifiedAt`, `isBusy`, `RuleEngine.needs`: 방금 덮어쓰거나 고쳐 저장한 파일도 대기 시간만큼 기다림
+- [Added] - Sources/WindowModule/WindowModule.swift `Action.topLeft` 등: 4분의 1 배치 4종, 기본 단축키 없음
+- [Changed] - Sources/PolyMacCore/HotkeyCenter.swift `defaultCombo`, Sources/PolyMacCore/PolyMacModule.swift `hotkey`: 기본 단축키 없는 동작 등록 가능
+- [Added] - Sources/PolyMacApp/ShortcutSettings.swift `clear`: 단축키 줄마다 지우기(사용 안 함) 버튼
+- [Added] - Tests/OrganizeModuleTests/RuleEngineTests.swift: 수정·복사 중 대기, needs 판정 테스트
+- [Fixed] - README.md: 구현 안 된 기능에 (예정) 표시, 핀 고정 키 P→F, 중복·모든 파일 조건 JSON 설명, 내보내기 문구 정정, 4분의 1 단축키·검사 안전장치 안내
+- [Changed] - docs/ROADMAP.md: 4분의 1 배치 단축키 완료
+
 [2026-10-28 15:46]
 - [Changed] - feat/normalize-folders: PR #7에 미리보기 모드 확인 후 정리 push
 

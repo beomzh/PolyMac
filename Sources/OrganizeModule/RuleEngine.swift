@@ -10,14 +10,21 @@ public struct FileFacts: Sendable {
     /// 다운로드 출처 URL들 (kMDItemWhereFroms)
     public var sourceURLs: [String]
     public var isDuplicate: Bool
+    /// 마지막으로 내용이 바뀐 때. 덮어쓰기·수정 저장은 추가된 날짜를 바꾸지 않으므로 따로 본다.
+    public var modifiedAt: Date?
+    /// 아직 쓰는 중 (Finder가 복사하는 동안 붙이는 표시)
+    public var isBusy: Bool
 
-    public init(name: String, size: Int64, addedAt: Date, lastOpenedAt: Date? = nil, sourceURLs: [String] = [], isDuplicate: Bool = false) {
+    public init(name: String, size: Int64, addedAt: Date, lastOpenedAt: Date? = nil, sourceURLs: [String] = [], isDuplicate: Bool = false,
+                modifiedAt: Date? = nil, isBusy: Bool = false) {
         self.name = name
         self.size = size
         self.addedAt = addedAt
         self.lastOpenedAt = lastOpenedAt
         self.sourceURLs = sourceURLs
         self.isDuplicate = isDuplicate
+        self.modifiedAt = modifiedAt
+        self.isBusy = isBusy
     }
 
     public var fileExtension: String { (name as NSString).pathExtension.lowercased() }
@@ -58,7 +65,10 @@ public enum RuleEngine {
     public static func plan(for file: FileFacts, settings: OrganizeSettings, now: Date = Date()) -> [PlannedStep] {
         guard settings.isEnabled else { return [] }
         if settings.ignoredExtensions.contains(file.fileExtension) { return [] }
-        if now.timeIntervalSince(file.addedAt) < settings.settleDelay { return [] }
+        // 받은 직후·복사 중·방금 고쳐 저장한 파일은 기다린다
+        if file.isBusy { return [] }
+        let lastChange = max(file.addedAt, file.modifiedAt ?? .distantPast)
+        if now.timeIntervalSince(lastChange) < settings.settleDelay { return [] }
 
         var steps: [PlannedStep] = []
         for rule in settings.rules where rule.isEnabled && matches(rule, file, now: now) {
@@ -70,6 +80,26 @@ public enum RuleEngine {
             if rule.stopAfterMatch { break }
         }
         return steps
+    }
+
+    /// 켜진 규칙이 쓰는 비싼 정보. 안 쓰면 파일마다 Spotlight를 묻거나 내용을 비교하지 않는다.
+    public struct Needs: Equatable, Sendable {
+        public var spotlight = false
+        public var duplicate = false
+    }
+
+    public static func needs(_ settings: OrganizeSettings) -> Needs {
+        var needs = Needs()
+        func visit(_ condition: Condition) {
+            switch condition {
+            case .sourceDomain, .notOpenedFor: needs.spotlight = true
+            case .isDuplicate: needs.duplicate = true
+            case .not(let inner): visit(inner)
+            default: break
+            }
+        }
+        settings.rules.filter(\.isEnabled).flatMap(\.conditions).forEach(visit)
+        return needs
     }
 
     public static func matches(_ rule: OrganizeRule, _ file: FileFacts, now: Date) -> Bool {

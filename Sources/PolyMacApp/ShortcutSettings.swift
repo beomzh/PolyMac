@@ -61,6 +61,13 @@ final class ShortcutSettingsModel: ObservableObject {
         reload()
     }
 
+    func clear(_ key: String) {
+        stopRecording()
+        HotkeyCenter.shared.setCombo(nil, for: key)
+        message = nil
+        reload()
+    }
+
     func resetAll() {
         stopRecording()
         HotkeyCenter.shared.resetAll()
@@ -107,7 +114,7 @@ struct ShortcutSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(L("바꿀 단축키를 클릭한 뒤 새 조합을 누르세요.  Esc 취소 · ⌫ 사용 안 함", "Click a shortcut, then press the new combination.  Esc cancels · ⌫ turns it off"))
+            Text(L("바꿀 단축키를 클릭한 뒤 새 조합을 누르세요.  Esc 취소 · ⌫ 또는 ⓧ 버튼으로 지우기", "Click a shortcut, then press the new combination.  Esc cancels · ⌫ or the ⓧ button removes it"))
                 .font(.callout)
                 .foregroundStyle(.secondary)
 
@@ -117,6 +124,7 @@ struct ShortcutSettingsView: View {
                         ForEach(group.rows) { row in
                             ShortcutRow(row: row, isRecording: model.recordingKey == row.key,
                                         record: { model.startRecording(row.key) },
+                                        clear: { model.clear(row.key) },
                                         reset: { model.resetToDefault(row.key) })
                         }
                     }
@@ -146,6 +154,7 @@ private struct ShortcutRow: View {
     let row: HotkeyCenter.Registration
     let isRecording: Bool
     let record: () -> Void
+    let clear: () -> Void
     let reset: () -> Void
 
     var body: some View {
@@ -169,11 +178,17 @@ private struct ShortcutRow: View {
             }
             .buttonStyle(.bordered)
             .tint(isRecording ? .accentColor : nil)
+            Button(action: clear) {
+                Image(systemName: "xmark.circle")
+            }
+            .buttonStyle(.borderless)
+            .help(L("단축키 지우기 (사용 안 함)", "Remove shortcut (off)"))
+            .disabled(row.combo == nil)
             Button(action: reset) {
                 Image(systemName: "arrow.uturn.backward")
             }
             .buttonStyle(.borderless)
-            .help(L("기본값 \(row.defaultCombo.display)", "Default \(row.defaultCombo.display)"))
+            .help(L("기본값 \(row.defaultCombo?.display ?? "없음")", "Default \(row.defaultCombo?.display ?? "none")"))
             .disabled(row.combo == row.defaultCombo)
         }
     }
