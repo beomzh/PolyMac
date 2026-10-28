@@ -2,6 +2,13 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 15:10]
+- [Added] - Sources/OrganizeModule/OrganizeEditor.swift: 자동 정리 규칙 편집 창 — 규칙 목록(켜기·추가·삭제·순서), 조건·동작 편집, 감시 폴더 추가·끄기, 미리보기 모드·기다릴 시간, 빈 값 검사 후 저장
+- [Added] - Sources/OrganizeModule/RuleRows.swift: 조건·동작을 편집용 줄로 바꾸고 되돌리기, 파일 종류 이름, 중복 이름 판정("이름 (1).pdf", "이름 2.pdf")
+- [Changed] - Sources/OrganizeModule/OrganizeModule.swift: 메뉴 "규칙 편집…", 저장 시 바로 반영, 중복 판정(번호 뗀 원래 파일과 크기·내용 비교)
+- [Added] - Tests/OrganizeModuleTests/RuleRowsTests.swift: 편집 줄 변환·중복 판정 테스트
+- [Changed] - README.md: 규칙 편집 화면 안내, 중복 조건 설명, 개발 현황 갱신
+
 [2026-10-28 14:52]
 - [Added] - Sources/WindowModule/EdgeSnap.swift: 가장자리 끌기 배치 — 왼쪽·오른쪽 끝 절반, 위 최대화, 모서리 4분의 1, 놓을 자리 미리보기(클릭 통과), 마우스 전역 감시(키 입력은 보지 않음)
 - [Added] - Sources/WindowModule/WindowModule.swift: 메뉴 토글(UserDefaults window.edgeSnap, 기본 꺼짐 — macOS 창 타일링과 겹침 방지), 스냅도 ⌥⌘Z로 되돌리기

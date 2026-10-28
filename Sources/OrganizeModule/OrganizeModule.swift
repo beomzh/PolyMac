@@ -27,6 +27,7 @@ public final class OrganizeModule: PolyMacModule {
     private var pendingRun: DispatchWorkItem?
     private var previewed = Set<String>()
     private var lastBatch: [HistoryEntry] = []
+    private lazy var editor = OrganizeEditorWindow()
 
     private var settingsURL: URL { context.dataDirectory.appendingPathComponent("organize.json") }
     private var logURL: URL { context.dataDirectory.appendingPathComponent("organize-log.txt") }
@@ -59,6 +60,7 @@ public final class OrganizeModule: PolyMacModule {
         hourly?.invalidate()
         hourly = nil
         pendingRun?.cancel()
+        editor.close()
         settings.isEnabled = false
         saveSettings()
     }
@@ -82,8 +84,9 @@ public final class OrganizeModule: PolyMacModule {
             item(L("지금 정리 실행", "Run Now"), #selector(runNow)),
             undo,
             .separator(),
-            item(L("규칙 파일 편집…", "Edit Rules File…"), #selector(openRules)),
-            item(L("규칙 다시 불러오기", "Reload Rules"), #selector(reloadRules)),
+            item(L("규칙 편집…", "Edit Rules…"), #selector(openEditor)),
+            item(L("규칙 파일(JSON) 편집…", "Edit Rules File (JSON)…"), #selector(openRules)),
+            item(L("규칙 파일 다시 불러오기", "Reload Rules File"), #selector(reloadRules)),
             item(L("정리 기록 보기", "Show Log"), #selector(openLog)),
         ]
     }
@@ -293,6 +296,25 @@ public final class OrganizeModule: PolyMacModule {
         context.toast(L("\(restored)건을 되돌렸습니다", "Restored \(restored) item(s)"))
     }
 
+    @objc private func openEditor() {
+        editor.show(settings: settings, onSave: { [weak self] new in
+            self?.apply(new)
+        }, openJSON: { [weak self] in
+            self?.openRules()
+        })
+    }
+
+    /// 편집 화면에서 저장
+    private func apply(_ new: OrganizeSettings) {
+        settings = new
+        settings.isEnabled = true
+        saveSettings()
+        previewed.removeAll()
+        startWatching()
+        context.toast(L("규칙을 저장했습니다 (켜진 규칙 \(settings.rules.filter(\.isEnabled).count)개)", "Rules saved (\(settings.rules.filter(\.isEnabled).count) on)"))
+        scheduleRun(after: 1)
+    }
+
     @objc private func openRules() {
         NSWorkspace.shared.open([settingsURL], withApplicationAt: URL(fileURLWithPath: "/System/Applications/TextEdit.app"), configuration: NSWorkspace.OpenConfiguration())
     }
@@ -343,12 +365,25 @@ public final class OrganizeModule: PolyMacModule {
             lastUsed = MDItemCopyAttribute(item, kMDItemLastUsedDate) as? Date
             sources = MDItemCopyAttribute(item, kMDItemWhereFroms) as? [String] ?? []
         }
+        let size = Int64(values?.fileSize ?? 0)
         return FileFacts(
             name: name,
-            size: Int64(values?.fileSize ?? 0),
+            size: size,
             addedAt: values?.addedToDirectoryDate ?? values?.creationDate ?? Date(),
             lastOpenedAt: lastUsed,
-            sourceURLs: sources
+            sourceURLs: sources,
+            isDuplicate: isDuplicate(path: path, name: name, size: size)
         )
+    }
+
+    /// "이름 (1).pdf"처럼 번호가 붙었고, 같은 폴더의 원래 파일과 크기·내용이 같으면 중복
+    static func isDuplicate(path: String, name: String, size: Int64) -> Bool {
+        guard let original = DuplicateName.original(of: name) else { return false }
+        let other = ((path as NSString).deletingLastPathComponent as NSString).appendingPathComponent(original)
+        guard let attrs = try? FileManager.default.attributesOfItem(atPath: other),
+              attrs[.type] as? FileAttributeType == .typeRegular,
+              (attrs[.size] as? NSNumber)?.int64Value == size
+        else { return false }
+        return FileManager.default.contentsEqual(atPath: path, andPath: other)
     }
 }
