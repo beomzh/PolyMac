@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 14:47]
+- [Changed] - feat/toast-style: push 후 PR #6 생성 (환경 설정 알림 모양)
+
 [2026-10-28 14:46]
 - [Added] - Sources/PolyMacCore/ToastStyle.swift `ToastStyle`: 안내 알림의 글자색·배경색(미지정 시 라이트·다크 모드 따름)·글자 크기·최대 너비·여백을 UserDefaults(toast.*)에 저장, 범위 밖 값과 잘못된 색은 보정
 - [Changed] - Sources/PolyMacCore/Toast.swift `Toast.show`: 저장된 모양을 적용, 배경색을 직접 정하면 단색 박스, 미리보기용 `show(_:duration:style:)` 추가
