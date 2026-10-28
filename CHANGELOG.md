@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 09:47]
+- [Changed] - 저장소: 아래 변경(커밋 e5aa717)을 브랜치 fix/uninstaller-finder-clipboard로 push하고 PR #1 생성 — 이번부터 main 직접 push 대신 브랜치+PR
+
 [2026-10-28 09:44]
 - [Added] - Sources/UninstallerCore/LeftoverScanner.swift: 찾는 위치 확대 (충돌 기록, /var/folders 캐시·임시, 플러그인·확장 폴더, /Library/Logs), 앱이 든 폴더(다른 앱 없을 때) 폴더째 후보
 - [Added] - Sources/UninstallerCore/InUseChecker.swift: 실행 파일이 안에 있거나 파일을 연 프로그램이 있는 항목을 "사용 중"으로 표시·삭제 제외 (proc_pidpath, lsof)
