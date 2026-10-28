@@ -3,6 +3,9 @@
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
 [2026-10-28 15:38]
+- [Changed] - feat/normalize-folders: PR #7에 설정 창 크기·앞에 띄우기 수정 push
+
+[2026-10-28 15:38]
 - [Fixed] - Sources/PolyMacApp/Settings.swift `SettingsWindow.fit`: 환경 설정 창이 탭 내용에 따라 저절로 크기가 바뀌어 자동 정리 탭에서 맞지 않던 문제 — 최소 크기만 따르고, 자동 정리 탭은 1000×680, 나머지는 760×560 이상으로 키움(사용자가 키운 크기는 유지, 화면 밖으로 안 나감)
 - [Fixed] - Sources/PolyMacCore/SystemSupport.swift `NSWindow.bringToFront`: 메뉴바 앱의 활성화 요청이 거절되면 창이 다른 앱 뒤에 뜨던 문제 — orderFrontRegardless로 맨 앞에, 메뉴가 닫힌 뒤 한 번 더
 - [Changed] - Sources/UninstallerModule/UninstallerModule.swift: 앱 삭제 창도 bringToFront 사용
