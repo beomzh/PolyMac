@@ -27,6 +27,9 @@ public final class OrganizeModule: PolyMacModule {
     private var pendingRun: DispatchWorkItem?
     private var previewed = Set<String>()
     private var lastBatch: [HistoryEntry] = []
+    /// 백그라운드 검사가 도는 중이면 새 요청은 끝난 뒤 한 번 더 돌린다 (겹쳐 돌지 않게)
+    private var isScanning = false
+    private var rescanRequested = false
     private var observer: NSObjectProtocol?
 
     private var settingsURL: URL { OrganizeStore.url }
@@ -137,9 +140,32 @@ public final class OrganizeModule: PolyMacModule {
 
     // MARK: - 실행
 
-    /// 감시 폴더에서 규칙에 걸리는 파일과 그 계획
-    private func pendingPlans(now: Date = Date()) -> [(path: String, name: String, steps: [PlannedStep])] {
-        var plans: [(path: String, name: String, steps: [PlannedStep])] = []
+    /// 규칙에 걸린 파일 하나와 그 계획. 검사할 때의 크기·수정 시각·파일 번호를 같이 들고 있다가
+    /// 실제로 옮기기 직전에 다시 비교한다.
+    struct Plan: Sendable {
+        let path: String
+        let name: String
+        let steps: [PlannedStep]
+        let stamp: FileStamp
+    }
+
+    struct FileStamp: Equatable, Sendable {
+        let size: Int64
+        let modifiedAt: Date?
+        let fileNumber: Int
+
+        init?(path: String) {
+            guard let attrs = try? FileManager.default.attributesOfItem(atPath: path) else { return nil }
+            size = (attrs[.size] as? NSNumber)?.int64Value ?? 0
+            modifiedAt = attrs[.modificationDate] as? Date
+            fileNumber = (attrs[.systemFileNumber] as? NSNumber)?.intValue ?? 0
+        }
+    }
+
+    /// 감시 폴더에서 규칙에 걸리는 파일과 그 계획. 디스크·Spotlight를 읽으므로 백그라운드에서 부른다.
+    nonisolated static func pendingPlans(settings: OrganizeSettings, now: Date = Date()) -> [Plan] {
+        let needs = RuleEngine.needs(settings)
+        var plans: [Plan] = []
         for folder in settings.watchedFolders where folder.isEnabled {
             let dir = NSString(string: folder.path).expandingTildeInPath
             guard let names = try? FileManager.default.contentsOfDirectory(atPath: dir) else { continue }
@@ -147,43 +173,79 @@ public final class OrganizeModule: PolyMacModule {
                 let path = dir + "/" + name
                 var isDirectory: ObjCBool = false
                 // 폴더(.app 번들 포함)는 건드리지 않는다
-                guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory), !isDirectory.boolValue else { continue }
-                let steps = RuleEngine.plan(for: Self.facts(path: path, name: name), settings: settings, now: now)
-                if !steps.isEmpty { plans.append((path, name, steps)) }
+                guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory), !isDirectory.boolValue,
+                      let stamp = FileStamp(path: path)
+                else { continue }
+                let steps = RuleEngine.plan(for: facts(path: path, name: name, needs: needs), settings: settings, now: now)
+                if !steps.isEmpty { plans.append(Plan(path: path, name: name, steps: steps, stamp: stamp)) }
             }
         }
         return plans
     }
 
-    /// 자동 실행(감시·1시간마다). 미리보기 모드면 기록만 남긴다.
-    private func run() {
-        let plans = pendingPlans()
-        if settings.dryRun {
-            var previewCount = 0
-            for plan in plans {
-                for step in plan.steps where previewed.insert(plan.path + "|" + step.ruleID.uuidString).inserted {
-                    log(L("[미리보기] \(plan.name) ← '\(step.ruleName)': \(step.actions.map(Self.describe).joined(separator: ", "))", "[preview] \(plan.name) ← '\(step.ruleName)': \(step.actions.map(Self.describe).joined(separator: ", "))"))
-                    previewCount += 1
+    /// 검사는 백그라운드에서, 결과 처리는 메인에서. 검사 중에 또 요청이 오면 끝난 뒤 한 번만 다시 돈다.
+    private func scan(_ completion: @escaping @MainActor ([Plan]) -> Void) {
+        guard !isScanning else {
+            rescanRequested = true
+            return
+        }
+        isScanning = true
+        let snapshot = settings
+        Task.detached(priority: .utility) {
+            let plans = OrganizeModule.pendingPlans(settings: snapshot)
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                self.isScanning = false
+                completion(plans)
+                if self.rescanRequested {
+                    self.rescanRequested = false
+                    self.scheduleRun(after: 1)
                 }
             }
-            if previewCount > 0 {
-                context.toast(L("자동 정리 미리보기: \(previewCount)건\n메뉴 › 정리 기록 보기에서 확인하세요", "Auto-organize preview: \(previewCount) item(s)\nSee menu › Show Log"))
-            }
-        } else {
-            executeAll(plans)
         }
     }
 
-    private func executeAll(_ plans: [(path: String, name: String, steps: [PlannedStep])]) {
-        let batch = plans.flatMap { execute($0.steps, path: $0.path) }
+    /// 자동 실행(감시·1시간마다). 미리보기 모드면 기록만 남긴다.
+    private func run() {
+        scan { [weak self] plans in
+            guard let self else { return }
+            if self.settings.dryRun {
+                var previewCount = 0
+                for plan in plans {
+                    for step in plan.steps where self.previewed.insert(plan.path + "|" + step.ruleID.uuidString).inserted {
+                        self.log(L("[미리보기] \(plan.name) ← '\(step.ruleName)': \(step.actions.map(Self.describe).joined(separator: ", "))", "[preview] \(plan.name) ← '\(step.ruleName)': \(step.actions.map(Self.describe).joined(separator: ", "))"))
+                        previewCount += 1
+                    }
+                }
+                if previewCount > 0 {
+                    self.context.toast(L("자동 정리 미리보기: \(previewCount)건\n메뉴 › 정리 기록 보기에서 확인하세요", "Auto-organize preview: \(previewCount) item(s)\nSee menu › Show Log"))
+                }
+            } else {
+                self.executeAll(plans)
+            }
+        }
+    }
+
+    private func executeAll(_ plans: [Plan]) {
+        var batch: [HistoryEntry] = []
+        var skipped = 0
+        for plan in plans {
+            // 검사한 뒤에 바뀐 파일(복사·덮어쓰기·수정 저장 중)은 이번엔 건드리지 않고 나중에 다시 본다
+            guard FileStamp(path: plan.path) == plan.stamp else {
+                skipped += 1
+                log(L("[건너뜀] \(plan.name): 검사한 뒤에 바뀌었거나 아직 쓰는 중이라 다음에 다시 확인", "[skipped] \(plan.name): changed since the check or still being written; will retry"))
+                continue
+            }
+            batch += execute(plan.steps, path: plan.path)
+        }
+        if skipped > 0 { scheduleRun(after: settings.settleDelay + 1) }
         guard !batch.isEmpty else { return }
         lastBatch = batch
         context.toast(L("자동 정리: \(batch.count)건 처리했습니다\n되돌리려면 메뉴 › 마지막 정리 되돌리기", "Auto-organize: processed \(batch.count) item(s)\nTo undo: menu › Undo Last Run"))
     }
 
     /// 미리보기 모드에서 "지금 정리 실행": 무엇을 할지 보여주고, 확인하면 이번 한 번만 실제로 정리한다.
-    private func confirmPreviewRun() {
-        let plans = pendingPlans()
+    private func confirmPreviewRun(_ plans: [Plan]) {
         guard !plans.isEmpty else {
             context.toast(L("정리할 파일이 없습니다\n켜진 규칙에 맞는 파일이 감시 폴더에 없습니다", "Nothing to organize\nNo file in the watched folders matches an enabled rule"))
             return
@@ -320,17 +382,19 @@ public final class OrganizeModule: PolyMacModule {
 
     @objc private func runNow() {
         previewed.removeAll()
-        if settings.dryRun {
-            confirmPreviewRun()
-            return
+        scan { [weak self] plans in
+            guard let self else { return }
+            if self.settings.dryRun {
+                self.confirmPreviewRun(plans)
+                return
+            }
+            guard !plans.isEmpty else {
+                self.context.toast(L("정리할 파일이 없습니다", "Nothing to organize"))
+                return
+            }
+            self.lastBatch = []
+            self.executeAll(plans)
         }
-        let plans = pendingPlans()
-        guard !plans.isEmpty else {
-            context.toast(L("정리할 파일이 없습니다", "Nothing to organize"))
-            return
-        }
-        lastBatch = []
-        executeAll(plans)
     }
 
     @objc private func undoLast() {
@@ -408,29 +472,35 @@ public final class OrganizeModule: PolyMacModule {
         }
     }
 
-    /// 디스크·Spotlight에서 규칙 평가에 필요한 정보를 읽는다.
-    static func facts(path: String, name: String) -> FileFacts {
+    /// Finder는 복사하는 동안 생성일을 1984-01-24로 두었다가 끝나면 원래대로 바꾼다
+    private nonisolated static let finderCopyMarker = Date(timeIntervalSince1970: 443_779_200) // 1984-01-24
+
+    /// 디스크·Spotlight에서 규칙 평가에 필요한 정보를 읽는다. 켜진 규칙이 안 쓰는 정보(needs)는 읽지 않는다.
+    nonisolated static func facts(path: String, name: String, needs: RuleEngine.Needs = .init(spotlight: true, duplicate: true)) -> FileFacts {
         let url = URL(fileURLWithPath: path)
-        let values = try? url.resourceValues(forKeys: [.fileSizeKey, .addedToDirectoryDateKey, .creationDateKey])
+        let values = try? url.resourceValues(forKeys: [.fileSizeKey, .addedToDirectoryDateKey, .creationDateKey, .contentModificationDateKey])
         var lastUsed: Date?
         var sources: [String] = []
-        if let item = MDItemCreate(kCFAllocatorDefault, path as CFString) {
+        if needs.spotlight, let item = MDItemCreate(kCFAllocatorDefault, path as CFString) {
             lastUsed = MDItemCopyAttribute(item, kMDItemLastUsedDate) as? Date
             sources = MDItemCopyAttribute(item, kMDItemWhereFroms) as? [String] ?? []
         }
         let size = Int64(values?.fileSize ?? 0)
+        let isBusy = values?.creationDate.map { abs($0.timeIntervalSince(finderCopyMarker)) < 86_400 } ?? false
         return FileFacts(
             name: name,
             size: size,
             addedAt: values?.addedToDirectoryDate ?? values?.creationDate ?? Date(),
             lastOpenedAt: lastUsed,
             sourceURLs: sources,
-            isDuplicate: isDuplicate(path: path, name: name, size: size)
+            isDuplicate: needs.duplicate && !isBusy && isDuplicate(path: path, name: name, size: size),
+            modifiedAt: values?.contentModificationDate,
+            isBusy: isBusy
         )
     }
 
     /// "이름 (1).pdf"처럼 번호가 붙었고, 같은 폴더의 원래 파일과 크기·내용이 같으면 중복
-    static func isDuplicate(path: String, name: String, size: Int64) -> Bool {
+    nonisolated static func isDuplicate(path: String, name: String, size: Int64) -> Bool {
         guard let original = DuplicateName.original(of: name) else { return false }
         let other = ((path as NSString).deletingLastPathComponent as NSString).appendingPathComponent(original)
         guard let attrs = try? FileManager.default.attributesOfItem(atPath: other),

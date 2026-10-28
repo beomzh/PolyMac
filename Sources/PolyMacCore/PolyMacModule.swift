@@ -80,7 +80,7 @@ public struct ModuleContext {
 
     /// 이 모듈 소유의 전역 단축키 등록. `id`는 사용자가 바꾼 조합을 저장하는 키라 바꾸지 않는다.
     /// 모듈을 끌 때 `unregisterHotkeys()`로 한 번에 해제한다.
-    public func hotkey(_ id: String, _ defaultCombo: KeyCombo, _ name: String, _ handler: @escaping @MainActor () -> Void) {
+    public func hotkey(_ id: String, _ defaultCombo: KeyCombo?, _ name: String, _ handler: @escaping @MainActor () -> Void) {
         HotkeyCenter.shared.register(key: "\(moduleID).\(id)", defaultCombo: defaultCombo, name: name, owner: moduleID, handler: handler)
     }
 
