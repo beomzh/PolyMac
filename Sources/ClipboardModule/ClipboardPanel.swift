@@ -468,6 +468,12 @@ private struct ClipboardRow: View {
                 .frame(maxWidth: 200, maxHeight: 44, alignment: .leading)
                 .clipShape(RoundedRectangle(cornerRadius: 3))
                 Spacer(minLength: 0)
+            } else if let files = item.files, !files.isEmpty {
+                Image(systemName: files.count == 1 ? "doc" : "doc.on.doc").foregroundStyle(isSelected ? .white : .secondary)
+                Text(fileSummary(files))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Spacer(minLength: 4)
             } else {
                 Text(oneLine)
                     .lineLimit(1)
@@ -487,6 +493,11 @@ private struct ClipboardRow: View {
         .padding(.vertical, item.isImage ? 4 : 6)
         .foregroundStyle(isSelected ? .white : .primary)
         .background(isSelected ? Color.accentColor : .clear, in: RoundedRectangle(cornerRadius: 6))
+    }
+
+    private func fileSummary(_ files: [String]) -> String {
+        let first = (files[0] as NSString).lastPathComponent
+        return files.count == 1 ? first : L("\(first) 외 \(files.count - 1)개", "\(first) and \(files.count - 1) more")
     }
 
     /// 줄바꿈을 ⏎로 보여 한 줄에 요약 (Maccy처럼). 한 줄에 보이는 건 몇십 자라 앞 300자만 배치한다.
@@ -558,6 +569,11 @@ private struct ClipboardPreview: View {
         if item.isImage {
             let size = ByteCountFormatter.string(fromByteCount: Int64(item.imageBytes ?? 0), countStyle: .file)
             return L("이미지 \(item.imageWidth ?? 0) × \(item.imageHeight ?? 0) px · \(size)", "Image \(item.imageWidth ?? 0) × \(item.imageHeight ?? 0) px · \(size)")
+        }
+        if let files = item.files, !files.isEmpty {
+            let missing = files.filter { !FileManager.default.fileExists(atPath: $0) }.count
+            return L("파일 \(files.count)개 (경로만 기록)", "\(files.count) file(s) (paths only)")
+                + (missing > 0 ? L(" · \(missing)개는 지금 없음", " · \(missing) no longer exist") : "")
         }
         if item.isLargeText {
             let size = ByteCountFormatter.string(fromByteCount: Int64(item.textBytes ?? 0), countStyle: .file)

@@ -2,6 +2,12 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 14:32]
+- [Added] - Sources/ClipboardModule/ClipboardItem.swift, ClipboardModule.swift, ClipboardPanel.swift: Finder에서 복사한 파일·폴더 기록(경로만, 고르면 다시 파일로 들어가 Finder ⌘V), 목록·미리보기에 파일 표시
+- [Added] - Sources/ClipboardModule/ClipboardModule.swift: 기록하지 않을 앱 — 메뉴에서 앞에 있는 앱을 바로 제외·다시 포함
+- [Added] - Tests/ClipboardModuleTests: 파일 항목·앱 제외 테스트
+- [Changed] - README.md: 클립보드 단축키 표를 실제 동작(↩ 복사, ⇧↩ 붙여넣기, ⌘1~⌘0, ⌘P, ⌘⌫)으로 바로잡음, 파일 기록·앱 제외 안내
+
 [2026-10-28 14:31]
 - [Added] - Sources/PolyMacApp/ServicesProvider.swift, App/Info.plist(NSServices), App/en.lproj/ServicesMenu.strings: Finder 우클릭 메뉴(macOS 서비스) — 여기서 터미널 열기, 경로 복사, 폴더로 보내기, 한글 파일명 정리, Windows용으로 압축. Finder 확장·Xcode 없이 동작, 자동화 권한 불필요
 - [Added] - Sources/FinderModule/FinderServices.swift: 고른 항목으로 터미널 열기·경로 복사, 지정 폴더로 보내기(이동/복사, 이름 충돌 시 " 2", 마지막 폴더 기억)
