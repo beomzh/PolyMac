@@ -19,6 +19,7 @@ let package = Package(
         .testTarget(name: "OrganizeModuleTests", dependencies: ["OrganizeModule"]),
         .testTarget(name: "ClipboardModuleTests", dependencies: ["ClipboardModule"]),
         .testTarget(name: "OCRModuleTests", dependencies: ["OCRModule"]),
+        .testTarget(name: "WindowModuleTests", dependencies: ["WindowModule"]),
         .testTarget(name: "UninstallerCoreTests", dependencies: ["UninstallerCore", "PolyMacL10n"]),
         .target(name: "CaptureModule", dependencies: ["PolyMacCore", "OCRModule"]),
         .target(name: "UninstallerModule", dependencies: ["PolyMacCore", "UninstallerCore"]),
