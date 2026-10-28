@@ -1,4 +1,7 @@
 import AppKit
+import Combine
+import NormalizeModule
+import OrganizeModule
 import PolyMacCore
 import ServiceManagement
 import SwiftUI
@@ -22,13 +25,15 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
     private var model: SettingsModel?
 
     enum Tab: String, CaseIterable, Identifiable {
-        case features, language, notifications, shortcuts, permissions
+        case features, language, notifications, normalize, organize, shortcuts, permissions
         var id: String { rawValue }
         var title: String {
             switch self {
             case .features: return L("기능", "Features")
             case .language: return L("언어", "Language")
             case .notifications: return L("알림", "Notifications")
+            case .normalize: return L("한글 파일명", "Korean Filenames")
+            case .organize: return L("자동 정리", "Auto-Organize")
             case .shortcuts: return L("단축키", "Shortcuts")
             case .permissions: return L("권한", "Permissions")
             }
@@ -38,6 +43,8 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
             case .features: return "square.grid.2x2"
             case .language: return "globe"
             case .notifications: return "text.bubble"
+            case .normalize: return "folder.badge.gearshape"
+            case .organize: return "tray.full"
             case .shortcuts: return "command"
             case .permissions: return "lock.shield"
             }
@@ -48,23 +55,51 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
         if let window, let model {
             if let tab { model.tab = tab }
             model.refresh()
-            NSApp.activate()
-            window.makeKeyAndOrderFront(nil)
+            window.bringToFront()
             return
         }
         let model = SettingsModel(host: host)
         if let tab { model.tab = tab }
-        let w = ClosableWindow(contentRect: NSRect(x: 0, y: 0, width: 700, height: 560),
+        let w = ClosableWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 620),
                                styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
         w.title = L("PolyMac 환경 설정", "PolyMac Settings")
         w.isReleasedWhenClosed = false
-        w.contentViewController = NSHostingController(rootView: SettingsView(model: model))
+        let hosting = NSHostingController(rootView: SettingsView(model: model))
+        // 내용 크기에 맞춰 창이 저절로 줄었다 늘었다 하지 않게 — 최소 크기만 따른다 (크기는 fit에서)
+        hosting.sizingOptions = [.minSize]
+        w.contentViewController = hosting
+        w.setContentSize(Self.size(for: model.tab))
         w.delegate = self
         w.center()
         window = w
         self.model = model
-        NSApp.activate()
-        w.makeKeyAndOrderFront(nil)
+        tabObserver = model.$tab.dropFirst().sink { [weak self] tab in self?.fit(tab) }
+        w.bringToFront()
+    }
+
+    private var tabObserver: AnyCancellable?
+
+    /// 탭마다 알맞은 창 크기 — 자동 정리(규칙 목록 + 편집)는 넓어야 한다
+    private static func size(for tab: Tab) -> NSSize {
+        tab == .organize ? NSSize(width: 1000, height: 680) : NSSize(width: 760, height: 560)
+    }
+
+    /// 지금 창이 그 탭에 작으면 키운다 (사용자가 키워 둔 크기는 줄이지 않는다). 왼쪽 위 모서리는 그대로, 화면 밖으로 나가지 않게.
+    private func fit(_ tab: Tab) {
+        guard let window else { return }
+        let need = Self.size(for: tab)
+        let current = window.contentRect(forFrameRect: window.frame).size
+        guard current.width < need.width || current.height < need.height else { return }
+        let content = NSSize(width: max(current.width, need.width), height: max(current.height, need.height))
+        var frame = window.frameRect(forContentRect: NSRect(origin: .zero, size: content))
+        frame.origin = NSPoint(x: window.frame.minX, y: window.frame.maxY - frame.height)
+        if let visible = window.screen?.visibleFrame {
+            frame.size.width = min(frame.width, visible.width)
+            frame.size.height = min(frame.height, visible.height)
+            frame.origin.x = min(max(frame.minX, visible.minX), visible.maxX - frame.width)
+            frame.origin.y = min(max(frame.minY, visible.minY), visible.maxY - frame.height)
+        }
+        window.setFrame(frame, display: true, animate: true)
     }
 
     /// 언어가 바뀌면 창 제목도 새 언어로
@@ -75,6 +110,7 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         model?.shortcuts.stopRecording()
         model?.stopWatching()
+        tabObserver = nil
         window?.contentViewController = nil
         window = nil
         model = nil
@@ -190,6 +226,8 @@ struct SettingsView: View {
                 case .features: FeaturesPane(model: model)
                 case .language: LanguagePane(model: model)
                 case .notifications: NotificationsPane()
+                case .normalize: NormalizePane()
+                case .organize: OrganizeRulesPane()
                 case .shortcuts: ShortcutSettingsView(model: model.shortcuts)
                 case .permissions: PermissionsPane(model: model)
                 }
@@ -403,6 +441,79 @@ private struct ColorChoiceRow: View {
         }
         .buttonStyle(.plain)
         .help(help)
+    }
+}
+
+/// 한글 자소분리 자동 정리가 감시할 폴더. 바꾸면 바로 저장하고 모듈이 감시를 다시 시작한다.
+private struct NormalizePane: View {
+    @State private var folders = NormalizeFolders.load()
+    @State private var message: String?
+
+    var body: some View {
+        Form {
+            Section {
+                ForEach($folders, id: \.path) { $folder in
+                    HStack {
+                        Toggle("", isOn: $folder.isEnabled).labelsHidden().toggleStyle(.checkbox)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(folder.path).lineLimit(1).truncationMode(.middle)
+                            if let problem = NormalizeFolders.problem(with: folder.expandedPath) {
+                                Text(problem).font(.caption).foregroundStyle(.orange)
+                            }
+                        }
+                        Spacer()
+                        Button { NSWorkspace.shared.open(URL(fileURLWithPath: folder.expandedPath)) } label: { Image(systemName: "folder") }
+                            .buttonStyle(.borderless)
+                            .help(L("Finder에서 열기", "Show in Finder"))
+                        Button { folders.removeAll { $0.path == folder.path } } label: { Image(systemName: "minus.circle") }
+                            .buttonStyle(.borderless)
+                            .help(L("목록에서 빼기", "Remove from list"))
+                    }
+                }
+                if folders.isEmpty {
+                    Text(L("감시하는 폴더가 없습니다", "No folders are watched")).foregroundStyle(.secondary)
+                }
+                HStack {
+                    Button(L("폴더 추가…", "Add Folder…")) { add() }
+                    Spacer()
+                    Button(L("기본값으로", "Restore Defaults")) {
+                        folders = NormalizeFolders.defaults.map { NormalizeFolders.Folder(path: $0) }
+                    }
+                    .disabled(folders == NormalizeFolders.defaults.map { NormalizeFolders.Folder(path: $0) })
+                }
+                if let message {
+                    Text(message).font(.caption).foregroundStyle(.orange)
+                }
+            } header: {
+                Text(L("자소분리를 검사할 폴더", "Folders to check for decomposed names"))
+            } footer: {
+                Text(L("폴더 바로 아래의 파일·폴더 이름만 고칩니다(하위 폴더는 우클릭 › 한글 파일명 정리). 홈 폴더 안의 폴더만 지정할 수 있고, ~/Library와 iCloud 동기화 폴더는 건드리지 않습니다. 기능이 꺼져 있으면 저장만 됩니다.",
+                       "Only names directly inside each folder are fixed (use right-click › Fix Korean Filenames for subfolders). Only folders inside your home folder are allowed; ~/Library and iCloud-synced folders are never touched. If the feature is off, the list is only saved."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+        .onChange(of: folders) { _, new in NormalizeFolders.save(new) }
+    }
+
+    private func add() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = true
+        panel.directoryURL = URL(fileURLWithPath: NSHomeDirectory())
+        panel.prompt = L("추가", "Add")
+        guard panel.runModal() == .OK else { return }
+        var rejected: [String] = []
+        for url in panel.urls {
+            if let problem = NormalizeFolders.problem(with: url.path) {
+                rejected.append("\(url.lastPathComponent): \(problem)")
+                continue
+            }
+            let path = (url.path as NSString).abbreviatingWithTildeInPath
+            if !folders.contains(where: { $0.path == path }) { folders.append(NormalizeFolders.Folder(path: path)) }
+        }
+        message = rejected.isEmpty ? nil : rejected.joined(separator: "\n")
     }
 }
 

@@ -105,6 +105,8 @@ public enum RuleEngine {
             return now.timeIntervalSince(file.lastOpenedAt ?? file.addedAt) > days * day
         case .isDuplicate:
             return file.isDuplicate
+        case .allFiles:
+            return true
         case .not(let inner):
             return !evaluate(inner, file, now: now)
         }

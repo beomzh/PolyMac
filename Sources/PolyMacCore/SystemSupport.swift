@@ -148,6 +148,24 @@ private func fsEventsCallback(
     watcher.deliver(paths)
 }
 
+public extension NSWindow {
+    /// 메뉴바 앱(LSUIElement)의 창을 다른 앱 창보다 앞에 띄운다. macOS 14부터 활성화 요청은 거절될 수 있어
+    /// (그러면 창이 다른 앱 뒤에 뜬다) 창 순서는 orderFrontRegardless로 따로 올리고, 메뉴가 닫힌 뒤 한 번 더 시도한다.
+    func bringToFront() {
+        NSApp.activate()
+        makeKeyAndOrderFront(nil)
+        orderFrontRegardless()
+        DispatchQueue.main.async { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self, self.isVisible else { return }
+                NSApp.activate()
+                self.makeKeyAndOrderFront(nil)
+                self.orderFrontRegardless()
+            }
+        }
+    }
+}
+
 /// PolyMac의 일반 창(설정·앱 삭제). Esc로 닫힌다 — 메뉴바 앱이라 창을 닫을 방법이 눈에 안 띄기 쉬워서.
 /// 단축키 녹화처럼 Esc를 먼저 쓰는 곳은 이벤트를 가로채므로 여기까지 오지 않는다.
 public final class ClosableWindow: NSWindow {

@@ -48,8 +48,7 @@ final class UninstallerWindow: NSObject, NSWindowDelegate {
         if let window, let model {
             model.mode = mode
             if mode == .orphans { model.scanOrphans() }
-            NSApp.activate()
-            window.makeKeyAndOrderFront(nil)
+            window.bringToFront()
             return
         }
         let model = UninstallerModel()
@@ -65,8 +64,7 @@ final class UninstallerWindow: NSObject, NSWindowDelegate {
         window.center()
         self.window = window
         self.model = model
-        NSApp.activate()
-        window.makeKeyAndOrderFront(nil)
+        window.bringToFront()
     }
 
     func close() {

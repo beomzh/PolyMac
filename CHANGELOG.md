@@ -2,6 +2,67 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 15:46]
+- [Changed] - feat/normalize-folders: PR #7에 미리보기 모드 확인 후 정리 push
+
+[2026-10-28 15:46]
+- [Added] - Sources/OrganizeModule/OrganizeModule.swift `confirmPreviewRun`: 미리보기 모드에서 "지금 정리 실행"을 누르면 정리할 파일·동작 목록을 확인 창으로 보여주고, "정리하기"를 누르면 이번 한 번만 실제로 정리(미리보기 모드 유지, 되돌리기 가능) — 기록만 남고 알림이 없어 실행이 안 된 것처럼 보이던 문제
+- [Changed] - Sources/OrganizeModule/OrganizeModule.swift `pendingPlans`, `executeAll`, `runNow`: 계획 모으기와 실행을 나눔, 맞는 파일이 없으면 항상 알림, 처리 알림에 되돌리기 안내
+- [Changed] - README.md: 미리보기 모드에서 지금 정리 실행 안내
+
+[2026-10-28 15:38]
+- [Changed] - feat/normalize-folders: PR #7에 설정 창 크기·앞에 띄우기 수정 push
+
+[2026-10-28 15:38]
+- [Fixed] - Sources/PolyMacApp/Settings.swift `SettingsWindow.fit`: 환경 설정 창이 탭 내용에 따라 저절로 크기가 바뀌어 자동 정리 탭에서 맞지 않던 문제 — 최소 크기만 따르고, 자동 정리 탭은 1000×680, 나머지는 760×560 이상으로 키움(사용자가 키운 크기는 유지, 화면 밖으로 안 나감)
+- [Fixed] - Sources/PolyMacCore/SystemSupport.swift `NSWindow.bringToFront`: 메뉴바 앱의 활성화 요청이 거절되면 창이 다른 앱 뒤에 뜨던 문제 — orderFrontRegardless로 맨 앞에, 메뉴가 닫힌 뒤 한 번 더
+- [Changed] - Sources/UninstallerModule/UninstallerModule.swift: 앱 삭제 창도 bringToFront 사용
+
+[2026-10-28 15:35]
+- [Changed] - feat/normalize-folders: PR #7에 기간 조건 개월·년 단위 push
+
+[2026-10-28 15:35]
+- [Added] - Sources/OrganizeModule/RuleRows.swift `ConditionRow.TimeUnit`: 기간 조건(받은 지·안 연 지)에 일·개월·년 단위 — 저장은 일 수 그대로(1개월 30일, 1년 365일), 불러올 때 나누어떨어지는 가장 큰 단위로 표시
+- [Changed] - Sources/OrganizeModule/OrganizeEditor.swift `ConditionEditor`: 기간 숫자 칸 옆 단위 선택
+- [Added] - Tests/OrganizeModuleTests/RuleRowsTests.swift: 단위 변환 테스트
+- [Changed] - README.md: 조건 표의 기간 설명
+
+[2026-10-28 15:32]
+- [Changed] - feat/normalize-folders: PR #7에 규칙 편집 입력란 수정 push
+
+[2026-10-28 15:32]
+- [Fixed] - Sources/OrganizeModule/OrganizeEditor.swift `InputBox`, `ConditionEditor`, `ActionEditor`: 규칙 편집의 조건·동작·이름 입력란이 grouped Form 기본 모양(테두리 없음, 자리표시 글이 왼쪽 이름표로 빠짐)이라 칸으로 보이지 않던 문제 — 테두리 칸 + 칸 안 자리표시 글 + 왼쪽 정렬, 숫자 칸에 MB·일 단위 표시
+
+[2026-10-28 15:28]
+- [Changed] - feat/normalize-folders: PR #7에 자동 정리 "모든 파일" 조건 push
+
+[2026-10-28 15:28]
+- [Added] - Sources/OrganizeModule/OrganizeRule.swift `Condition.allFiles`, RuleEngine.swift `evaluate`: 자동 정리 조건 "모든 파일" — 감시 폴더의 파일 전체에 동작을 걸 수 있게 (빈 조건 규칙은 여전히 아무 파일과도 맞지 않음, 다운로드 중·폴더 제외)
+- [Added] - Sources/OrganizeModule/RuleRows.swift, OrganizeEditor.swift: 편집 화면 조건 목록 맨 위에 "모든 파일"과 주의 설명
+- [Added] - Tests/OrganizeModuleTests/RuleRowsTests.swift: 모든 파일·빈 조건·다운로드 중 파일 테스트
+- [Changed] - README.md: 조건 표에 모든 파일
+
+[2026-10-28 15:23]
+- [Changed] - feat/normalize-folders: PR #7에 자동 정리 규칙 환경 설정 탭 push
+
+[2026-10-28 15:23]
+- [Added] - Sources/OrganizeModule/OrganizeStore.swift `OrganizeStore`, `OrganizeRulesPane`: organize.json 읽기·쓰기를 모듈 밖으로 빼 기능이 꺼져 있어도 규칙 편집, 환경 설정에 넣을 자동 정리 탭
+- [Changed] - Sources/OrganizeModule/OrganizeEditor.swift `OrganizeEditorView`: 환경 설정에 들어가도록 닫기 버튼 선택·최소 크기 축소, 별도 창(OrganizeEditorWindow) 삭제
+- [Changed] - Sources/OrganizeModule/OrganizeModule.swift: 저장 알림을 받으면 다시 불러오기, 메뉴 "규칙 편집…"은 환경 설정 › 자동 정리 탭을 염
+- [Added] - Sources/PolyMacCore/PolyMacModule.swift `ModuleContext.openSettings(tab:)`, `SettingsRequest`: 모듈이 환경 설정 탭을 열어 달라고 요청
+- [Changed] - Sources/PolyMacApp/Settings.swift, AppDelegate.swift: 자동 정리 탭 추가, 탭 열기 요청 처리, 창 기본 크기 900×620
+- [Changed] - README.md: 자동 정리 규칙 편집 위치 안내, 환경 설정 탭 표
+
+[2026-10-28 15:16]
+- [Changed] - feat/normalize-folders: push 후 PR #7 생성 (자소분리 검사 폴더 지정)
+
+[2026-10-28 15:15]
+- [Added] - Sources/NormalizeModule/NormalizeFolders.swift `NormalizeFolders`: 자소분리 검사 폴더 목록을 변수 normalize.folders(끈 폴더는 normalize.disabledFolders)로 저장, 예전 normalize.extraFolders 이어받기, 홈 폴더 안의 실제 폴더만 허용(홈 전체·~/Library 거부) — 다운로드·데스크탑 고정 + 추가만 되던 것을 전체 지정 가능하게
+- [Changed] - Sources/NormalizeModule/NormalizeModule.swift: 새 목록 사용, 목록이 바뀌면 감시 다시 시작, 폴더가 없으면 감시하지 않음
+- [Added] - Sources/PolyMacApp/Settings.swift `NormalizePane`: 환경 설정 › 한글 파일명 — 폴더 추가·빼기·켜기/끄기·기본값, 막힌 폴더는 이유 표시
+- [Added] - Tests/NormalizeModuleTests/NormalizeFoldersTests.swift: 기본값·이어받기·저장·허용 검사 테스트
+- [Changed] - README.md: 검사 폴더 바꾸기 안내(환경 설정·defaults 변수), 환경 설정 탭 표
+
 [2026-10-28 15:10]
 - [Changed] - CHANGELOG.md: PR #5 머지 후 main을 feat/toast-style에 합침 — 두 브랜치 기록 모두 유지
 

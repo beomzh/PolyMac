@@ -115,18 +115,19 @@ final class OrganizeEditorModel: ObservableObject {
 
 struct OrganizeEditorView: View {
     @ObservedObject var model: OrganizeEditorModel
-    let close: () -> Void
+    /// 따로 띄운 창이면 닫기 버튼, 환경 설정 탭에 넣으면 nil
+    let close: (() -> Void)?
 
     var body: some View {
         VStack(spacing: 0) {
             HSplitView {
-                ruleList.frame(minWidth: 220, idealWidth: 250, maxWidth: 320)
-                detail.frame(minWidth: 460, maxWidth: .infinity, maxHeight: .infinity)
+                ruleList.frame(minWidth: 200, idealWidth: 230, maxWidth: 300)
+                detail.frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity)
             }
             Divider()
             footer.padding(12)
         }
-        .frame(minWidth: 760, minHeight: 520)
+        .frame(minWidth: 620, minHeight: 480)
     }
 
     // MARK: - 왼쪽: 규칙 목록 + 감시 폴더
@@ -220,8 +221,10 @@ struct OrganizeEditorView: View {
                     .help(model.problems.joined(separator: "\n"))
             }
             Button(L("JSON으로 편집…", "Edit as JSON…")) { model.openJSON() }
-            Button(L("닫기", "Close")) { close() }
-                .keyboardShortcut(.cancelAction)
+            if let close {
+                Button(L("닫기", "Close")) { close() }
+                    .keyboardShortcut(.cancelAction)
+            }
             Button(L("저장", "Save")) { model.save() }
                 .keyboardShortcut("s", modifiers: .command)
                 .buttonStyle(.borderedProminent)
@@ -236,7 +239,9 @@ private struct RuleDetail: View {
     var body: some View {
         Form {
             Section {
-                TextField(L("이름", "Name"), text: $rule.name)
+                LabeledContent(L("이름", "Name")) {
+                    InputBox(L("규칙 이름", "Rule name"), text: $rule.name)
+                }
                 Toggle(L("켜기", "Enabled"), isOn: $rule.isEnabled)
                 Toggle(L("이 규칙이 적용되면 다음 규칙은 건너뛰기", "Stop checking later rules after this one applies"), isOn: $rule.stopAfterMatch)
             }
@@ -288,12 +293,12 @@ private struct ConditionEditor: View {
             }
             switch row.kind {
             case .fileExtension:
-                TextField(L("pdf, hwp, zip (쉼표로 구분)", "pdf, docx, zip (comma separated)"), text: $row.text)
+                InputBox(L("pdf, hwp, zip (쉼표로 구분)", "pdf, docx, zip (comma separated)"), text: $row.text)
             case .sourceDomain:
-                TextField(L("go.kr, github.com (하위 도메인 포함)", "github.com, example.org (includes subdomains)"), text: $row.text)
+                InputBox(L("go.kr, github.com (하위 도메인 포함)", "github.com, example.org (includes subdomains)"), text: $row.text)
             case .name:
                 HStack {
-                    TextField(L("*견적서*", "*invoice*"), text: $row.text)
+                    InputBox(L("*견적서*", "*invoice*"), text: $row.text)
                     Toggle(L("정규식", "Regex"), isOn: $row.isRegex).toggleStyle(.checkbox)
                 }
             case .kind:
@@ -307,7 +312,29 @@ private struct ConditionEditor: View {
                     }
                 }
             case .sizeGreaterThan, .sizeLessThan, .addedMoreThan, .notOpenedFor:
-                TextField("", value: $row.number, format: .number).frame(width: 100)
+                HStack {
+                    TextField("", value: $row.number, format: .number, prompt: Text("0"))
+                        .labelsHidden()
+                        .textFieldStyle(.roundedBorder)
+                        .multilineTextAlignment(.trailing)
+                        .frame(width: 100)
+                    if [.sizeGreaterThan, .sizeLessThan].contains(row.kind) {
+                        Text("MB").foregroundStyle(.secondary)
+                    } else {
+                        Picker("", selection: $row.timeUnit) {
+                            ForEach(ConditionRow.TimeUnit.allCases, id: \.self) { Text($0.title).tag($0) }
+                        }
+                        .labelsHidden()
+                        .fixedSize()
+                        .help(L("1개월은 30일, 1년은 365일로 셉니다", "A month counts as 30 days, a year as 365 days"))
+                    }
+                    Spacer()
+                }
+            case .allFiles:
+                Text(L("감시 폴더 바로 아래의 모든 파일 (다운로드 중인 파일·폴더 제외). 다른 조건과 \"모두 맞을 때\"로 묶으면 그 조건만 남습니다.",
+                       "Every file directly in the watched folders (except downloads in progress and folders). Combined with \"All match\", only the other conditions matter."))
+                    .font(.caption)
+                    .foregroundStyle(.orange)
             case .isDuplicate:
                 Text(L("\"이름 (1).pdf\"처럼 번호가 붙었고 원래 파일과 내용이 똑같을 때", "Numbered copies like \"name (1).pdf\" whose content equals the original"))
                     .font(.caption)
@@ -329,7 +356,7 @@ private struct ActionEditor: View {
             .labelsHidden()
             .fixedSize()
             if row.needsText {
-                TextField(placeholder, text: $row.text)
+                InputBox(placeholder, text: $row.text)
                 if row.kind == .move || row.kind == .copy {
                     Button(L("고르기…", "Choose…")) { choose() }
                 }
@@ -359,35 +386,22 @@ private struct ActionEditor: View {
     }
 }
 
-/// 창과 모델은 열 때 만들고 닫을 때 버린다
-@MainActor
-final class OrganizeEditorWindow: NSObject, NSWindowDelegate {
-    private var window: NSWindow?
+/// 테두리 있는 입력 칸. grouped Form 안의 TextField는 기본이 테두리 없는 글자라 입력 칸으로 보이지 않는다 —
+/// 자리표시 글은 칸 안에 흐리게, 이름표는 따로 두지 않는다.
+private struct InputBox: View {
+    let placeholder: String
+    @Binding var text: String
 
-    func show(settings: OrganizeSettings, onSave: @escaping (OrganizeSettings) -> Void, openJSON: @escaping () -> Void) {
-        if let window {
-            NSApp.activate()
-            window.makeKeyAndOrderFront(nil)
-            return
-        }
-        let model = OrganizeEditorModel(settings: settings, onSave: onSave, openJSON: openJSON)
-        let window = ClosableWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 620),
-                                    styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
-        window.title = L("자동 정리 규칙 — PolyMac", "Auto-Organize Rules — PolyMac")
-        window.isReleasedWhenClosed = false
-        window.contentViewController = NSHostingController(rootView: OrganizeEditorView(model: model) { [weak window] in window?.close() })
-        window.delegate = self
-        window.center()
-        self.window = window
-        NSApp.activate()
-        window.makeKeyAndOrderFront(nil)
+    init(_ placeholder: String, text: Binding<String>) {
+        self.placeholder = placeholder
+        self._text = text
     }
 
-    func close() {
-        window?.close()
-    }
-
-    func windowWillClose(_ notification: Notification) {
-        window = nil
+    var body: some View {
+        TextField("", text: $text, prompt: Text(placeholder))
+            .labelsHidden()
+            .textFieldStyle(.roundedBorder)
+            .multilineTextAlignment(.leading) // grouped Form은 오른쪽 정렬이 기본
+            .frame(maxWidth: .infinity)
     }
 }

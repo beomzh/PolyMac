@@ -73,6 +73,11 @@ public struct ModuleContext {
         Toast.show(message, duration: duration)
     }
 
+    /// 환경 설정 창의 탭을 연다 (앱이 SettingsRequest.open을 받아 처리)
+    public func openSettings(tab: String) {
+        NotificationCenter.default.post(name: SettingsRequest.open, object: nil, userInfo: ["tab": tab])
+    }
+
     /// 이 모듈 소유의 전역 단축키 등록. `id`는 사용자가 바꾼 조합을 저장하는 키라 바꾸지 않는다.
     /// 모듈을 끌 때 `unregisterHotkeys()`로 한 번에 해제한다.
     public func hotkey(_ id: String, _ defaultCombo: KeyCombo, _ name: String, _ handler: @escaping @MainActor () -> Void) {
@@ -103,4 +108,9 @@ public protocol PolyMacModule: AnyObject {
 
 public extension PolyMacModule {
     func menuItems() -> [NSMenuItem] { [] }
+}
+
+/// 모듈이 환경 설정 창을 열어 달라고 앱에 부탁할 때
+public enum SettingsRequest {
+    public static let open = Notification.Name("dev.polymac.openSettings")
 }

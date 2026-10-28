@@ -4,7 +4,33 @@ import PolyMacCore
 /// 편집 화면에서 다루기 쉬운 조건 한 줄. Condition(중첩 enum)과 서로 바꾼다.
 public struct ConditionRow: Identifiable, Equatable, Sendable {
     public enum Kind: String, CaseIterable, Sendable {
-        case fileExtension, kind, name, sourceDomain, sizeGreaterThan, sizeLessThan, addedMoreThan, notOpenedFor, isDuplicate
+        case allFiles, fileExtension, kind, name, sourceDomain, sizeGreaterThan, sizeLessThan, addedMoreThan, notOpenedFor, isDuplicate
+    }
+
+    /// 기간 조건의 단위. 저장은 일 수로 한다 (1개월 = 30일, 1년 = 365일).
+    public enum TimeUnit: String, CaseIterable, Sendable {
+        case day, month, year
+        public var days: Double {
+            switch self {
+            case .day: return 1
+            case .month: return 30
+            case .year: return 365
+            }
+        }
+        public var title: String {
+            switch self {
+            case .day: return L("일", "days")
+            case .month: return L("개월", "months")
+            case .year: return L("년", "years")
+            }
+        }
+        /// 일 수를 나누어떨어지는 가장 큰 단위로 (예: 60일 → 2개월, 45일 → 45일)
+        static func best(forDays days: Double) -> TimeUnit {
+            for unit in [TimeUnit.year, .month] where days >= unit.days && days.truncatingRemainder(dividingBy: unit.days) == 0 {
+                return unit
+            }
+            return .day
+        }
     }
 
     public var id = UUID()
@@ -14,8 +40,9 @@ public struct ConditionRow: Identifiable, Equatable, Sendable {
     /// 확장자·도메인(쉼표로 구분), 이름 패턴
     public var text = ""
     public var isRegex = false
-    /// MB 또는 일
+    /// MB, 또는 기간 조건이면 timeUnit 단위의 수
     public var number: Double = 0
+    public var timeUnit: TimeUnit = .day
     public var kinds: Set<FileKind> = []
 
     public init(kind: Kind = .fileExtension) {
@@ -41,15 +68,22 @@ public struct ConditionRow: Identifiable, Equatable, Sendable {
         case .sizeLessThan(let bytes):
             kind = .sizeLessThan; number = Double(bytes) / Self.mb
         case .addedMoreThan(let days):
-            kind = .addedMoreThan; number = days
+            kind = .addedMoreThan; setDays(days)
         case .notOpenedFor(let days):
-            kind = .notOpenedFor; number = days
+            kind = .notOpenedFor; setDays(days)
         case .isDuplicate:
             kind = .isDuplicate
+        case .allFiles:
+            kind = .allFiles
         }
     }
 
     static let mb: Double = 1_000_000
+
+    private mutating func setDays(_ days: Double) {
+        timeUnit = TimeUnit.best(forDays: days)
+        number = days / timeUnit.days
+    }
 
     /// 값이 비어 있으면 nil (저장하지 않음)
     public var condition: Condition? {
@@ -70,11 +104,13 @@ public struct ConditionRow: Identifiable, Equatable, Sendable {
         case .sizeLessThan:
             base = .sizeLessThan(bytes: Int64(max(number, 0) * Self.mb))
         case .addedMoreThan:
-            base = .addedMoreThan(days: max(number, 0))
+            base = .addedMoreThan(days: max(number, 0) * timeUnit.days)
         case .notOpenedFor:
-            base = .notOpenedFor(days: max(number, 0))
+            base = .notOpenedFor(days: max(number, 0) * timeUnit.days)
         case .isDuplicate:
             base = .isDuplicate
+        case .allFiles:
+            base = .allFiles
         }
         guard let base else { return nil }
         return negated ? .not(condition: base) : base
@@ -88,9 +124,10 @@ public struct ConditionRow: Identifiable, Equatable, Sendable {
         case .sourceDomain: return L("받은 사이트", "Downloaded from")
         case .sizeGreaterThan: return L("크기 > (MB)", "Size > (MB)")
         case .sizeLessThan: return L("크기 < (MB)", "Size < (MB)")
-        case .addedMoreThan: return L("받은 지 (일) 지남", "Added more than (days) ago")
-        case .notOpenedFor: return L("안 연 지 (일) 지남", "Not opened for (days)")
+        case .addedMoreThan: return L("받은 지 지남", "Added more than … ago")
+        case .notOpenedFor: return L("안 연 지 지남", "Not opened for")
         case .isDuplicate: return L("같은 내용의 파일이 이미 있음", "Same file already exists")
+        case .allFiles: return L("모든 파일", "All files")
         }
     }
 }
