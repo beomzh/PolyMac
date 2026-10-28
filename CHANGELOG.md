@@ -3,6 +3,9 @@
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
 [2026-10-28 15:46]
+- [Changed] - feat/normalize-folders: PR #7에 미리보기 모드 확인 후 정리 push
+
+[2026-10-28 15:46]
 - [Added] - Sources/OrganizeModule/OrganizeModule.swift `confirmPreviewRun`: 미리보기 모드에서 "지금 정리 실행"을 누르면 정리할 파일·동작 목록을 확인 창으로 보여주고, "정리하기"를 누르면 이번 한 번만 실제로 정리(미리보기 모드 유지, 되돌리기 가능) — 기록만 남고 알림이 없어 실행이 안 된 것처럼 보이던 문제
 - [Changed] - Sources/OrganizeModule/OrganizeModule.swift `pendingPlans`, `executeAll`, `runNow`: 계획 모으기와 실행을 나눔, 맞는 파일이 없으면 항상 알림, 처리 알림에 되돌리기 안내
 - [Changed] - README.md: 미리보기 모드에서 지금 정리 실행 안내
