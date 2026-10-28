@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 15:22]
+- [Changed] - feat/remaining-features: push 후 PR #5 생성 (캡처 도구, Finder 우클릭, 클립보드 파일, 설치 기록, OCR 줄바꿈, 가장자리 배치, 자동 정리 편집)
+
 [2026-10-28 15:18]
 - [Changed] - docs/ROADMAP.md: 체크 항목을 실제 구현 상태로 갱신, 남은 일은 별도 줄로 분리
 
