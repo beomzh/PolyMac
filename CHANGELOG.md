@@ -2,6 +2,12 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 10:10]
+- [Fixed] - Sources/UninstallerModule/UninstallerModel.swift: 흔적 찾기를 설치된 앱 목록을 다 읽기 전에 시작해, 쓰고 있는 Chrome의 데이터(Application Support/Google 등)를 "유력"으로 고르던 문제 — 목록을 다 읽은 뒤에만 시작, 못 읽으면 멈춤
+- [Changed] - Sources/UninstallerModule/UninstallerModel.swift: "설치된 앱"에 Spotlight가 아는 모든 앱과 실행 중인 앱 추가, 앱 ID·이름을 Spotlight 속성으로 받아 29초 → 0.15초
+- [Added] - Tests/UninstallerCoreTests: Chrome·Drive가 설치돼 있으면 Google 폴더·업데이터 제외 테스트 (총 24개)
+- [Changed] - docs/UNINSTALLER.md: "설치된 앱"의 범위
+
 [2026-10-28 10:05]
 - [Changed] - 저장소: 아래 변경(커밋 683394b)을 브랜치 fix/uninstaller-installed-app-names로 push하고 PR #2 생성
 

@@ -150,6 +150,20 @@ private let app = AppBundleInfo(url: URL(fileURLWithPath: "/Applications/Foo Bar
     #expect(ids.contains("com.gone.Forgotten"))
 }
 
+@Test func installedChromeKeepsGoogleFolders() throws {
+    // Chrome이 설치돼 있으면 업데이터(Keystone)와 회사 이름 폴더(Google)는 흔적이 아니다
+    let (root, locations) = try makeFakeLibrary([
+        "Preferences": ["com.google.Keystone.Agent.plist"],
+        "Application Support": ["Google"],
+        "Caches": ["Google", "com.google.GoogleUpdater"],
+    ])
+    defer { try? FileManager.default.removeItem(at: root) }
+    let groups = LeftoverScanner.orphans(locations: locations, isInstalled: { _ in false },
+                                         installedIDs: ["com.google.Chrome", "com.google.drivefs"],
+                                         installedNames: ["Google Chrome", "Google Drive"])
+    #expect(groups.isEmpty)
+}
+
 @Test func systemAppsAreProtected() {
     #expect(AppBundleInfo(url: URL(fileURLWithPath: "/System/Applications/Notes.app"), bundleID: "com.apple.Notes", name: "Notes").isSystemApp)
     #expect(!app.isSystemApp)

@@ -56,6 +56,14 @@
 
 ## 4. 이미 지운 앱의 흔적 — 등급
 
+### 4-0. "설치된 앱"의 범위
+
+흔적 판단의 기준이 되는 "설치된 앱"은 다음을 모두 합친 것이다. **이 목록을 다 읽기 전에는 흔적 찾기를 시작하지 않고, 읽지 못하면 멈춘다** (빈 목록으로 판단하면 쓰고 있는 앱의 데이터를 흔적으로 잘못 고른다).
+
+- `/Applications`, `~/Applications` (두 단계 아래 폴더까지)
+- Spotlight가 아는 이 Mac의 모든 앱 (`kMDItemContentType == com.apple.application-bundle`, 휴지통·`/System` 제외) — 다운로드 폴더 등 다른 위치의 앱, 앱 안에 숨은 앱(예: `~/Library/Application Support/discord/…/Discord.app`)까지
+- 지금 실행 중인 앱
+
 ### 4-1. 앱 ID 형태 이름
 
 이름이 앱 ID처럼 생긴 항목만 후보로 본다.
