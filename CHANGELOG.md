@@ -2,6 +2,14 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 14:31]
+- [Added] - Sources/PolyMacApp/ServicesProvider.swift, App/Info.plist(NSServices), App/en.lproj/ServicesMenu.strings: Finder 우클릭 메뉴(macOS 서비스) — 여기서 터미널 열기, 경로 복사, 폴더로 보내기, 한글 파일명 정리, Windows용으로 압축. Finder 확장·Xcode 없이 동작, 자동화 권한 불필요
+- [Added] - Sources/FinderModule/FinderServices.swift: 고른 항목으로 터미널 열기·경로 복사, 지정 폴더로 보내기(이동/복사, 이름 충돌 시 " 2", 마지막 폴더 기억)
+- [Added] - Sources/NormalizeModule/NormalizeServices.swift, HangulNormalizer.swift: 하위 폴더까지 NFC 정리(개수 확인 후, 앱·번들·.git·숨김 제외)
+- [Added] - Sources/NormalizeModule/WindowsZip.swift: UTF-8 이름 플래그를 켠 zip 작성기(deflate, NFC 이름, .DS_Store·__MACOSX 제외, 4 GB까지) — macOS 기본 압축은 이 표시가 없어 Windows에서 한글이 깨짐
+- [Added] - Tests/NormalizeModuleTests: 하위 폴더 정리, zip 플래그·내용 왕복 테스트 (총 32개)
+- [Changed] - README.md: 우클릭 메뉴 사용법, 개발 상태
+
 [2026-10-28 11:00]
 - [Removed] - README.md: "같은 일을 하는 앱 끄기" 안내 단계
 - [Added] - Sources/PolyMacCore/Annotation.swift: 표시 도구 글자(E)·모자이크(M)·번호(N), 글자 입력 칸(↩ 확정·Esc 취소), 모자이크는 원본을 10pt 칸으로 뭉갬

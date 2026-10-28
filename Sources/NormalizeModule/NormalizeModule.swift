@@ -10,7 +10,7 @@ public final class NormalizeModule: PolyMacModule {
         permissions: [.filesAndFolders]
     )
 
-    private let context: ModuleContext
+    let context: ModuleContext
     private var watcher: FolderWatcher?
 
     /// 감시 폴더 (바로 아래 항목만). 추가: defaults write dev.polymac.app normalize.extraFolders -array "~/Documents/받은파일"

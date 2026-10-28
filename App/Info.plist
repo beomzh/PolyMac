@@ -41,5 +41,93 @@
     <string>다운로드 폴더의 자소분리된 한글 파일명을 고치고, 자동 정리 규칙을 적용합니다.</string>
     <key>NSDocumentsFolderUsageDescription</key>
     <string>자동 정리 규칙이 파일을 문서 폴더로 옮길 때 사용합니다.</string>
+    <key>NSServices</key>
+    <array>
+        <dict>
+            <key>NSMenuItem</key>
+            <dict>
+                <key>default</key>
+                <string>PolyMac: 여기서 터미널 열기</string>
+            </dict>
+            <key>NSMessage</key>
+            <string>openTerminal</string>
+            <key>NSPortName</key>
+            <string>PolyMac</string>
+            <key>NSRequiredContext</key>
+            <dict/>
+            <key>NSSendFileTypes</key>
+            <array>
+                <string>public.item</string>
+            </array>
+        </dict>
+        <dict>
+            <key>NSMenuItem</key>
+            <dict>
+                <key>default</key>
+                <string>PolyMac: 경로 복사</string>
+            </dict>
+            <key>NSMessage</key>
+            <string>copyPaths</string>
+            <key>NSPortName</key>
+            <string>PolyMac</string>
+            <key>NSRequiredContext</key>
+            <dict/>
+            <key>NSSendFileTypes</key>
+            <array>
+                <string>public.item</string>
+            </array>
+        </dict>
+        <dict>
+            <key>NSMenuItem</key>
+            <dict>
+                <key>default</key>
+                <string>PolyMac: 폴더로 보내기…</string>
+            </dict>
+            <key>NSMessage</key>
+            <string>sendTo</string>
+            <key>NSPortName</key>
+            <string>PolyMac</string>
+            <key>NSRequiredContext</key>
+            <dict/>
+            <key>NSSendFileTypes</key>
+            <array>
+                <string>public.item</string>
+            </array>
+        </dict>
+        <dict>
+            <key>NSMenuItem</key>
+            <dict>
+                <key>default</key>
+                <string>PolyMac: 한글 파일명 정리</string>
+            </dict>
+            <key>NSMessage</key>
+            <string>fixNames</string>
+            <key>NSPortName</key>
+            <string>PolyMac</string>
+            <key>NSRequiredContext</key>
+            <dict/>
+            <key>NSSendFileTypes</key>
+            <array>
+                <string>public.item</string>
+            </array>
+        </dict>
+        <dict>
+            <key>NSMenuItem</key>
+            <dict>
+                <key>default</key>
+                <string>PolyMac: Windows용으로 압축</string>
+            </dict>
+            <key>NSMessage</key>
+            <string>windowsZip</string>
+            <key>NSPortName</key>
+            <string>PolyMac</string>
+            <key>NSRequiredContext</key>
+            <dict/>
+            <key>NSSendFileTypes</key>
+            <array>
+                <string>public.item</string>
+            </array>
+        </dict>
+    </array>
 </dict>
 </plist>
