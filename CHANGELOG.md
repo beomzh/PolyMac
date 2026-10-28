@@ -2,6 +2,10 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 14:53]
+- [Changed] - Sources/PolyMacApp/Settings.swift `NotificationsPane`, `ColorChoiceRow`: 글자색·배경색을 "시스템 설정 따르기" 토글 뒤에 숨기지 않고 [시스템] [견본 6개] [직접 고르기]를 한 줄에 항상 보이게 — 직접 고르기가 없는 것처럼 보이던 문제
+- [Changed] - README.md: 알림 탭 설명에 견본·직접 고르기 추가
+
 [2026-10-28 14:47]
 - [Changed] - feat/toast-style: push 후 PR #6 생성 (환경 설정 알림 모양)
 

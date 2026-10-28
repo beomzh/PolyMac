@@ -273,41 +273,18 @@ private struct NotificationsPane: View {
         L("캡처를 클립보드에 복사했습니다\n알림 문구는 이렇게 보입니다", "Copied the capture to the clipboard\nNotifications look like this")
     }
 
-    /// nil(시스템 색)과 직접 고른 색을 오가는 바인딩
-    private func colorBinding(_ keyPath: WritableKeyPath<ToastStyle, String?>, fallback: NSColor) -> Binding<Color> {
-        Binding(
-            get: { Color(nsColor: style[keyPath: keyPath].flatMap(ToastStyle.color(hex:)) ?? fallback) },
-            set: { style[keyPath: keyPath] = ToastStyle.hex(NSColor($0)) }
-        )
-    }
-
-    private func systemBinding(_ keyPath: WritableKeyPath<ToastStyle, String?>, fallback: NSColor) -> Binding<Bool> {
-        Binding(
-            get: { style[keyPath: keyPath] == nil },
-            set: { useSystem in
-                var resolved = fallback
-                NSApp.effectiveAppearance.performAsCurrentDrawingAppearance { resolved = fallback.usingColorSpace(.sRGB) ?? fallback }
-                style[keyPath: keyPath] = useSystem ? nil : ToastStyle.hex(resolved)
-            }
-        )
-    }
-
     var body: some View {
         Form {
             Section {
-                Toggle(L("글자색: 시스템 설정 따르기", "Text color: follow system"), isOn: systemBinding(\.textColor, fallback: .labelColor))
-                if style.textColor != nil {
-                    ColorPicker(L("글자색", "Text color"), selection: colorBinding(\.textColor, fallback: .labelColor), supportsOpacity: false)
-                }
-                Toggle(L("배경색: 시스템 설정 따르기", "Background: follow system"), isOn: systemBinding(\.backgroundColor, fallback: .windowBackgroundColor))
-                if style.backgroundColor != nil {
-                    ColorPicker(L("배경색", "Background color"), selection: colorBinding(\.backgroundColor, fallback: .windowBackgroundColor), supportsOpacity: true)
-                }
+                ColorChoiceRow(title: L("글자색", "Text color"), hex: $style.textColor, fallback: .labelColor,
+                               swatches: ["#FFFFFF", "#000000", "#8E8E93", "#FFD60A", "#0A84FF", "#FF453A"], opacity: false)
+                ColorChoiceRow(title: L("배경색", "Background"), hex: $style.backgroundColor, fallback: .windowBackgroundColor,
+                               swatches: ["#1E1E1EE6", "#FFFFFFF2", "#0A84FFE6", "#30D158E6", "#FF9F0AE6", "#FF453AE6"], opacity: true)
             } header: {
                 Text(L("색", "Colors"))
             } footer: {
-                Text(L("\"시스템 설정 따르기\"는 라이트·다크 모드에 맞춰 바뀝니다. 직접 고른 색은 모드와 관계없이 그대로입니다.",
-                       "\"Follow system\" adapts to light and dark mode. A color you pick stays the same in both."))
+                Text(L("\"시스템\"은 라이트·다크 모드에 맞춰 바뀝니다. 견본이나 직접 고른 색은 모드와 관계없이 그대로입니다.",
+                       "\"System\" adapts to light and dark mode. A swatch or a color you pick stays the same in both."))
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section(L("크기", "Size")) {
@@ -338,6 +315,54 @@ private struct NotificationsPane: View {
                 Text("\(Int(value.wrappedValue)) \(unit)").monospacedDigit().frame(width: 56, alignment: .trailing)
             }
         }
+    }
+}
+
+/// 색 한 줄: [시스템] [견본…] [직접 고르기]. 고른 칸에 테두리를 두른다.
+private struct ColorChoiceRow: View {
+    let title: String
+    @Binding var hex: String?
+    /// "시스템"일 때 쓰는 동적 색 (칸 안에 현재 모드로 그려 보여준다)
+    let fallback: NSColor
+    let swatches: [String]
+    let opacity: Bool
+
+    private var isCustom: Bool { hex != nil && !swatches.contains(hex!) }
+
+    var body: some View {
+        LabeledContent(title) {
+            HStack(spacing: 6) {
+                chip(Color(nsColor: fallback), selected: hex == nil, help: L("시스템 설정 따르기", "Follow system")) { hex = nil }
+                    .overlay(Text("A").font(.caption2.bold()).foregroundStyle(.secondary).allowsHitTesting(false))
+                Divider().frame(height: 18)
+                ForEach(swatches, id: \.self) { value in
+                    if let color = ToastStyle.color(hex: value) {
+                        chip(Color(nsColor: color), selected: hex == value, help: value) { hex = value }
+                    }
+                }
+                Divider().frame(height: 18)
+                ColorPicker("", selection: Binding(
+                    get: { Color(nsColor: hex.flatMap(ToastStyle.color(hex:)) ?? fallback) },
+                    set: { hex = ToastStyle.hex(NSColor($0)) }
+                ), supportsOpacity: opacity)
+                .labelsHidden()
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.accentColor, lineWidth: isCustom ? 2 : 0).padding(-3))
+                .help(L("직접 고르기", "Choose a color"))
+                Text(L("직접 고르기", "Custom")).font(.caption).foregroundStyle(isCustom ? .primary : .secondary)
+            }
+        }
+    }
+
+    private func chip(_ color: Color, selected: Bool, help: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            RoundedRectangle(cornerRadius: 5)
+                .fill(color)
+                .frame(width: 22, height: 22)
+                .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.primary.opacity(0.25), lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: 7).stroke(Color.accentColor, lineWidth: selected ? 2 : 0).padding(-3))
+        }
+        .buttonStyle(.plain)
+        .help(help)
     }
 }
 
