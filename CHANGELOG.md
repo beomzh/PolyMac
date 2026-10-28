@@ -3,6 +3,9 @@
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
 [2026-10-28 15:02]
+- [Changed] - feat/toast-style: PR #6에 한글 입력 캡처 단축키 수정·알림 위치·시간·끄기 push
+
+[2026-10-28 15:02]
 - [Fixed] - Sources/PolyMacCore/KeyInput.swift `NSEvent.latinKey`: 한글 입력 상태에서 캡처 단축키(R·A·P·T·F·C 등)가 "ㄱ" 같은 한글로 들어와 동작하지 않던 문제 — 글자 대신 자판 위치로 판단
 - [Fixed] - Sources/PolyMacCore/SelectionView.swift, Sources/CaptureModule/PinPanel.swift, Sources/ClipboardModule/ClipboardPanel.swift: 키 판단을 `latinKey`로
 - [Added] - Sources/PolyMacCore/ToastStyle.swift `ToastPosition`, `isEnabled`, `seconds`: 알림 위치 7곳, 표시 시간(1~10초, 오래 뜨는 안내는 같은 비율), 알림 끄기
