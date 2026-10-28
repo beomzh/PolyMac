@@ -51,6 +51,7 @@ final class SelectionView: NSView {
     private var annotations: [Annotation] = []
     private var drawing: Annotation?
     private var toolbar: AnnotationToolbar?
+    private var textInput: AnnotationTextInput?
     private var lastExtent: NSRect?
 
     var onFinish: ((Outcome?) -> Void)?
@@ -144,7 +145,8 @@ final class SelectionView: NSView {
         ctx.saveGState()
         ctx.clip(to: selection)
         ctx.translateBy(x: selection.minX, y: selection.minY)
-        AnnotationRenderer.draw(annotations + (drawing.map { [$0] } ?? []), in: ctx)
+        AnnotationRenderer.draw(annotations + (drawing.map { [$0] } ?? []), in: ctx,
+                                source: .init(image: image, scale: scale, origin: selection.origin))
         ctx.restoreGState()
 
         ctx.setStrokeColor(NSColor.systemBlue.cgColor)
@@ -233,6 +235,7 @@ final class SelectionView: NSView {
                 (L("드래그", "Drag"), L("안쪽: 이동 · 테두리: 크기 조절", "inside: move · edge: resize")),
                 ("← ↑ ↓ →", L("1px 이동 (⇧ 10px)", "move 1px (⇧ 10px)")),
                 ("R A P", L("사각형 · 화살표 · 펜", "box · arrow · pen")),
+                ("E M N", L("글자 · 모자이크 · 번호", "text · mosaic · number")),
                 ("1 ~ 8", L("색상 (1 빨강)", "color (1 red)")),
                 ("⌘Z", L("표시 되돌리기", "undo markup")),
                 ("T", L("텍스트 추출", "extract text")),
@@ -462,9 +465,19 @@ final class SelectionView: NSView {
         let p = convert(event.locationInWindow, from: nil)
         mouse = p
         if isSelected {
+            // 입력 중인 글자가 있으면 다른 곳을 누를 때 확정만 한다
+            if let input = textInput, input.isActive {
+                input.commit()
+                return
+            }
             if let tool = toolbar?.selectedTool {
                 guard selection.contains(p) else { return }
+                if tool == .text {
+                    beginText(at: p)
+                    return
+                }
                 drawing = Annotation(tool: tool, start: local(p), color: toolbar?.color ?? .systemRed)
+                if tool == .number { drawing?.number = Annotation.nextNumber(after: annotations) }
                 drag = .annotating
                 return
             }
@@ -604,6 +617,9 @@ final class SelectionView: NSView {
         case ("r", false): pick(.rectangle)
         case ("a", false): pick(.arrow)
         case ("p", false): pick(.pen)
+        case ("e", false): pick(.text)
+        case ("m", false): pick(.mosaic)
+        case ("n", false): pick(.number)
         case ("t", false): complete(.ocr)
         case ("f", false): complete(.pin)
         default: break
@@ -663,6 +679,21 @@ final class SelectionView: NSView {
         toolbar?.select(toolbar?.selectedTool == tool ? nil : tool)
     }
 
+    /// 글자 도구: 누른 자리에 입력 칸을 띄우고, 확정하면 표시로 남긴다
+    private func beginText(at p: NSPoint) {
+        let color = toolbar?.color ?? .systemRed
+        let anchor = local(p)
+        textInput = AnnotationTextInput(in: self, at: p, color: color) { [weak self] text in
+            guard let self else { return }
+            var a = Annotation(tool: .text, start: anchor, color: color)
+            a.text = text
+            if a.isMeaningful { self.annotations.append(a) }
+            self.textInput = nil
+            self.window?.makeFirstResponder(self)
+            self.needsDisplay = true
+        }
+    }
+
     private func undoAnnotation() {
         guard !annotations.isEmpty else { return }
         annotations.removeLast()
@@ -674,6 +705,7 @@ final class SelectionView: NSView {
     }
 
     private func complete(_ action: CaptureAction?) {
+        textInput?.commit()
         let pixelRect = CGRect(
             x: selection.minX * scale,
             y: (bounds.height - selection.maxY) * scale,

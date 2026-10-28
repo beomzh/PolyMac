@@ -13,6 +13,7 @@ import os
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SettingsHost {
     private let registry = ModuleRegistry()
+    private lazy var services = ServicesProvider(registry: registry)
     private var statusItem: NSStatusItem?
     private let logger = Logger(subsystem: "dev.polymac", category: "app")
 
@@ -39,6 +40,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Settin
             activate(descriptor)
         }
         NSApp.mainMenu = Self.makeMainMenu(target: self)
+        // Finder 우클릭 메뉴 (Info.plist NSServices)
+        NSApp.servicesProvider = services
+        NSUpdateDynamicServices()
         watchAccessibilityChanges()
         logger.info("launched \(self.version, privacy: .public) accessibility=\(Permissions.accessibility)")
     }

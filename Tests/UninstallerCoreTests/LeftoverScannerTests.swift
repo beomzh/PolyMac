@@ -199,3 +199,12 @@ private let app = AppBundleInfo(url: URL(fileURLWithPath: "/Applications/Foo Bar
     #expect(AppBundleInfo(url: URL(fileURLWithPath: "/System/Applications/Notes.app"), bundleID: "com.apple.Notes", name: "Notes").isSystemApp)
     #expect(!app.isSystemApp)
 }
+
+@Test func receiptFilesGiveSafePackageIDs() {
+    let dir = URL(fileURLWithPath: "/private/var/db/receipts")
+    #expect(PkgReceipt.id(fromFile: dir.appendingPathComponent("com.vendor.app.pkg.plist")) == "com.vendor.app.pkg")
+    #expect(PkgReceipt.id(fromFile: dir.appendingPathComponent("com.vendor.app.pkg.bom")) == "com.vendor.app.pkg")
+    // 셸에 넘길 수 없는 글자나 다른 폴더는 거절
+    #expect(PkgReceipt.id(fromFile: dir.appendingPathComponent("evil'; rm -rf ~.plist")) == nil)
+    #expect(PkgReceipt.id(fromFile: URL(fileURLWithPath: "/tmp/com.vendor.app.pkg.plist")) == nil)
+}

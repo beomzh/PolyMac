@@ -1,6 +1,20 @@
 import Foundation
 import PolyMacL10n
 
+/// pkg 설치 기록 (/var/db/receipts/<id>.plist, .bom). 휴지통으로 옮기는 대신 `pkgutil --forget <id>`로 지운다 —
+/// 파일만 옮기면 pkgutil 데이터베이스에 흔적이 남는다.
+public enum PkgReceipt {
+    /// 설치 기록 파일 → 패키지 ID. 영문·숫자·.-_ 만 받는다 (셸 명령에 들어가므로)
+    public static func id(fromFile url: URL) -> String? {
+        let name = url.lastPathComponent
+        guard url.deletingLastPathComponent().path.hasSuffix("/db/receipts") else { return nil }
+        let id: String
+        if name.hasSuffix(".plist") { id = String(name.dropLast(6)) } else if name.hasSuffix(".bom") { id = String(name.dropLast(4)) } else { return nil }
+        guard !id.isEmpty, id.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || ".-_".contains($0)) }) else { return nil }
+        return id
+    }
+}
+
 /// 삭제할 앱 정보
 public struct AppBundleInfo: Sendable, Hashable, Identifiable {
     public let url: URL

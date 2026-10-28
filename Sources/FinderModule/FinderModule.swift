@@ -12,7 +12,7 @@ public final class FinderModule: PolyMacModule {
         permissions: [.accessibility, .automationFinder]
     )
 
-    private let context: ModuleContext
+    let context: ModuleContext
     private var keyTap: FinderKeyTap?
     /// 권한이 없어 탭을 못 만들었을 때만 도는 재시도 타이머. 권한이 생기면 멈춘다.
     private var retryTimer: Timer?

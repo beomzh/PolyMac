@@ -1,6 +1,6 @@
 import Foundation
 
-/// 클립보드 히스토리 한 항목 — 텍스트 또는 이미지.
+/// 클립보드 히스토리 한 항목 — 텍스트, 이미지 또는 Finder에서 복사한 파일.
 /// 이미지와 큰 텍스트(긴 로그 등)는 JSON에 넣지 않고 데이터 폴더에 따로 저장한다 (0600):
 /// clipboard-images/<파일>.png, clipboard-texts/<파일>.txt
 public struct ClipboardItem: Codable, Sendable, Identifiable, Equatable {
@@ -22,8 +22,11 @@ public struct ClipboardItem: Codable, Sendable, Identifiable, Equatable {
     public var imageBytes: Int?
     /// 같은 이미지를 두 번 저장하지 않기 위한 SHA-256
     public var contentHash: String?
+    /// Finder에서 복사한 파일·폴더 경로 (파일 내용은 저장하지 않고 경로만). text에는 경로를 줄마다 담아 검색·미리보기에 쓴다.
+    public var files: [String]?
 
     public var isImage: Bool { imageFile != nil }
+    public var isFiles: Bool { !(files ?? []).isEmpty }
     /// 앞부분만 들고 있는 큰 텍스트
     public var isLargeText: Bool { textFile != nil }
 
@@ -43,6 +46,12 @@ public struct ClipboardItem: Codable, Sendable, Identifiable, Equatable {
         item.textFile = file
         item.textBytes = bytes
         item.contentHash = hash
+        return item
+    }
+
+    public static func files(_ paths: [String], sourceApp: String?) -> ClipboardItem {
+        var item = ClipboardItem(text: paths.joined(separator: "\n"), sourceApp: sourceApp)
+        item.files = paths
         return item
     }
 
@@ -74,9 +83,10 @@ public enum ClipboardPrivacy {
         "com.bitwarden.desktop",
     ]
 
-    public static func shouldIgnore(types: [String], frontmostBundleID: String?) -> Bool {
+    /// excludedApps: 사용자가 메뉴에서 고른 "기록하지 않을 앱"
+    public static func shouldIgnore(types: [String], frontmostBundleID: String?, excludedApps: Set<String> = []) -> Bool {
         if types.contains(where: ignoredTypes.contains) { return true }
-        if let id = frontmostBundleID, defaultIgnoredApps.contains(id) { return true }
+        if let id = frontmostBundleID, defaultIgnoredApps.contains(id) || excludedApps.contains(id) { return true }
         return false
     }
 }

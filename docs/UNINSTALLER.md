@@ -29,7 +29,7 @@
 | 백그라운드 항목 | `LaunchAgents` | `LaunchAgents`, `LaunchDaemons`, `PrivilegedHelperTools` |
 | 플러그인·확장 | `Internet Plug-Ins`, `PreferencePanes`, `Services`, `QuickLook`, `Spotlight`, `Screen Savers`, `Input Methods`, `Audio/Plug-Ins/{Components,VST,VST3,HAL}` | 같은 폴더들 |
 | 공유 폴더 | `/Users/Shared` | |
-| 설치 기록 | | `/var/db/receipts` (pkg) |
+| 설치 기록 | | `/var/db/receipts` (pkg) — 휴지통 대신 `pkgutil --forget <id>`(관리자 암호), ID는 영문·숫자·`.-_`만 받음 |
 | 앱이 든 폴더 | `/Applications/<폴더>/`, `~/Applications/<폴더>/` | |
 
 각 위치는 **바로 아래 항목만** 본다 (하위 폴더를 재귀로 뒤지지 않는다). 찾은 항목은 폴더째 지운다.
