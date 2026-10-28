@@ -181,6 +181,17 @@ private let app = AppBundleInfo(url: URL(fileURLWithPath: "/Applications/Foo Bar
     #expect(LeftoverScanner.appKey("com.riotgames.RiotGames.RiotClient") != LeftoverScanner.appKey("com.riotgames.LeagueofLegends.LeagueClient"))
 }
 
+@Test func onlyRemovedItemsLeaveTheList() throws {
+    let dir = FileManager.default.temporaryDirectory.appendingPathComponent("polymac-present-\(UUID().uuidString)")
+    try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+    func item(_ name: String) -> LeftoverItem { LeftoverItem(url: dir.appendingPathComponent(name), kind: .caches, confidence: .likely, reason: "") }
+    let kept = item("com.example.Kept"), gone = item("com.example.Gone")
+    try Data().write(to: kept.url)
+    // 고르지 않아 남아 있는 항목은 목록에 그대로, 지워진 항목만 빠진다
+    #expect(LeftoverScanner.stillPresent([kept, gone]).map(\.url) == [kept.url])
+}
+
 @Test func systemAppsAreProtected() {
     #expect(AppBundleInfo(url: URL(fileURLWithPath: "/System/Applications/Notes.app"), bundleID: "com.apple.Notes", name: "Notes").isSystemApp)
     #expect(!app.isSystemApp)

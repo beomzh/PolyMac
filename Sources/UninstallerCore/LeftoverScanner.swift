@@ -329,6 +329,11 @@ public enum LeftoverScanner {
     /// 회사 단위 묶음 열쇠: "com.riotgames.RiotGames.RiotClient" → "com.riotgames"
     public static func vendorKey(_ id: String) -> String { vendor(id) }
 
+    /// 지운 뒤에도 디스크에 남아 있는 항목만 — 링크는 따라가지 않는다(lstat)
+    public static func stillPresent(_ items: [LeftoverItem]) -> [LeftoverItem] {
+        items.filter { (try? FileManager.default.attributesOfItem(atPath: $0.url.path)) != nil }
+    }
+
     /// 앱 단위 묶음 열쇠 — 앱 ID 앞 세 부분. 도우미·위젯도 같은 앱으로 묶인다.
     /// "com.alanyan.BatteryMac.BigSurWidget" → "com.alanyan.batterymac"
     public static func appKey(_ id: String) -> String {

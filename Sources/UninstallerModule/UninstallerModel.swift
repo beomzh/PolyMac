@@ -287,14 +287,15 @@ final class UninstallerModel: ObservableObject {
             if mode == .apps, let app = selectedApp {
                 if !FileManager.default.fileExists(atPath: app.url.path) {
                     apps.removeAll { $0.id == app.id }
-                    items = items.filter { failed.contains($0.url) }
+                    items = LeftoverScanner.stillPresent(items)
                     checked = []
                 } else {
                     scan(app)
                 }
             } else {
+                // 휴지통으로 간 것만 뺀다 — 고르지 않은 항목·옮기지 못한 항목은 그대로
                 orphanGroups = orphanGroups.compactMap { g in
-                    let left = g.items.filter { failed.contains($0.url) }
+                    let left = LeftoverScanner.stillPresent(g.items)
                     return left.isEmpty ? nil : LeftoverScanner.OrphanGroup(bundleID: g.bundleID, items: left)
                 }
                 checked = []

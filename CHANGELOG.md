@@ -2,6 +2,11 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 10:19]
+- [Fixed] - Sources/UninstallerModule/UninstallerModel.swift: 남은 흔적에서 하나를 지우면 고르지 않은 다른 묶음까지 목록에서 사라져 "다시 찾기"가 필요하던 문제 — 디스크에 아직 있는 항목은 목록에 그대로 둠 (앱 모드도 같음)
+- [Added] - Sources/UninstallerCore/LeftoverScanner.swift: stillPresent(지운 뒤 남은 항목, 링크는 따라가지 않음)
+- [Added] - Tests/UninstallerCoreTests/LeftoverScannerTests.swift: 지운 항목만 목록에서 빠지는지 테스트 (총 26개)
+
 [2026-10-28 10:16]
 - [Changed] - 저장소: 위 수정(커밋 88d76b8)을 push, PR #3 생성
 
