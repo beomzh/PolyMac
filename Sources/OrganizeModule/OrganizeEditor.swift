@@ -239,7 +239,9 @@ private struct RuleDetail: View {
     var body: some View {
         Form {
             Section {
-                TextField(L("이름", "Name"), text: $rule.name)
+                LabeledContent(L("이름", "Name")) {
+                    InputBox(L("규칙 이름", "Rule name"), text: $rule.name)
+                }
                 Toggle(L("켜기", "Enabled"), isOn: $rule.isEnabled)
                 Toggle(L("이 규칙이 적용되면 다음 규칙은 건너뛰기", "Stop checking later rules after this one applies"), isOn: $rule.stopAfterMatch)
             }
@@ -291,12 +293,12 @@ private struct ConditionEditor: View {
             }
             switch row.kind {
             case .fileExtension:
-                TextField(L("pdf, hwp, zip (쉼표로 구분)", "pdf, docx, zip (comma separated)"), text: $row.text)
+                InputBox(L("pdf, hwp, zip (쉼표로 구분)", "pdf, docx, zip (comma separated)"), text: $row.text)
             case .sourceDomain:
-                TextField(L("go.kr, github.com (하위 도메인 포함)", "github.com, example.org (includes subdomains)"), text: $row.text)
+                InputBox(L("go.kr, github.com (하위 도메인 포함)", "github.com, example.org (includes subdomains)"), text: $row.text)
             case .name:
                 HStack {
-                    TextField(L("*견적서*", "*invoice*"), text: $row.text)
+                    InputBox(L("*견적서*", "*invoice*"), text: $row.text)
                     Toggle(L("정규식", "Regex"), isOn: $row.isRegex).toggleStyle(.checkbox)
                 }
             case .kind:
@@ -310,7 +312,16 @@ private struct ConditionEditor: View {
                     }
                 }
             case .sizeGreaterThan, .sizeLessThan, .addedMoreThan, .notOpenedFor:
-                TextField("", value: $row.number, format: .number).frame(width: 100)
+                HStack {
+                    TextField("", value: $row.number, format: .number, prompt: Text("0"))
+                        .labelsHidden()
+                        .textFieldStyle(.roundedBorder)
+                        .multilineTextAlignment(.trailing)
+                        .frame(width: 100)
+                    Text([.sizeGreaterThan, .sizeLessThan].contains(row.kind) ? "MB" : L("일", "days"))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
             case .allFiles:
                 Text(L("감시 폴더 바로 아래의 모든 파일 (다운로드 중인 파일·폴더 제외). 다른 조건과 \"모두 맞을 때\"로 묶으면 그 조건만 남습니다.",
                        "Every file directly in the watched folders (except downloads in progress and folders). Combined with \"All match\", only the other conditions matter."))
@@ -337,7 +348,7 @@ private struct ActionEditor: View {
             .labelsHidden()
             .fixedSize()
             if row.needsText {
-                TextField(placeholder, text: $row.text)
+                InputBox(placeholder, text: $row.text)
                 if row.kind == .move || row.kind == .copy {
                     Button(L("고르기…", "Choose…")) { choose() }
                 }
@@ -364,5 +375,25 @@ private struct ActionEditor: View {
         panel.canCreateDirectories = true
         guard panel.runModal() == .OK, let url = panel.url else { return }
         row.text = (url.path as NSString).abbreviatingWithTildeInPath
+    }
+}
+
+/// 테두리 있는 입력 칸. grouped Form 안의 TextField는 기본이 테두리 없는 글자라 입력 칸으로 보이지 않는다 —
+/// 자리표시 글은 칸 안에 흐리게, 이름표는 따로 두지 않는다.
+private struct InputBox: View {
+    let placeholder: String
+    @Binding var text: String
+
+    init(_ placeholder: String, text: Binding<String>) {
+        self.placeholder = placeholder
+        self._text = text
+    }
+
+    var body: some View {
+        TextField("", text: $text, prompt: Text(placeholder))
+            .labelsHidden()
+            .textFieldStyle(.roundedBorder)
+            .multilineTextAlignment(.leading) // grouped Form은 오른쪽 정렬이 기본
+            .frame(maxWidth: .infinity)
     }
 }
