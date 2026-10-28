@@ -12,28 +12,42 @@ public final class NormalizeModule: PolyMacModule {
 
     let context: ModuleContext
     private var watcher: FolderWatcher?
+    private var observer: NSObjectProtocol?
 
-    /// 감시 폴더 (바로 아래 항목만). 추가: defaults write dev.polymac.app normalize.extraFolders -array "~/Documents/받은파일"
-    private var folders: [String] {
-        let extra = UserDefaults.standard.stringArray(forKey: "normalize.extraFolders") ?? []
-        return (["~/Downloads", "~/Desktop"] + extra).map { NSString(string: $0).expandingTildeInPath }
-    }
+    /// 감시 폴더 (바로 아래 항목만) — 환경 설정 › 한글 파일명, 또는 NormalizeFolders 설명의 defaults 명령
+    private var folders: [String] { NormalizeFolders.activePaths() }
 
     public init(context: ModuleContext) {
         self.context = context
     }
 
     public func activate() throws {
+        startWatching()
+        observer = NotificationCenter.default.addObserver(forName: NormalizeFolders.didChange, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.startWatching() }
+        }
+    }
+
+    private func startWatching() {
+        watcher?.stop()
+        watcher = nil
         let targets = folders.filter { !isExcluded($0) }
+        guard !targets.isEmpty else {
+            context.logger.info("normalize: no folders to watch")
+            return
+        }
         targets.forEach(normalize)
         let watcher = FolderWatcher(paths: targets) { [weak self] changed in
             self?.handle(changed, roots: targets)
         }
         watcher.start()
         self.watcher = watcher
+        context.logger.info("normalize watching \(targets.count) folders")
     }
 
     public func deactivate() {
+        if let observer { NotificationCenter.default.removeObserver(observer) }
+        observer = nil
         watcher?.stop()
         watcher = nil
     }

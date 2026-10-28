@@ -2,6 +2,13 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 15:15]
+- [Added] - Sources/NormalizeModule/NormalizeFolders.swift `NormalizeFolders`: 자소분리 검사 폴더 목록을 변수 normalize.folders(끈 폴더는 normalize.disabledFolders)로 저장, 예전 normalize.extraFolders 이어받기, 홈 폴더 안의 실제 폴더만 허용(홈 전체·~/Library 거부) — 다운로드·데스크탑 고정 + 추가만 되던 것을 전체 지정 가능하게
+- [Changed] - Sources/NormalizeModule/NormalizeModule.swift: 새 목록 사용, 목록이 바뀌면 감시 다시 시작, 폴더가 없으면 감시하지 않음
+- [Added] - Sources/PolyMacApp/Settings.swift `NormalizePane`: 환경 설정 › 한글 파일명 — 폴더 추가·빼기·켜기/끄기·기본값, 막힌 폴더는 이유 표시
+- [Added] - Tests/NormalizeModuleTests/NormalizeFoldersTests.swift: 기본값·이어받기·저장·허용 검사 테스트
+- [Changed] - README.md: 검사 폴더 바꾸기 안내(환경 설정·defaults 변수), 환경 설정 탭 표
+
 [2026-10-28 15:10]
 - [Changed] - CHANGELOG.md: PR #5 머지 후 main을 feat/toast-style에 합침 — 두 브랜치 기록 모두 유지
 
