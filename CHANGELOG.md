@@ -2,6 +2,11 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 15:09]
+- [Changed] - Sources/PolyMacCore/Toast.swift `Toast.show(_:content:)`: 안내 첫 줄은 가운데·굵게, 다음 줄은 가운데 보조 설명, 추출한 글 같은 내용은 아래 별도 상자(왼쪽 정렬, 6줄) — 안내와 내용이 섞여 보이던 문제
+- [Changed] - Sources/OCRModule/TextRecognizer.swift `OCRRunner.recognizeAndCopy`: 미리보기를 내용 상자로 분리, 문구 "텍스트를 클립보드에 복사했습니다"
+- [Changed] - Sources/PolyMacApp/Settings.swift `NotificationsPane`: 미리보기에 내용 상자도 함께 표시
+
 [2026-10-28 15:02]
 - [Changed] - feat/toast-style: PR #6에 한글 입력 캡처 단축키 수정·알림 위치·시간·끄기 push
 

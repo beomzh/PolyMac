@@ -270,7 +270,12 @@ private struct NotificationsPane: View {
     @State private var style = ToastStyle.current
 
     private var sample: String {
-        L("캡처를 클립보드에 복사했습니다\n알림 문구는 이렇게 보입니다", "Copied the capture to the clipboard\nNotifications look like this")
+        L("텍스트를 클립보드에 복사했습니다", "Text copied to the clipboard")
+    }
+
+    /// 미리보기에서 안내 문구와 내용 상자가 어떻게 나뉘는지 함께 보여준다
+    private var sampleContent: String {
+        L("맥에서 만든 한글 파일명이 윈도우에서 깨지는 문제…", "Recognized text appears here, separate from the notice…")
     }
 
     var body: some View {
@@ -317,7 +322,7 @@ private struct NotificationsPane: View {
             }
             Section {
                 HStack {
-                    Button(L("미리보기", "Preview")) { Toast.show(sample, duration: style.seconds, style: style) }
+                    Button(L("미리보기", "Preview")) { Toast.show(sample, content: sampleContent, duration: style.seconds, style: style) }
                     Spacer()
                     Button(L("기본값으로", "Restore Defaults")) { style = ToastStyle() }
                         .disabled(style == ToastStyle())
@@ -327,7 +332,7 @@ private struct NotificationsPane: View {
         .formStyle(.grouped)
         .onChange(of: style) { _, new in
             new.save()
-            Toast.show(sample, duration: new.seconds, style: new)
+            Toast.show(sample, content: sampleContent, duration: new.seconds, style: new)
         }
     }
 
