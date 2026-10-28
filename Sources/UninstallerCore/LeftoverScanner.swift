@@ -1,4 +1,5 @@
 import Foundation
+import PolyMacL10n
 
 /// 앱이 남기는 파일을 찾는 규칙. 파일 시스템 위치는 주입받아 테스트에서 가짜 폴더로 돌릴 수 있다.
 public enum LeftoverScanner {
@@ -95,12 +96,12 @@ public enum LeftoverScanner {
                             receiptDirectory: URL = URL(fileURLWithPath: "/var/db/receipts"),
                             fileManager: FileManager = .default) -> [LeftoverItem] {
         var found: [LeftoverItem] = [
-            LeftoverItem(url: app.url, kind: .app, confidence: .exact, reason: "삭제할 앱", requiresAdmin: !isUserWritable(app.url, fileManager)),
+            LeftoverItem(url: app.url, kind: .app, confidence: .exact, reason: L("삭제할 앱", "The app to remove"), requiresAdmin: !isUserWritable(app.url, fileManager)),
         ]
         var seen = Set([app.url.path])
         if let folder = containingFolder(of: app, fileManager: fileManager) {
             found.append(LeftoverItem(url: folder, kind: .app, confidence: .likely,
-                                      reason: "앱이 들어 있는 폴더 — 안에 다른 앱 없음 (설치 관리자·리소스 포함)",
+                                      reason: L("앱이 들어 있는 폴더 — 안에 다른 앱 없음 (설치 관리자·리소스 포함)", "Folder containing the app — no other apps inside (installer and resources included)"),
                                       requiresAdmin: !isUserWritable(folder, fileManager)))
             seen.insert(folder.path)
         }
@@ -120,7 +121,7 @@ public enum LeftoverScanner {
             for ext in ["plist", "bom"] {
                 let url = receiptDirectory.appendingPathComponent("\(id).\(ext)")
                 guard fileManager.fileExists(atPath: url.path), seen.insert(url.path).inserted else { continue }
-                found.append(LeftoverItem(url: url, kind: .receipt, confidence: .likely, reason: "설치 기록 ID \(id)", requiresAdmin: true))
+                found.append(LeftoverItem(url: url, kind: .receipt, confidence: .likely, reason: L("설치 기록 ID \(id)", "Install receipt ID \(id)"), requiresAdmin: true))
             }
         }
         return found
@@ -134,37 +135,37 @@ public enum LeftoverScanner {
             // "Foo-2026-10-27-120000.ips", "Foo_2026-...crash"
             let process = normalized(app.executableName ?? app.name)
             let head = normalized(String(name.split(whereSeparator: { $0 == "-" || $0 == "_" }).first ?? ""))
-            return process.count >= 3 && head == process ? (.likely, "이 앱(\(app.executableName ?? app.name))의 충돌 기록") : nil
+            return process.count >= 3 && head == process ? (.likely, L("이 앱(\(app.executableName ?? app.name))의 충돌 기록", "Crash report of this app (\(app.executableName ?? app.name))")) : nil
         }
         if kind == .plugins {
             // 플러그인은 자기 번들 ID를 가진다
             let pluginID = Bundle(url: url)?.bundleIdentifier?.lowercased() ?? ""
-            if pluginID == id.lowercased() || pluginID.hasPrefix(id.lowercased() + ".") { return (.exact, "앱 ID(\(id))로 시작하는 플러그인") }
-            if !pluginID.isEmpty, vendor(pluginID) == vendor(id) { return (.guessed, "같은 회사(\(vendor(id)))의 플러그인 — 확인 후 선택") }
+            if pluginID == id.lowercased() || pluginID.hasPrefix(id.lowercased() + ".") { return (.exact, L("앱 ID(\(id))로 시작하는 플러그인", "Plug-in whose ID starts with the app ID (\(id))")) }
+            if !pluginID.isEmpty, vendor(pluginID) == vendor(id) { return (.guessed, L("같은 회사(\(vendor(id)))의 플러그인 — 확인 후 선택", "Plug-in from the same vendor (\(vendor(id))) — check before selecting")) }
         }
         if base.caseInsensitiveCompare(id) == .orderedSame || base.lowercased().hasPrefix(id.lowercased() + ".") {
-            return (.exact, "앱 ID(\(id))와 일치")
+            return (.exact, L("앱 ID(\(id))와 일치", "Matches the app ID (\(id))"))
         }
         // "팀ID.앱ID" (Application Scripts·Group Containers 등) — 팀 ID를 몰라도 형태로 알아본다
         if let dot = base.firstIndex(of: "."), base[..<dot].count == 10, base[..<dot].allSatisfy({ $0.isUppercase || $0.isNumber }) {
             let rest = base[base.index(after: dot)...].lowercased()
             if rest == id.lowercased() || rest.hasPrefix(id.lowercased() + ".") {
-                return (.exact, "개발사 팀 ID + 앱 ID(\(id))와 일치")
+                return (.exact, L("개발사 팀 ID + 앱 ID(\(id))와 일치", "Matches the developer team ID + app ID (\(id))"))
             }
         }
         if let team = app.teamID, base.hasPrefix(team + ".") {
-            return (.likely, "같은 개발사(팀 \(team))의 데이터")
+            return (.likely, L("같은 개발사(팀 \(team))의 데이터", "Data from the same developer (team \(team))"))
         }
         if [.launchAgent, .launchDaemon].contains(kind), launchItem(at: url, runs: app) {
-            return (.likely, "이 앱 안의 프로그램을 실행하는 항목")
+            return (.likely, L("이 앱 안의 프로그램을 실행하는 항목", "Launches a program inside this app"))
         }
         if [.appSupport, .caches, .logs, .webData, .sharedData, .plugins, .other].contains(kind) {
             let n = normalized(base), appName = normalized(app.name)
             if appName.count >= 3, n == appName {
-                return (.likely, "앱 이름(\(app.name))과 같은 이름")
+                return (.likely, L("앱 이름(\(app.name))과 같은 이름", "Same name as the app (\(app.name))"))
             }
             if appName.count >= 5, n.contains(appName) {
-                return (.guessed, "앱 이름(\(app.name))이 들어간 이름 — 확인 후 선택")
+                return (.guessed, L("앱 이름(\(app.name))이 들어간 이름 — 확인 후 선택", "Name contains the app name (\(app.name)) — check before selecting"))
             }
         }
         return nil
@@ -243,8 +244,8 @@ public enum LeftoverScanner {
                 let item = LeftoverItem(
                     url: url, kind: location.kind,
                     confidence: programMissing ? .likely : (sameVendor ? .guessed : .likely),
-                    reason: programMissing ? "실행할 프로그램이 이미 지워진 백그라운드 항목"
-                        : sameVendor ? "설치된 앱 없음 — 같은 회사의 다른 앱이 있어 공용 구성요소일 수 있음" : "이 ID의 앱이 설치돼 있지 않음",
+                    reason: programMissing ? L("실행할 프로그램이 이미 지워진 백그라운드 항목", "Background item whose program is already gone")
+                        : sameVendor ? L("설치된 앱 없음 — 같은 회사의 다른 앱이 있어 공용 구성요소일 수 있음", "App not installed — another app from this vendor exists, so it may be a shared component") : L("이 ID의 앱이 설치돼 있지 않음", "No installed app has this ID"),
                     requiresAdmin: location.requiresAdmin
                 )
                 groups[id, default: []].append(item)
@@ -279,20 +280,20 @@ public enum LeftoverScanner {
             for name in (try? fileManager.contentsOfDirectory(atPath: location.directory.path)) ?? [] where !name.hasPrefix(".") {
                 let url = location.directory.appendingPathComponent(name)
                 if name.hasPrefix("Relocated Items") || name.hasPrefix("Previously Relocated Items") {
-                    groups["macOS 업데이트가 옮겨 둔 항목", default: []].append(LeftoverItem(
+                    groups[L("macOS 업데이트가 옮겨 둔 항목", "Items relocated by macOS updates"), default: []].append(LeftoverItem(
                         url: url, kind: .relocated, confidence: .guessed,
-                        reason: "macOS 업데이트가 옮겨 둔 예전 설정 — 안을 확인하고 선택", requiresAdmin: true))
+                        reason: L("macOS 업데이트가 옮겨 둔 예전 설정 — 안을 확인하고 선택", "Old configuration set aside by a macOS update — check inside before selecting"), requiresAdmin: true))
                     continue
                 }
                 let n = normalized(name)
                 guard n.count >= 4, !sharedSystemFolders.contains(name), bundleIDLike(name) == nil, !relatesToInstalled(n) else { continue }
                 if let match = keyToGroup.first(where: { similar(n, $0.key) }) {
                     groups[match.group, default: []].append(LeftoverItem(url: url, kind: .sharedData, confidence: .likely,
-                                                                         reason: "지운 앱(\(match.group))의 회사·앱 이름과 같은 폴더", requiresAdmin: false))
+                                                                         reason: L("지운 앱(\(match.group))의 회사·앱 이름과 같은 폴더", "Folder named like the vendor or app (\(match.group)) you removed"), requiresAdmin: false))
                 } else {
-                    let title = "\(name) (이름으로 찾음)"
+                    let title = "\(name) \(foundByName)"
                     groups[title, default: []].append(LeftoverItem(url: url, kind: .sharedData, confidence: .guessed,
-                                                                   reason: "공유 폴더의 앱 데이터 — 관련된 설치 앱이 없음, 확인 후 선택", requiresAdmin: false))
+                                                                   reason: L("공유 폴더의 앱 데이터 — 관련된 설치 앱이 없음, 확인 후 선택", "App data in the shared folder with no related installed app — check before selecting"), requiresAdmin: false))
                     keyToGroup.append((n, title))
                 }
             }
@@ -304,12 +305,12 @@ public enum LeftoverScanner {
                 guard n.count >= 4, bundleIDLike(strippedName(name)) == nil, !relatesToInstalled(n),
                       let match = keyToGroup.first(where: { similar(n, $0.key) })
                 else { continue }
-                let fromName = match.group.hasSuffix("(이름으로 찾음)")
+                let fromName = match.group.hasSuffix(foundByName)
                 groups[match.group, default: []].append(LeftoverItem(
                     url: location.directory.appendingPathComponent(name), kind: location.kind,
                     confidence: fromName ? .guessed : .likely,
-                    reason: fromName ? "공유 폴더의 \(match.group.replacingOccurrences(of: " (이름으로 찾음)", with: ""))와 같은 이름 — 확인 후 선택"
-                                     : "지운 앱(\(match.group))의 회사·앱 이름과 같은 폴더",
+                    reason: fromName ? sameNameAsShared(match.group.replacingOccurrences(of: " " + foundByName, with: ""))
+                                     : L("지운 앱(\(match.group))의 회사·앱 이름과 같은 폴더", "Folder named like the vendor or app (\(match.group)) you removed"),
                     requiresAdmin: location.requiresAdmin))
             }
         }
@@ -332,6 +333,13 @@ public enum LeftoverScanner {
     /// 지운 뒤에도 디스크에 남아 있는 항목만 — 링크는 따라가지 않는다(lstat)
     public static func stillPresent(_ items: [LeftoverItem]) -> [LeftoverItem] {
         items.filter { (try? FileManager.default.attributesOfItem(atPath: $0.url.path)) != nil }
+    }
+
+    /// 이름으로 찾은 묶음 제목 끝에 붙는 표시
+    static var foundByName: String { L("(이름으로 찾음)", "(found by name)") }
+
+    static func sameNameAsShared(_ name: String) -> String {
+        L("공유 폴더의 \(name)와 같은 이름 — 확인 후 선택", "Same name as \(name) in the shared folder — check before selecting")
     }
 
     /// 앱 단위 묶음 열쇠 — 앱 ID 앞 세 부분. 도우미·위젯도 같은 앱으로 묶인다.

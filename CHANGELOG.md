@@ -2,6 +2,23 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 10:52]
+- [Fixed] - Sources/PolyMacApp/Settings.swift: 환경 설정 사이드바를 접으면 여는 버튼이 툴바 오른쪽 위로 옮겨 가던 문제 — 사이드바를 항상 펼치고 접기 버튼 제거
+
+[2026-10-28 10:46]
+- [Changed] - 저장소: 위 변경(커밋 2d016a3)을 push, PR #4 생성
+
+[2026-10-28 10:46]
+- [Added] - Sources/PolyMacApp/Settings.swift: 환경 설정 창(⌘,) — 기능 켜기/끄기·로그인 시 자동 실행·데이터 폴더, 언어, 단축키, 권한(허용 상태·쓰는 기능·설정 바로가기) 네 탭
+- [Changed] - Sources/PolyMacApp/AppDelegate.swift: 메뉴바 메뉴를 앱 삭제·기능 도구·환경 설정·종료로 줄임, 켜진 기능에 권한이 빠지면 "권한이 필요합니다…" 표시, 언어를 바꾸면 켜진 기능을 다시 올려 새 언어 적용
+- [Changed] - Sources/PolyMacApp/ShortcutSettings.swift: 별도 창 대신 환경 설정의 단축키 탭으로
+- [Added] - Sources/PolyMacL10n: 언어 설정(시스템/한국어/English)과 L("한국어", "English") 문구 고르기
+- [Changed] - Sources/PolyMacCore/PolyMacModule.swift: 기능 이름·한 줄 설명을 두 언어로
+- [Changed] - Sources/*: 화면 문구 전체(메뉴·알림·캡처 안내·클립보드·Finder·자동 정리·앱 삭제)에 영어 추가, 언어를 따라야 하는 static let(프리셋·색상표·터미널 목록)을 계산 속성으로
+- [Added] - App/en.lproj/InfoPlist.strings, App/Info.plist, scripts/build-app.sh: macOS 권한 안내 문구 영어판
+- [Added] - Tests: 기능 이름이 언어를 따르는지, 앱 삭제 문구 테스트는 한국어로 고정
+- [Changed] - README.md, docs/ARCHITECTURE.md: 환경 설정 사용법, 화면 언어 규칙(6-1)
+
 [2026-10-28 10:28]
 - [Changed] - 저장소: 위 수정(커밋 963d32d)을 PR #3 브랜치에 push
 

@@ -1,0 +1,5 @@
+/* macOS가 권한을 물을 때 보여 주는 문구 — 영어 */
+"NSAppleEventsUsageDescription" = "Reads the current Finder folder and selected items to open Terminal there and copy paths.";
+"NSDesktopFolderUsageDescription" = "Fixes decomposed Korean filenames on the Desktop and applies your organize rules.";
+"NSDocumentsFolderUsageDescription" = "Used when an organize rule moves files into Documents.";
+"NSDownloadsFolderUsageDescription" = "Fixes decomposed Korean filenames in Downloads and applies your organize rules.";

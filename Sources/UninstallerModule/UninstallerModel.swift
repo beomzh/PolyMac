@@ -10,6 +10,13 @@ final class UninstallerModel: ObservableObject {
     enum Mode: String, CaseIterable, Identifiable {
         case apps = "설치된 앱"
         case orphans = "남은 흔적"
+
+        var title: String {
+            switch self {
+            case .apps: return L("설치된 앱", "Installed Apps")
+            case .orphans: return L("남은 흔적", "Leftovers")
+            }
+        }
         var id: String { rawValue }
     }
 
@@ -84,7 +91,7 @@ final class UninstallerModel: ObservableObject {
     /// 앱 하나를 직접 고르기 (창에 끌어다 놓은 경우)
     func select(appAt url: URL) {
         guard url.pathExtension == "app", let info = Self.info(url) else {
-            status = "앱(.app)만 놓을 수 있습니다"
+            status = L("앱(.app)만 놓을 수 있습니다", "Only apps (.app) can be dropped here")
             return
         }
         if !apps.contains(where: { $0.id == info.id }) { apps.insert(info, at: 0) }
@@ -100,7 +107,7 @@ final class UninstallerModel: ObservableObject {
         inUse = [:]
         appLastUsed = Self.lastUsed(app.url)
         guard !app.isSystemApp, app.bundleID != Bundle.main.bundleIdentifier else {
-            status = app.isSystemApp ? "macOS 기본 앱은 지울 수 없습니다" : "PolyMac 자신은 여기서 지울 수 없습니다"
+            status = app.isSystemApp ? L("macOS 기본 앱은 지울 수 없습니다", "Built-in macOS apps can't be removed") : L("PolyMac 자신은 여기서 지울 수 없습니다", "PolyMac can't remove itself here")
             return
         }
         isScanning = true
@@ -139,7 +146,7 @@ final class UninstallerModel: ObservableObject {
             guard !installedIDs.isEmpty else {
                 await MainActor.run {
                     self.isScanning = false
-                    self.status = "설치된 앱 목록을 읽지 못해 흔적 찾기를 멈췄습니다 (쓰고 있는 앱의 데이터를 잘못 고를 수 있어서)"
+                    self.status = L("설치된 앱 목록을 읽지 못해 흔적 찾기를 멈췄습니다 (쓰고 있는 앱의 데이터를 잘못 고를 수 있어서)", "Stopped: couldn't read the list of installed apps (it could mistake data of apps you use for leftovers)")
                 }
                 return
             }
@@ -150,7 +157,7 @@ final class UninstallerModel: ObservableObject {
                 self.orphanGroups = groups
                 self.checked = Set(groups.flatMap(\.items).filter { $0.confidence.selectedByDefault }.map(\.id))
                 self.isScanning = false
-                self.status = groups.isEmpty ? "남아 있는 흔적을 찾지 못했습니다" : nil
+                self.status = groups.isEmpty ? L("남아 있는 흔적을 찾지 못했습니다", "No leftovers found") : nil
                 self.measure(groups.flatMap(\.items))
                 self.checkInUse(groups.flatMap(\.items), ignoringProcessesUnder: nil)
             }
@@ -246,9 +253,9 @@ final class UninstallerModel: ObservableObject {
             // 가장 짧은 ID(보통 앱 본체)로 이름을 정한다
             let mainID = entry.ids.min { $0.count < $1.count } ?? entry.ids[0]
             let company = mainID.split(separator: ".").dropFirst().first.map(String.init) ?? ""
-            let ids = entry.ids.count == 1 ? mainID : "\(mainID) 외 \(entry.ids.count - 1)개"
+            let ids = entry.ids.count == 1 ? mainID : L("\(mainID) 외 \(entry.ids.count - 1)개", "\(mainID) and \(entry.ids.count - 1) more")
             return VendorGroup(id: key, title: LeftoverScanner.appTitle(forID: mainID, items: entry.items),
-                               note: "회사 \(company) · 앱 ID \(ids)", items: entry.items)
+                               note: L("회사 \(company) · 앱 ID \(ids)", "Vendor \(company) · App ID \(ids)"), items: entry.items)
         }
         .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
     }
@@ -264,13 +271,13 @@ final class UninstallerModel: ObservableObject {
         let targets = checkedItems
         guard !targets.isEmpty, !isDeleting else { return }
         isDeleting = true
-        status = "정리하는 중…"
+        status = L("정리하는 중…", "Cleaning up…")
         let appID = mode == .apps ? selectedApp?.bundleID : nil
         let freed = checkedSize
         Task {
             if let appID, !(await Self.quit(appID)) {
                 isDeleting = false
-                status = "앱이 아직 실행 중이라 지우지 않았습니다. 앱을 종료한 뒤 다시 시도하세요."
+                status = L("앱이 아직 실행 중이라 지우지 않았습니다. 앱을 종료한 뒤 다시 시도하세요.", "The app is still running, so nothing was removed. Quit it and try again.")
                 return
             }
             await Self.unloadLaunchAgents(targets)
@@ -287,8 +294,8 @@ final class UninstallerModel: ObservableObject {
             leftBehind = failed
             let size = ByteCountFormatter.string(fromByteCount: freed, countStyle: .file)
             status = failed.isEmpty
-                ? "휴지통으로 \(moved)개(\(size))를 옮겼습니다. Finder 휴지통에서 \"되돌려 놓기\"로 복구할 수 있습니다."
-                : "\(moved)개를 옮겼고 \(failed.count)개는 옮기지 못했습니다."
+                ? L("휴지통으로 \(moved)개(\(size))를 옮겼습니다. Finder 휴지통에서 \"되돌려 놓기\"로 복구할 수 있습니다.", "Moved \(moved) item(s) (\(size)) to the Trash. Use \"Put Back\" in the Finder Trash to restore.")
+                : L("\(moved)개를 옮겼고 \(failed.count)개는 옮기지 못했습니다.", "Moved \(moved) item(s); \(failed.count) could not be moved.")
             if mode == .apps, let app = selectedApp {
                 if !FileManager.default.fileExists(atPath: app.url.path) {
                     apps.removeAll { $0.id == app.id }
@@ -388,7 +395,7 @@ final class UninstallerModel: ObservableObject {
     func revealLeftBehind() {
         let present = leftBehind.filter { (try? FileManager.default.attributesOfItem(atPath: $0.path)) != nil }
         leftBehind = present
-        guard !present.isEmpty else { status = "남은 항목이 없습니다 — 이미 휴지통으로 옮겨졌습니다"; return }
+        guard !present.isEmpty else { status = L("남은 항목이 없습니다 — 이미 휴지통으로 옮겨졌습니다", "Nothing left — already moved to the Trash"); return }
         NSWorkspace.shared.activateFileViewerSelecting(present)
     }
 

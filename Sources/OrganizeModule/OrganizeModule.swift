@@ -6,7 +6,8 @@ import PolyMacCore
 public final class OrganizeModule: PolyMacModule {
     public static let descriptor = ModuleDescriptor(
         id: "organize",
-        displayName: "다운로드 폴더 자동 정리",
+        displayName: ("다운로드 폴더 자동 정리", "Downloads Auto-Organize"),
+        summary: ("규칙에 따라 새로 받은 파일을 옮기고 이름 바꾸기", "Move and rename new downloads by your rules"),
         permissions: [.filesAndFolders],
         enabledByDefault: false
     )
@@ -48,7 +49,7 @@ public final class OrganizeModule: PolyMacModule {
         hourly = timer
         scheduleRun(after: 2)
         if settings.dryRun {
-            context.toast("자동 정리: 미리보기 모드로 켜졌습니다\n실제로 옮기지 않고 정리 기록에만 남깁니다", duration: 4)
+            context.toast(L("자동 정리: 미리보기 모드로 켜졌습니다\n실제로 옮기지 않고 정리 기록에만 남깁니다", "Auto-organize is on in preview mode\nNothing is moved; actions are only logged"), duration: 4)
         }
     }
 
@@ -68,22 +69,22 @@ public final class OrganizeModule: PolyMacModule {
             i.target = self
             return i
         }
-        let preview = item("미리보기 모드 (실제로 옮기지 않음)", #selector(toggleDryRun))
+        let preview = item(L("미리보기 모드 (실제로 옮기지 않음)", "Preview Mode (don't move files)"), #selector(toggleDryRun))
         preview.state = settings.dryRun ? .on : .off
         let enabledRules = settings.rules.filter(\.isEnabled).count
-        let info = NSMenuItem(title: "켜진 규칙 \(enabledRules)개 / 전체 \(settings.rules.count)개", action: nil, keyEquivalent: "")
+        let info = NSMenuItem(title: L("켜진 규칙 \(enabledRules)개 / 전체 \(settings.rules.count)개", "\(enabledRules) of \(settings.rules.count) rules on"), action: nil, keyEquivalent: "")
         info.isEnabled = false
-        let undo = item("마지막 정리 되돌리기 (\(lastBatch.count)건)", #selector(undoLast))
+        let undo = item(L("마지막 정리 되돌리기 (\(lastBatch.count)건)", "Undo Last Run (\(lastBatch.count))"), #selector(undoLast))
         undo.isEnabled = !lastBatch.isEmpty
         return [
             info,
             preview,
-            item("지금 정리 실행", #selector(runNow)),
+            item(L("지금 정리 실행", "Run Now"), #selector(runNow)),
             undo,
             .separator(),
-            item("규칙 파일 편집…", #selector(openRules)),
-            item("규칙 다시 불러오기", #selector(reloadRules)),
-            item("정리 기록 보기", #selector(openLog)),
+            item(L("규칙 파일 편집…", "Edit Rules File…"), #selector(openRules)),
+            item(L("규칙 다시 불러오기", "Reload Rules"), #selector(reloadRules)),
+            item(L("정리 기록 보기", "Show Log"), #selector(openLog)),
         ]
     }
 
@@ -99,10 +100,10 @@ public final class OrganizeModule: PolyMacModule {
             decoded = try JSONDecoder().decode(OrganizeSettings.self, from: data)
         } catch {
             // 사용자가 고친 파일을 덮어쓰지 않는다
-            throw ModuleError("규칙 파일을 읽지 못했습니다 (organize.json): \(error.localizedDescription)")
+            throw ModuleError(L("규칙 파일을 읽지 못했습니다 (organize.json): \(error.localizedDescription)", "Could not read the rules file (organize.json): \(error.localizedDescription)"))
         }
         guard decoded.schemaVersion <= OrganizeSettings.currentSchemaVersion else {
-            throw ModuleError("규칙 파일이 더 새 버전의 PolyMac에서 만들어졌습니다. 앱을 업데이트하세요.")
+            throw ModuleError(L("규칙 파일이 더 새 버전의 PolyMac에서 만들어졌습니다. 앱을 업데이트하세요.", "The rules file was made by a newer PolyMac. Please update the app."))
         }
         settings = decoded
     }
@@ -157,7 +158,7 @@ public final class OrganizeModule: PolyMacModule {
 
                 if settings.dryRun {
                     for step in steps where previewed.insert(path + "|" + step.ruleID.uuidString).inserted {
-                        log("[미리보기] \(name) ← '\(step.ruleName)': \(step.actions.map(Self.describe).joined(separator: ", "))")
+                        log(L("[미리보기] \(name) ← '\(step.ruleName)': \(step.actions.map(Self.describe).joined(separator: ", "))", "[preview] \(name) ← '\(step.ruleName)': \(step.actions.map(Self.describe).joined(separator: ", "))"))
                         previewCount += 1
                     }
                 } else {
@@ -166,11 +167,11 @@ public final class OrganizeModule: PolyMacModule {
             }
         }
         if previewCount > 0 {
-            context.toast("자동 정리 미리보기: \(previewCount)건\n메뉴 › 정리 기록 보기에서 확인하세요")
+            context.toast(L("자동 정리 미리보기: \(previewCount)건\n메뉴 › 정리 기록 보기에서 확인하세요", "Auto-organize preview: \(previewCount) item(s)\nSee menu › Show Log"))
         }
         if !batch.isEmpty {
             lastBatch = batch
-            context.toast("자동 정리: \(batch.count)건 처리했습니다")
+            context.toast(L("자동 정리: \(batch.count)건 처리했습니다", "Auto-organize: processed \(batch.count) item(s)"))
         }
     }
 
@@ -188,7 +189,7 @@ public final class OrganizeModule: PolyMacModule {
                         let dest = FileOps.uniquePath(directory: dir, name: name(current))
                         try FileOps.move(current, to: dest)
                         done.append(HistoryEntry(kind: .moved, from: current, to: dest))
-                        log("[이동] \(current) → \(dest)  ('\(step.ruleName)')")
+                        log(L("[이동] \(current) → \(dest)  ('\(step.ruleName)')", "[move] \(current) → \(dest)  ('\(step.ruleName)')"))
                         current = dest
                     case .copy(let to):
                         let dir = try safeDirectory(to)
@@ -196,22 +197,22 @@ public final class OrganizeModule: PolyMacModule {
                         let dest = FileOps.uniquePath(directory: dir, name: name(current))
                         try FileOps.copy(current, to: dest)
                         done.append(HistoryEntry(kind: .copied, from: current, to: dest))
-                        log("[복사] \(current) → \(dest)  ('\(step.ruleName)')")
+                        log(L("[복사] \(current) → \(dest)  ('\(step.ruleName)')", "[copy] \(current) → \(dest)  ('\(step.ruleName)')"))
                     case .rename(let newName):
                         guard !newName.contains("/"), newName != "..", !newName.isEmpty else {
-                            throw ModuleError("잘못된 이름: \(newName)")
+                            throw ModuleError(L("잘못된 이름: \(newName)", "Invalid name: \(newName)"))
                         }
                         let dir = (current as NSString).deletingLastPathComponent
                         let dest = FileOps.uniquePath(directory: dir, name: newName)
                         try FileOps.move(current, to: dest)
                         done.append(HistoryEntry(kind: .moved, from: current, to: dest))
-                        log("[이름 변경] \(current) → \(dest)  ('\(step.ruleName)')")
+                        log(L("[이름 변경] \(current) → \(dest)  ('\(step.ruleName)')", "[rename] \(current) → \(dest)  ('\(step.ruleName)')"))
                         current = dest
                     case .trash:
                         var result: NSURL?
                         try FileManager.default.trashItem(at: URL(fileURLWithPath: current), resultingItemURL: &result)
                         done.append(HistoryEntry(kind: .trashed, from: current, to: result?.path ?? ""))
-                        log("[휴지통] \(current)  ('\(step.ruleName)')")
+                        log(L("[휴지통] \(current)  ('\(step.ruleName)')", "[trash] \(current)  ('\(step.ruleName)')"))
                         return done
                     case .addTag(let tag):
                         let url = URL(fileURLWithPath: current) as NSURL
@@ -221,19 +222,19 @@ public final class OrganizeModule: PolyMacModule {
                         if !tags.contains(tag) {
                             tags.append(tag)
                             try url.setResourceValue(tags, forKey: .tagNamesKey)
-                            log("[태그] \(current) +\(tag)  ('\(step.ruleName)')")
+                            log(L("[태그] \(current) +\(tag)  ('\(step.ruleName)')", "[tag] \(current) +\(tag)  ('\(step.ruleName)')"))
                         }
                     case .notify:
                         let key = current + "|notify|" + step.ruleID.uuidString
                         if previewed.insert(key).inserted {
-                            log("[알림] \(current)  ('\(step.ruleName)')")
-                            context.toast("정리 후보: \(name(current))\n('\(step.ruleName)')")
+                            log(L("[알림] \(current)  ('\(step.ruleName)')", "[notify] \(current)  ('\(step.ruleName)')"))
+                            context.toast(L("정리 후보: \(name(current))\n('\(step.ruleName)')", "To organize: \(name(current))\n('\(step.ruleName)')"))
                         }
                     }
                 }
             }
         } catch {
-            log("[실패] \(current): \(error.localizedDescription)")
+            log(L("[실패] \(current): \(error.localizedDescription)", "[failed] \(current): \(error.localizedDescription)"))
             context.logger.error("organize action failed: \(error.localizedDescription, privacy: .public)")
         }
         return done
@@ -248,7 +249,7 @@ public final class OrganizeModule: PolyMacModule {
         while !FileOps.exists(probe), probe != "/" { probe = (probe as NSString).deletingLastPathComponent }
         let resolvedExisting = (probe as NSString).resolvingSymlinksInPath
         guard expanded.hasPrefix(home + "/"), resolvedExisting == home || resolvedExisting.hasPrefix(home + "/") else {
-            throw ModuleError("홈 폴더 밖으로는 옮기지 않습니다: \(expanded)")
+            throw ModuleError(L("홈 폴더 밖으로는 옮기지 않습니다: \(expanded)", "Won't move files outside your home folder: \(expanded)"))
         }
         return expanded
     }
@@ -259,14 +260,14 @@ public final class OrganizeModule: PolyMacModule {
         settings.dryRun.toggle()
         previewed.removeAll()
         saveSettings()
-        context.toast(settings.dryRun ? "미리보기 모드: 옮기지 않고 기록만 합니다" : "자동 정리가 실제로 동작합니다")
+        context.toast(settings.dryRun ? L("미리보기 모드: 옮기지 않고 기록만 합니다", "Preview mode: actions are logged, nothing is moved") : L("자동 정리가 실제로 동작합니다", "Auto-organize now moves files for real"))
         if !settings.dryRun { scheduleRun(after: 1) }
     }
 
     @objc private func runNow() {
         previewed.removeAll()
         run()
-        if settings.dryRun == false, lastBatch.isEmpty { context.toast("정리할 파일이 없습니다") }
+        if settings.dryRun == false, lastBatch.isEmpty { context.toast(L("정리할 파일이 없습니다", "Nothing to organize")) }
     }
 
     @objc private func undoLast() {
@@ -283,13 +284,13 @@ public final class OrganizeModule: PolyMacModule {
                     try FileManager.default.trashItem(at: URL(fileURLWithPath: entry.to), resultingItemURL: nil)
                 }
                 restored += 1
-                log("[되돌리기] \(entry.to) → \(entry.from)")
+                log(L("[되돌리기] \(entry.to) → \(entry.from)", "[undo] \(entry.to) → \(entry.from)"))
             } catch {
-                log("[되돌리기 실패] \(entry.to): \(error.localizedDescription)")
+                log(L("[되돌리기 실패] \(entry.to): \(error.localizedDescription)", "[undo failed] \(entry.to): \(error.localizedDescription)"))
             }
         }
         lastBatch.removeAll()
-        context.toast("\(restored)건을 되돌렸습니다")
+        context.toast(L("\(restored)건을 되돌렸습니다", "Restored \(restored) item(s)"))
     }
 
     @objc private func openRules() {
@@ -302,7 +303,7 @@ public final class OrganizeModule: PolyMacModule {
             settings.isEnabled = true
             previewed.removeAll()
             startWatching()
-            context.toast("규칙을 다시 불러왔습니다 (켜진 규칙 \(settings.rules.filter(\.isEnabled).count)개)")
+            context.toast(L("규칙을 다시 불러왔습니다 (켜진 규칙 \(settings.rules.filter(\.isEnabled).count)개)", "Rules reloaded (\(settings.rules.filter(\.isEnabled).count) on)"))
             scheduleRun(after: 1)
         } catch {
             context.toast(error.localizedDescription, duration: 5)
@@ -310,7 +311,7 @@ public final class OrganizeModule: PolyMacModule {
     }
 
     @objc private func openLog() {
-        if !FileOps.exists(logURL.path) { log("정리 기록 시작") }
+        if !FileOps.exists(logURL.path) { log(L("정리 기록 시작", "Log started")) }
         NSWorkspace.shared.open(logURL)
     }
 
@@ -323,12 +324,12 @@ public final class OrganizeModule: PolyMacModule {
 
     private static func describe(_ action: Action) -> String {
         switch action {
-        case .move(let to): return "이동 → \(to)"
-        case .copy(let to): return "복사 → \(to)"
-        case .rename(let name): return "이름 → \(name)"
-        case .trash: return "휴지통"
-        case .addTag(let name): return "태그 +\(name)"
-        case .notify: return "알림"
+        case .move(let to): return L("이동 → \(to)", "move → \(to)")
+        case .copy(let to): return L("복사 → \(to)", "copy → \(to)")
+        case .rename(let name): return L("이름 → \(name)", "rename → \(name)")
+        case .trash: return L("휴지통", "trash")
+        case .addTag(let name): return L("태그 +\(name)", "tag +\(name)")
+        case .notify: return L("알림", "notify")
         }
     }
 

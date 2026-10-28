@@ -5,7 +5,8 @@ import PolyMacCore
 public final class NormalizeModule: PolyMacModule {
     public static let descriptor = ModuleDescriptor(
         id: "normalize",
-        displayName: "한글 자소분리 자동 정리",
+        displayName: ("한글 자소분리 자동 정리", "Korean Filename Fix"),
+        summary: ("다운로드·데스크탑의 풀어진 한글 파일명(NFD)을 자동으로 붙이기", "Automatically fix decomposed (NFD) Korean filenames in Downloads and Desktop"),
         permissions: [.filesAndFolders]
     )
 
@@ -39,9 +40,9 @@ public final class NormalizeModule: PolyMacModule {
 
     public func menuItems() -> [NSMenuItem] {
         let names = folders.map { ($0 as NSString).abbreviatingWithTildeInPath }.joined(separator: ", ")
-        let info = NSMenuItem(title: "감시 중: \(names)", action: nil, keyEquivalent: "")
+        let info = NSMenuItem(title: L("감시 중: \(names)", "Watching: \(names)"), action: nil, keyEquivalent: "")
         info.isEnabled = false
-        let run = NSMenuItem(title: "지금 정리", action: #selector(runNow), keyEquivalent: "")
+        let run = NSMenuItem(title: L("지금 정리", "Fix Now"), action: #selector(runNow), keyEquivalent: "")
         run.target = self
         return [info, run]
     }
@@ -51,7 +52,7 @@ public final class NormalizeModule: PolyMacModule {
         for dir in folders where !isExcluded(dir) {
             total += (try? HangulNormalizer.normalizeDirectory(dir).count) ?? 0
         }
-        context.toast(total == 0 ? "자소분리된 파일명이 없습니다" : "한글 파일명 \(total)개를 정리했습니다")
+        context.toast(total == 0 ? L("자소분리된 파일명이 없습니다", "No decomposed filenames found") : L("한글 파일명 \(total)개를 정리했습니다", "Fixed \(total) Korean filename(s)"))
     }
 
     private func handle(_ changed: [String], roots: [String]) {
@@ -64,7 +65,7 @@ public final class NormalizeModule: PolyMacModule {
             let renamed = try HangulNormalizer.normalizeDirectory(dir)
             guard !renamed.isEmpty else { return }
             context.logger.info("normalized \(renamed.count) names in \(dir, privacy: .private)")
-            context.toast("한글 파일명 \(renamed.count)개를 정리했습니다")
+            context.toast(L("한글 파일명 \(renamed.count)개를 정리했습니다", "Fixed \(renamed.count) Korean filename(s)"))
         } catch {
             context.logger.error("normalize failed: \(error.localizedDescription, privacy: .public)")
         }

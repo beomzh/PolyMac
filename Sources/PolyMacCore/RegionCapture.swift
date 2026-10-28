@@ -1,4 +1,5 @@
 import AppKit
+import PolyMacL10n
 import ScreenCaptureKit
 import os
 
@@ -47,7 +48,7 @@ public enum RegionCapture {
     private static func run(editing: Bool) async -> (CaptureResult, CaptureAction?)? {
         guard Permissions.screenRecording else {
             Permissions.requestScreenRecording()
-            Toast.show("화면 녹음 권한이 필요합니다.\n시스템 설정에서 PolyMac을 허용한 뒤 앱을 다시 실행하세요.", duration: 4)
+            Toast.show(L("화면 녹음 권한이 필요합니다.\n시스템 설정에서 PolyMac을 허용한 뒤 앱을 다시 실행하세요.", "Screen Recording permission is needed.\nAllow PolyMac in System Settings, then reopen the app."), duration: 4)
             return nil
         }
         let shots: [(NSScreen, CGImage)]
@@ -55,7 +56,7 @@ public enum RegionCapture {
             shots = try await snapshots()
         } catch {
             logger.error("snapshot failed: \(error.localizedDescription, privacy: .public)")
-            Toast.show("화면을 캡처하지 못했습니다: \(error.localizedDescription)")
+            Toast.show(L("화면을 캡처하지 못했습니다: \(error.localizedDescription)", "Could not capture the screen: \(error.localizedDescription)"))
             return nil
         }
         guard !shots.isEmpty else { return nil }
@@ -194,7 +195,7 @@ final class RegionSelector {
             MainActor.assumeIsolated {
                 guard let self, !self.windows.isEmpty else { return }
                 self.finish(nil)
-                Toast.show("화면 구성이 바뀌어 캡처를 취소했습니다")
+                Toast.show(L("화면 구성이 바뀌어 캡처를 취소했습니다", "Capture cancelled because the display setup changed"))
             }
         }
         restartTimeout()

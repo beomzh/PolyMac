@@ -67,7 +67,7 @@ final class PinPanel: NSPanel {
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
 
         let view = PinCanvasView(frame: NSRect(origin: .zero, size: frame.size), image: image)
-        view.toolTip = "Esc·⌫ 닫기 · 스크롤 확대 · ⌥스크롤 투명도 · 우클릭 메뉴"
+        view.toolTip = L("Esc·⌫ 닫기 · 스크롤 확대 · ⌥스크롤 투명도 · 우클릭 메뉴", "Esc/⌫ close · scroll to zoom · ⌥-scroll opacity · right-click for menu")
         view.autoresizingMask = [.width, .height]
         view.wantsLayer = true
         view.layer?.borderWidth = 1
@@ -160,13 +160,13 @@ final class PinPanel: NSPanel {
             item.tag = tag
             return item
         }
-        menu.addItem(add(isEditingMarkup ? "표시 편집 끝내기" : "표시 편집 (사각형·화살표·펜)", isEditingMarkup ? #selector(finishEditingFromMenu) : #selector(beginEditing)))
+        menu.addItem(add(isEditingMarkup ? L("표시 편집 끝내기", "Finish Markup") : L("표시 편집 (사각형·화살표·펜)", "Markup (box, arrow, pen)"), isEditingMarkup ? #selector(finishEditingFromMenu) : #selector(beginEditing)))
         menu.addItem(.separator())
-        menu.addItem(add("복사", #selector(copyImage)))
-        menu.addItem(add("저장…", #selector(saveImage)))
-        menu.addItem(add("텍스트 추출", #selector(extractText)))
+        menu.addItem(add(L("복사", "Copy"), #selector(copyImage)))
+        menu.addItem(add(L("저장…", "Save…"), #selector(saveImage)))
+        menu.addItem(add(L("텍스트 추출", "Extract Text"), #selector(extractText)))
         menu.addItem(.separator())
-        let opacity = NSMenuItem(title: "투명도", action: nil, keyEquivalent: "")
+        let opacity = NSMenuItem(title: L("투명도", "Opacity"), action: nil, keyEquivalent: "")
         let sub = NSMenu()
         for percent in [100, 80, 60, 40] {
             let item = add("\(percent)%", #selector(setOpacity(_:)), tag: percent)
@@ -175,9 +175,9 @@ final class PinPanel: NSPanel {
         }
         opacity.submenu = sub
         menu.addItem(opacity)
-        menu.addItem(add("원래 크기", #selector(resetZoom)))
+        menu.addItem(add(L("원래 크기", "Actual Size"), #selector(resetZoom)))
         menu.addItem(.separator())
-        menu.addItem(add("닫기", #selector(closeFromMenu)))
+        menu.addItem(add(L("닫기", "Close"), #selector(closeFromMenu)))
         return menu
     }
 
@@ -187,7 +187,7 @@ final class PinPanel: NSPanel {
 
     @objc private func copyImage() {
         PasteboardWriter.copy(composite, scale: scale)
-        Toast.show("이미지를 복사했습니다")
+        Toast.show(L("이미지를 복사했습니다", "Image copied"))
     }
 
     @objc func saveImage() {
@@ -209,9 +209,9 @@ final class PinPanel: NSPanel {
             else { return }
             do {
                 try data.write(to: url)
-                MainActor.assumeIsolated { Toast.show("저장했습니다: \(url.lastPathComponent)") }
+                MainActor.assumeIsolated { Toast.show(L("저장했습니다: \(url.lastPathComponent)", "Saved: \(url.lastPathComponent)")) }
             } catch {
-                MainActor.assumeIsolated { Toast.show("저장 실패: \(error.localizedDescription)") }
+                MainActor.assumeIsolated { Toast.show(L("저장 실패: \(error.localizedDescription)", "Save failed: \(error.localizedDescription)")) }
             }
         }
     }

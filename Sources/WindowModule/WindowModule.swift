@@ -7,7 +7,8 @@ import PolyMacCore
 public final class WindowModule: PolyMacModule {
     public static let descriptor = ModuleDescriptor(
         id: "window",
-        displayName: "창 분할",
+        displayName: ("창 분할", "Window Layout"),
+        summary: ("단축키로 창을 반쪽·사분면·최대화로 배치", "Snap windows to halves, quarters or full screen with shortcuts"),
         permissions: [.accessibility]
     )
 
@@ -28,15 +29,15 @@ public final class WindowModule: PolyMacModule {
 
         // Spectacle 기본 단축키와 같게
         let bindings: [(KeyCombo, Action, String)] = [
-            (KeyCombo(kVK_LeftArrow, [.option, .command]), .left, "왼쪽 절반 (반복: ⅓ → ⅔)"),
-            (KeyCombo(kVK_RightArrow, [.option, .command]), .right, "오른쪽 절반 (반복: ⅓ → ⅔)"),
-            (KeyCombo(kVK_UpArrow, [.option, .command]), .top, "위쪽 절반"),
-            (KeyCombo(kVK_DownArrow, [.option, .command]), .bottom, "아래쪽 절반"),
-            (KeyCombo(kVK_ANSI_F, [.option, .command]), .maximize, "최대화"),
-            (KeyCombo(kVK_ANSI_C, [.option, .command]), .center, "가운데"),
-            (KeyCombo(kVK_RightArrow, [.control, .option, .command]), .nextDisplay, "다음 디스플레이"),
-            (KeyCombo(kVK_LeftArrow, [.control, .option, .command]), .previousDisplay, "이전 디스플레이"),
-            (KeyCombo(kVK_ANSI_Z, [.option, .command]), .undo, "창 위치 되돌리기"),
+            (KeyCombo(kVK_LeftArrow, [.option, .command]), .left, L("왼쪽 절반 (반복: ⅓ → ⅔)", "Left half (repeat: ⅓ → ⅔)")),
+            (KeyCombo(kVK_RightArrow, [.option, .command]), .right, L("오른쪽 절반 (반복: ⅓ → ⅔)", "Right half (repeat: ⅓ → ⅔)")),
+            (KeyCombo(kVK_UpArrow, [.option, .command]), .top, L("위쪽 절반", "Top half")),
+            (KeyCombo(kVK_DownArrow, [.option, .command]), .bottom, L("아래쪽 절반", "Bottom half")),
+            (KeyCombo(kVK_ANSI_F, [.option, .command]), .maximize, L("최대화", "Maximize")),
+            (KeyCombo(kVK_ANSI_C, [.option, .command]), .center, L("가운데", "Center")),
+            (KeyCombo(kVK_RightArrow, [.control, .option, .command]), .nextDisplay, L("다음 디스플레이", "Next display")),
+            (KeyCombo(kVK_LeftArrow, [.control, .option, .command]), .previousDisplay, L("이전 디스플레이", "Previous display")),
+            (KeyCombo(kVK_ANSI_Z, [.option, .command]), .undo, L("창 위치 되돌리기", "Undo window move")),
         ]
         for (combo, action, name) in bindings {
             context.hotkey(action.rawValue, combo, name) { [weak self] in self?.perform(action) }
@@ -49,7 +50,7 @@ public final class WindowModule: PolyMacModule {
 
     private func perform(_ action: Action) {
         guard Permissions.accessibility else {
-            context.toast("창 분할: 손쉬운 사용 권한이 필요합니다")
+            context.toast(L("창 분할: 손쉬운 사용 권한이 필요합니다", "Window Layout needs Accessibility permission"))
             Permissions.requestAccessibility()
             return
         }

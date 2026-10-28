@@ -324,7 +324,7 @@ enum AppInfo {
     private static var icons: [String: NSImage] = [:]
 
     static func name(for bundleID: String?) -> String {
-        guard let bundleID else { return "알 수 없음" }
+        guard let bundleID else { return L("알 수 없음", "Unknown") }
         if let cached = names[bundleID] { return cached }
         var name = bundleID
         if bundleID == Bundle.main.bundleIdentifier {
@@ -378,10 +378,10 @@ struct ClipboardPanelView: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            Text("클립보드").font(.headline)
+            Text(L("클립보드", "Clipboard")).font(.headline)
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                TextField("검색어를 입력하세요…", text: $model.query)
+                TextField(L("검색어를 입력하세요…", "Search…"), text: $model.query)
                     .textFieldStyle(.plain)
                     .focused($searchFocused)
             }
@@ -395,7 +395,7 @@ struct ClipboardPanelView: View {
                     .font(.system(size: 14))
             }
             .buttonStyle(.borderless)
-            .help(model.previewOpen ? "미리보기 접기 (⌘←)" : "미리보기 펼치기 (⌘→)")
+            .help(model.previewOpen ? L("미리보기 접기 (⌘←)", "Hide preview (⌘←)") : L("미리보기 펼치기 (⌘→)", "Show preview (⌘→)"))
         }
         .padding(.horizontal, 12)
         .padding(.top, 12)
@@ -409,7 +409,7 @@ struct ClipboardPanelView: View {
                     let items = model.filtered
                     let highlighted = model.highlightedID
                     if items.isEmpty {
-                        Text(model.query.isEmpty ? "기록이 없습니다" : "검색 결과가 없습니다")
+                        Text(model.query.isEmpty ? L("기록이 없습니다", "No history yet") : L("검색 결과가 없습니다", "No results"))
                             .foregroundStyle(.secondary)
                             .padding(.top, 40)
                     }
@@ -433,9 +433,9 @@ struct ClipboardPanelView: View {
         VStack(spacing: 0) {
             Divider()
             HStack {
-                Text("↩ 복사 · ⇧↩ 바로 붙여넣기 · ⌘P 고정 · ⌘⌫ 삭제")
+                Text(L("↩ 복사 · ⇧↩ 바로 붙여넣기 · ⌘P 고정 · ⌘⌫ 삭제", "↩ copy · ⇧↩ paste · ⌘P pin · ⌘⌫ delete"))
                 Spacer()
-                Text("\(model.filtered.count)개")
+                Text(L("\(model.filtered.count)개", "\(model.filtered.count) items"))
             }
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -494,7 +494,7 @@ private struct ClipboardRow: View {
         let collapsed = String(item.text.prefix(300)).trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "\r\n", with: "\n")
             .replacingOccurrences(of: "\n", with: " ⏎ ")
-        return collapsed.isEmpty ? "(공백)" : collapsed
+        return collapsed.isEmpty ? L("(공백)", "(whitespace)") : collapsed
     }
 }
 
@@ -524,7 +524,7 @@ private struct ClipboardPreview: View {
                     // 보이는 부분만 배치하는 시스템 텍스트 뷰로
                     PreviewTextView(id: item.id, text: preview.text)
                     if preview.truncated {
-                        Label("미리보기는 앞 200 KB까지만 보여 줍니다. 복사하면 전체가 들어갑니다.", systemImage: "info.circle")
+                        Label(L("미리보기는 앞 200 KB까지만 보여 줍니다. 복사하면 전체가 들어갑니다.", "Preview shows the first 200 KB only. Copying includes everything."), systemImage: "info.circle")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 12)
@@ -538,9 +538,9 @@ private struct ClipboardPreview: View {
                         Image(nsImage: AppInfo.icon(for: item.sourceApp)).resizable().frame(width: 16, height: 16)
                         Text(AppInfo.name(for: item.sourceApp)).font(.callout.weight(.semibold))
                         Spacer()
-                        if item.isPinned { Label("고정됨", systemImage: "pin.fill").font(.caption).foregroundStyle(.orange) }
+                        if item.isPinned { Label(L("고정됨", "Pinned"), systemImage: "pin.fill").font(.caption).foregroundStyle(.orange) }
                     }
-                    Text("복사한 시간: \(item.copiedAt.formatted(date: .abbreviated, time: .standard))")
+                    Text(L("복사한 시간: \(item.copiedAt.formatted(date: .abbreviated, time: .standard))", "Copied: \(item.copiedAt.formatted(date: .abbreviated, time: .standard))"))
                     Text(detail(item))
                 }
                 .font(.caption)
@@ -548,7 +548,7 @@ private struct ClipboardPreview: View {
                 .padding(12)
             }
         } else {
-            Text("선택한 항목이 없습니다")
+            Text(L("선택한 항목이 없습니다", "Nothing selected"))
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -557,13 +557,14 @@ private struct ClipboardPreview: View {
     private func detail(_ item: ClipboardItem) -> String {
         if item.isImage {
             let size = ByteCountFormatter.string(fromByteCount: Int64(item.imageBytes ?? 0), countStyle: .file)
-            return "이미지 \(item.imageWidth ?? 0) × \(item.imageHeight ?? 0) px · \(size)"
+            return L("이미지 \(item.imageWidth ?? 0) × \(item.imageHeight ?? 0) px · \(size)", "Image \(item.imageWidth ?? 0) × \(item.imageHeight ?? 0) px · \(size)")
         }
         if item.isLargeText {
             let size = ByteCountFormatter.string(fromByteCount: Int64(item.textBytes ?? 0), countStyle: .file)
-            return "긴 텍스트 \(size) (전체 보관)"
+            return L("긴 텍스트 \(size) (전체 보관)", "Long text \(size) (stored in full)")
         }
-        return "\(item.text.count)자 · \(item.text.reduce(1) { $1 == "\n" ? $0 + 1 : $0 })줄"
+        let lines = item.text.reduce(1) { $1 == "\n" ? $0 + 1 : $0 }
+        return L("\(item.text.count)자 · \(lines)줄", "\(item.text.count) chars · \(lines) lines")
     }
 }
 

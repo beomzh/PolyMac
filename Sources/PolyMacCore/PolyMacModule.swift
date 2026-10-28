@@ -1,4 +1,5 @@
 import AppKit
+import PolyMacL10n
 import os
 
 /// 모듈이 필요로 하는 시스템 권한.
@@ -20,21 +21,29 @@ public enum Residency: Sendable {
 
 public struct ModuleDescriptor: Sendable {
     public let id: String
-    public let displayName: String
+    private let name: (ko: String, en: String)
+    private let about: (ko: String, en: String)
     public let permissions: [Permission]
     public let residency: Residency
     /// 사용자가 아직 켜고 끈 적이 없을 때의 기본값
     public let enabledByDefault: Bool
 
+    /// 현재 언어의 이름
+    public var displayName: String { L(name.ko, name.en) }
+    /// 환경 설정에 보여 줄 한 줄 설명
+    public var summary: String { L(about.ko, about.en) }
+
     public init(
         id: String,
-        displayName: String,
+        displayName: (ko: String, en: String),
+        summary: (ko: String, en: String),
         permissions: [Permission],
         residency: Residency = .inProcess,
         enabledByDefault: Bool = true
     ) {
         self.id = id
-        self.displayName = displayName
+        self.name = displayName
+        self.about = summary
         self.permissions = permissions
         self.residency = residency
         self.enabledByDefault = enabledByDefault

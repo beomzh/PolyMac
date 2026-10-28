@@ -7,7 +7,8 @@ import PolyMacCore
 public final class FinderModule: PolyMacModule {
     public static let descriptor = ModuleDescriptor(
         id: "finder",
-        displayName: "Finder 도구",
+        displayName: ("Finder 도구", "Finder Tools"),
+        summary: ("Finder에서 ⌘X 잘라내기, 터미널 열기, 경로 복사", "Cut with ⌘X in Finder, open Terminal here, copy path"),
         permissions: [.accessibility, .automationFinder]
     )
 
@@ -26,19 +27,19 @@ public final class FinderModule: PolyMacModule {
     public func activate() throws {
         if !Permissions.accessibility { Permissions.requestAccessibility() }
         // macOS Finder엔 파일 잘라내기가 없다 (⌘X 메뉴 비활성). 기본 이동 방법인 ⌘C → ⌥⌘V를 이 두 키로 대신한다.
-        context.localShortcut("cut", KeyCombo(kVK_ANSI_X, [.command]), "Finder 파일 잘라내기", note: "Finder 안에서만 · ⌘C로 바꿔 보냄") { [weak self] combo in
+        context.localShortcut("cut", KeyCombo(kVK_ANSI_X, [.command]), L("Finder 파일 잘라내기", "Cut files in Finder"), note: L("Finder 안에서만 · ⌘C로 바꿔 보냄", "Finder only · sent as ⌘C")) { [weak self] combo in
             self?.cutCombo = combo
             self?.keyTap?.setShortcuts(cut: combo, paste: self?.pasteCombo)
         }
-        context.localShortcut("paste", KeyCombo(kVK_ANSI_V, [.command]), "Finder 잘라낸 파일 붙여넣기 (이동)", note: "Finder 안에서만 · 잘라내기 뒤에만 ⌥⌘V로 바꿔 보냄") { [weak self] combo in
+        context.localShortcut("paste", KeyCombo(kVK_ANSI_V, [.command]), L("Finder 잘라낸 파일 붙여넣기 (이동)", "Paste cut files in Finder (move)"), note: L("Finder 안에서만 · 잘라내기 뒤에만 ⌥⌘V로 바꿔 보냄", "Finder only · sent as ⌥⌘V right after a cut")) { [weak self] combo in
             self?.pasteCombo = combo
             self?.keyTap?.setShortcuts(cut: self?.cutCombo, paste: combo)
         }
         startKeyTap()
-        context.hotkey("openTerminal", KeyCombo(kVK_ANSI_T, [.control, .option]), "Finder 현재 폴더에서 터미널 열기") { [weak self] in
+        context.hotkey("openTerminal", KeyCombo(kVK_ANSI_T, [.control, .option]), L("Finder 현재 폴더에서 터미널 열기", "Open Terminal in current Finder folder")) { [weak self] in
             self?.openTerminal()
         }
-        context.hotkey("copyPaths", KeyCombo(kVK_ANSI_C, [.control, .option]), "Finder 선택 항목 경로 복사") { [weak self] in
+        context.hotkey("copyPaths", KeyCombo(kVK_ANSI_C, [.control, .option]), L("Finder 선택 항목 경로 복사", "Copy paths of Finder selection")) { [weak self] in
             self?.copyPaths()
         }
     }
@@ -55,11 +56,11 @@ public final class FinderModule: PolyMacModule {
 
     public func menuItems() -> [NSMenuItem] {
         let running = keyTap?.isRunning == true
-        let cut = cutCombo?.display ?? "꺼짐"
-        let status = NSMenuItem(title: running ? "잘라내기(\(cut)): 켜짐" : "잘라내기(\(cut)): 대기 중 (손쉬운 사용 권한이 필요합니다)", action: nil, keyEquivalent: "")
+        let cut = cutCombo?.display ?? L("꺼짐", "off")
+        let status = NSMenuItem(title: running ? L("잘라내기(\(cut)): 켜짐", "Cut (\(cut)): on") : L("잘라내기(\(cut)): 대기 중 (손쉬운 사용 권한이 필요합니다)", "Cut (\(cut)): waiting (needs Accessibility permission)"), action: nil, keyEquivalent: "")
         status.isEnabled = false
 
-        let terminalItem = NSMenuItem(title: "터미널 앱: \(TerminalApp.current.name)", action: nil, keyEquivalent: "")
+        let terminalItem = NSMenuItem(title: L("터미널 앱: \(TerminalApp.current.name)", "Terminal app: \(TerminalApp.current.name)"), action: nil, keyEquivalent: "")
         let sub = NSMenu()
         let installed = TerminalApp.installed
         for app in installed {
@@ -75,7 +76,7 @@ public final class FinderModule: PolyMacModule {
             sub.addItem(item)
         }
         sub.addItem(.separator())
-        let hint = NSMenuItem(title: "지원: " + TerminalApp.known.map(\.name).joined(separator: ", "), action: nil, keyEquivalent: "")
+        let hint = NSMenuItem(title: L("지원: ", "Supported: ") + TerminalApp.known.map(\.name).joined(separator: ", "), action: nil, keyEquivalent: "")
         hint.isEnabled = false
         sub.addItem(hint)
         terminalItem.submenu = sub
@@ -85,7 +86,7 @@ public final class FinderModule: PolyMacModule {
     @objc private func chooseTerminal(_ sender: NSMenuItem) {
         guard let id = sender.representedObject as? String else { return }
         UserDefaults.standard.set(id, forKey: TerminalApp.defaultsKey)
-        context.toast("터미널 열기: \(TerminalApp.current.name)")
+        context.toast(L("터미널 열기: \(TerminalApp.current.name)", "Open Terminal with: \(TerminalApp.current.name)"))
     }
 
     // MARK: - ⌘X 잘라내기
@@ -93,7 +94,7 @@ public final class FinderModule: PolyMacModule {
     private func startKeyTap() {
         let tap = FinderKeyTap { [context] in
             DispatchQueue.main.async {
-                MainActor.assumeIsolated { context.toast("✂️ 잘라내기 — 옮길 폴더에서 ⌘V") }
+                MainActor.assumeIsolated { context.toast(L("✂️ 잘라내기 — 옮길 폴더에서 ⌘V", "✂️ Cut — press ⌘V in the destination folder")) }
             }
         }
         guard tap.start() else {
@@ -122,7 +123,7 @@ public final class FinderModule: PolyMacModule {
                 self.retryTimer?.invalidate()
                 self.retryTimer = nil
                 self.startKeyTap()
-                if self.keyTap != nil { self.context.toast("Finder ⌘X 잘라내기가 켜졌습니다") }
+                if self.keyTap != nil { self.context.toast(L("Finder ⌘X 잘라내기가 켜졌습니다", "Finder ⌘X cut is on")) }
             }
         }
         timer.tolerance = 1
@@ -149,7 +150,7 @@ public final class FinderModule: PolyMacModule {
                 try terminal.open(folder: path)
             } catch {
                 self.context.logger.error("terminal open failed: \(error.localizedDescription, privacy: .public)")
-                self.context.toast("\(terminal.name)을(를) 열지 못했습니다: \(error.localizedDescription)")
+                self.context.toast(L("\(terminal.name)을(를) 열지 못했습니다: \(error.localizedDescription)", "Could not open \(terminal.name): \(error.localizedDescription)"))
             }
         }
     }
@@ -173,14 +174,14 @@ public final class FinderModule: PolyMacModule {
         runAppleScript(script) { [weak self] raw in
             guard let self else { return }
             guard let raw, !raw.isEmpty else {
-                self.context.toast("복사할 Finder 항목이 없습니다")
+                self.context.toast(L("복사할 Finder 항목이 없습니다", "No Finder items to copy"))
                 return
             }
             // 경로의 한글을 NFC로 — 다른 곳에 붙여넣어도 자소분리 없음
             let text = raw.precomposedStringWithCanonicalMapping
             PasteboardWriter.copy(text)
             let count = text.split(separator: "\n").count
-            self.context.toast(count == 1 ? "경로를 복사했습니다\n\(text)" : "경로 \(count)개를 복사했습니다")
+            self.context.toast(count == 1 ? L("경로를 복사했습니다\n\(text)", "Path copied\n\(text)") : L("경로 \(count)개를 복사했습니다", "Copied \(count) paths"))
         }
     }
 
@@ -219,10 +220,10 @@ public final class FinderModule: PolyMacModule {
                     guard status == 0 else {
                         logger.error("AppleScript failed: status=\(status) \(errorText, privacy: .public)")
                         if errorText.contains("-1743") {
-                            context.toast("Finder 제어 권한이 필요합니다\n시스템 설정 › 개인정보 보호 및 보안 › 자동화", duration: 4)
+                            context.toast(L("Finder 제어 권한이 필요합니다\n시스템 설정 › 개인정보 보호 및 보안 › 자동화", "PolyMac needs permission to control Finder\nSystem Settings › Privacy & Security › Automation"), duration: 4)
                             Permissions.openSettings(for: .automationFinder)
                         } else {
-                            context.toast("Finder 경로를 가져오지 못했습니다")
+                            context.toast(L("Finder 경로를 가져오지 못했습니다", "Could not get the Finder path"))
                         }
                         completion(nil)
                         return
@@ -249,15 +250,15 @@ struct TerminalApp {
 
     static let defaultsKey = "finder.terminalBundleID"
 
-    static let known: [TerminalApp] = [
-        TerminalApp(bundleID: "com.apple.Terminal", name: "터미널", launch: .openFolder),
+    static var known: [TerminalApp] { [
+        TerminalApp(bundleID: "com.apple.Terminal", name: L("터미널", "Terminal"), launch: .openFolder),
         TerminalApp(bundleID: "com.googlecode.iterm2", name: "iTerm2", launch: .openFolder),
         TerminalApp(bundleID: "com.mitchellh.ghostty", name: "Ghostty", launch: .openFolder),
         TerminalApp(bundleID: "dev.warp.Warp-Stable", name: "Warp", launch: .openFolder),
         TerminalApp(bundleID: "com.github.wez.wezterm", name: "WezTerm", launch: .executable("wezterm", ["start", "--cwd"])),
         TerminalApp(bundleID: "org.alacritty", name: "Alacritty", launch: .executable("alacritty", ["--working-directory"])),
         TerminalApp(bundleID: "net.kovidgoyal.kitty", name: "kitty", launch: .executable("kitty", ["--single-instance", "--directory"])),
-    ]
+    ] }
 
     /// 이 Mac에 설치된 것만
     static var installed: [TerminalApp] {
@@ -271,7 +272,7 @@ struct TerminalApp {
 
     func open(folder: String) throws {
         guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
-            throw ModuleError("\(name)이(가) 설치되어 있지 않습니다")
+            throw ModuleError(L("\(name)이(가) 설치되어 있지 않습니다", "\(name) is not installed"))
         }
         switch launch {
         case .openFolder:

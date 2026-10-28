@@ -6,6 +6,13 @@
     <string>dev.polymac.app</string>
     <key>CFBundleName</key>
     <string>PolyMac</string>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>ko</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>ko</string>
+        <string>en</string>
+    </array>
     <key>CFBundleDisplayName</key>
     <string>PolyMac</string>
     <key>CFBundleExecutable</key>
