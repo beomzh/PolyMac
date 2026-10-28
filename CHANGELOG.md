@@ -2,6 +2,12 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 15:35]
+- [Added] - Sources/OrganizeModule/RuleRows.swift `ConditionRow.TimeUnit`: 기간 조건(받은 지·안 연 지)에 일·개월·년 단위 — 저장은 일 수 그대로(1개월 30일, 1년 365일), 불러올 때 나누어떨어지는 가장 큰 단위로 표시
+- [Changed] - Sources/OrganizeModule/OrganizeEditor.swift `ConditionEditor`: 기간 숫자 칸 옆 단위 선택
+- [Added] - Tests/OrganizeModuleTests/RuleRowsTests.swift: 단위 변환 테스트
+- [Changed] - README.md: 조건 표의 기간 설명
+
 [2026-10-28 15:32]
 - [Changed] - feat/normalize-folders: PR #7에 규칙 편집 입력란 수정 push
 

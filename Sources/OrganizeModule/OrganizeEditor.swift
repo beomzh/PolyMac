@@ -318,8 +318,16 @@ private struct ConditionEditor: View {
                         .textFieldStyle(.roundedBorder)
                         .multilineTextAlignment(.trailing)
                         .frame(width: 100)
-                    Text([.sizeGreaterThan, .sizeLessThan].contains(row.kind) ? "MB" : L("일", "days"))
-                        .foregroundStyle(.secondary)
+                    if [.sizeGreaterThan, .sizeLessThan].contains(row.kind) {
+                        Text("MB").foregroundStyle(.secondary)
+                    } else {
+                        Picker("", selection: $row.timeUnit) {
+                            ForEach(ConditionRow.TimeUnit.allCases, id: \.self) { Text($0.title).tag($0) }
+                        }
+                        .labelsHidden()
+                        .fixedSize()
+                        .help(L("1개월은 30일, 1년은 365일로 셉니다", "A month counts as 30 days, a year as 365 days"))
+                    }
                     Spacer()
                 }
             case .allFiles:

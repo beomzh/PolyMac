@@ -68,3 +68,18 @@ import Testing
     #expect(RuleEngine.plan(for: downloading, settings: settings, now: now).isEmpty)
     #expect(RuleEngine.plan(for: file, settings: settings, now: now).count == 1)
 }
+
+@Test func timeUnitsConvertToDays() {
+    #expect(ConditionRow(.addedMoreThan(days: 60)).timeUnit == .month)
+    #expect(ConditionRow(.addedMoreThan(days: 60)).number == 2)
+    #expect(ConditionRow(.notOpenedFor(days: 730)).timeUnit == .year)
+    #expect(ConditionRow(.addedMoreThan(days: 45)).timeUnit == .day)
+    #expect(ConditionRow(.addedMoreThan(days: 0)).timeUnit == .day)
+    var row = ConditionRow(kind: .notOpenedFor)
+    row.number = 1
+    row.timeUnit = .year
+    #expect(row.condition == .notOpenedFor(days: 365))
+    row.timeUnit = .month
+    row.number = 3
+    #expect(row.condition == .notOpenedFor(days: 90))
+}
