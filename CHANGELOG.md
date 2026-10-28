@@ -2,6 +2,14 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 15:23]
+- [Added] - Sources/OrganizeModule/OrganizeStore.swift `OrganizeStore`, `OrganizeRulesPane`: organize.json 읽기·쓰기를 모듈 밖으로 빼 기능이 꺼져 있어도 규칙 편집, 환경 설정에 넣을 자동 정리 탭
+- [Changed] - Sources/OrganizeModule/OrganizeEditor.swift `OrganizeEditorView`: 환경 설정에 들어가도록 닫기 버튼 선택·최소 크기 축소, 별도 창(OrganizeEditorWindow) 삭제
+- [Changed] - Sources/OrganizeModule/OrganizeModule.swift: 저장 알림을 받으면 다시 불러오기, 메뉴 "규칙 편집…"은 환경 설정 › 자동 정리 탭을 염
+- [Added] - Sources/PolyMacCore/PolyMacModule.swift `ModuleContext.openSettings(tab:)`, `SettingsRequest`: 모듈이 환경 설정 탭을 열어 달라고 요청
+- [Changed] - Sources/PolyMacApp/Settings.swift, AppDelegate.swift: 자동 정리 탭 추가, 탭 열기 요청 처리, 창 기본 크기 900×620
+- [Changed] - README.md: 자동 정리 규칙 편집 위치 안내, 환경 설정 탭 표
+
 [2026-10-28 15:16]
 - [Changed] - feat/normalize-folders: push 후 PR #7 생성 (자소분리 검사 폴더 지정)
 

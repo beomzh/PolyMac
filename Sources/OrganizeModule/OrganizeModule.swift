@@ -27,9 +27,9 @@ public final class OrganizeModule: PolyMacModule {
     private var pendingRun: DispatchWorkItem?
     private var previewed = Set<String>()
     private var lastBatch: [HistoryEntry] = []
-    private lazy var editor = OrganizeEditorWindow()
+    private var observer: NSObjectProtocol?
 
-    private var settingsURL: URL { context.dataDirectory.appendingPathComponent("organize.json") }
+    private var settingsURL: URL { OrganizeStore.url }
     private var logURL: URL { context.dataDirectory.appendingPathComponent("organize-log.txt") }
 
     public init(context: ModuleContext) {
@@ -49,6 +49,10 @@ public final class OrganizeModule: PolyMacModule {
         RunLoop.main.add(timer, forMode: .common)
         hourly = timer
         scheduleRun(after: 2)
+        // 환경 설정 › 자동 정리에서 저장하면 다시 불러온다
+        observer = NotificationCenter.default.addObserver(forName: OrganizeStore.didChange, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.reload(announce: false) }
+        }
         if settings.dryRun {
             context.toast(L("자동 정리: 미리보기 모드로 켜졌습니다\n실제로 옮기지 않고 정리 기록에만 남깁니다", "Auto-organize is on in preview mode\nNothing is moved; actions are only logged"), duration: 4)
         }
@@ -60,7 +64,8 @@ public final class OrganizeModule: PolyMacModule {
         hourly?.invalidate()
         hourly = nil
         pendingRun?.cancel()
-        editor.close()
+        if let observer { NotificationCenter.default.removeObserver(observer) }
+        observer = nil
         settings.isEnabled = false
         saveSettings()
     }
@@ -94,29 +99,17 @@ public final class OrganizeModule: PolyMacModule {
     // MARK: - 설정
 
     private func loadSettings() throws {
-        guard let data = try? Data(contentsOf: settingsURL) else {
+        if !FileManager.default.fileExists(atPath: settingsURL.path) {
+            settings = OrganizeSettings()
             saveSettings() // 처음: 프리셋(모두 꺼짐)과 미리보기 모드로 파일 생성
             return
         }
-        let decoded: OrganizeSettings
-        do {
-            decoded = try JSONDecoder().decode(OrganizeSettings.self, from: data)
-        } catch {
-            // 사용자가 고친 파일을 덮어쓰지 않는다
-            throw ModuleError(L("규칙 파일을 읽지 못했습니다 (organize.json): \(error.localizedDescription)", "Could not read the rules file (organize.json): \(error.localizedDescription)"))
-        }
-        guard decoded.schemaVersion <= OrganizeSettings.currentSchemaVersion else {
-            throw ModuleError(L("규칙 파일이 더 새 버전의 PolyMac에서 만들어졌습니다. 앱을 업데이트하세요.", "The rules file was made by a newer PolyMac. Please update the app."))
-        }
-        settings = decoded
+        settings = try OrganizeStore.load()
     }
 
     private func saveSettings() {
-        let encoder = JSONEncoder()
-        // 키 순서를 고정해 사용자가 편집할 때 매번 같은 모양이 되게
-        encoder.outputFormatting = [.prettyPrinted, .withoutEscapingSlashes, .sortedKeys]
         do {
-            try AppPaths.writePrivate(try encoder.encode(settings), to: settingsURL)
+            try OrganizeStore.save(settings, notify: false)
         } catch {
             context.logger.error("organize settings save failed: \(error.localizedDescription, privacy: .public)")
         }
@@ -296,36 +289,29 @@ public final class OrganizeModule: PolyMacModule {
         context.toast(L("\(restored)건을 되돌렸습니다", "Restored \(restored) item(s)"))
     }
 
+    /// 환경 설정 › 자동 정리 탭을 연다
     @objc private func openEditor() {
-        editor.show(settings: settings, onSave: { [weak self] new in
-            self?.apply(new)
-        }, openJSON: { [weak self] in
-            self?.openRules()
-        })
-    }
-
-    /// 편집 화면에서 저장
-    private func apply(_ new: OrganizeSettings) {
-        settings = new
-        settings.isEnabled = true
-        saveSettings()
-        previewed.removeAll()
-        startWatching()
-        context.toast(L("규칙을 저장했습니다 (켜진 규칙 \(settings.rules.filter(\.isEnabled).count)개)", "Rules saved (\(settings.rules.filter(\.isEnabled).count) on)"))
-        scheduleRun(after: 1)
+        context.openSettings(tab: "organize")
     }
 
     @objc private func openRules() {
-        NSWorkspace.shared.open([settingsURL], withApplicationAt: URL(fileURLWithPath: "/System/Applications/TextEdit.app"), configuration: NSWorkspace.OpenConfiguration())
+        OrganizeStore.openJSON()
     }
 
     @objc private func reloadRules() {
+        reload(announce: true)
+    }
+
+    private func reload(announce: Bool) {
         do {
             try loadSettings()
             settings.isEnabled = true
+            saveSettings()
             previewed.removeAll()
             startWatching()
-            context.toast(L("규칙을 다시 불러왔습니다 (켜진 규칙 \(settings.rules.filter(\.isEnabled).count)개)", "Rules reloaded (\(settings.rules.filter(\.isEnabled).count) on)"))
+            if announce {
+                context.toast(L("규칙을 다시 불러왔습니다 (켜진 규칙 \(settings.rules.filter(\.isEnabled).count)개)", "Rules reloaded (\(settings.rules.filter(\.isEnabled).count) on)"))
+            }
             scheduleRun(after: 1)
         } catch {
             context.toast(error.localizedDescription, duration: 5)

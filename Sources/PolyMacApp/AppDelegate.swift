@@ -44,6 +44,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Settin
         NSApp.servicesProvider = services
         NSUpdateDynamicServices()
         watchAccessibilityChanges()
+        watchSettingsRequests()
         logger.info("launched \(self.version, privacy: .public) accessibility=\(Permissions.accessibility)")
     }
 
@@ -85,6 +86,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Settin
 
     /// 손쉬운 사용 권한이 바뀌면 시스템이 알림을 보낸다. 허용되면 그 권한이 필요한 모듈을 다시 켜서
     /// (이벤트 탭 등) 사용자가 기능을 껐다 켤 필요가 없게 한다.
+    /// 모듈이 환경 설정의 특정 탭을 열어 달라고 할 때 (예: 자동 정리 › 규칙 편집…)
+    private func watchSettingsRequests() {
+        NotificationCenter.default.addObserver(forName: SettingsRequest.open, object: nil, queue: .main) { [weak self] note in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                let tab = (note.userInfo?["tab"] as? String).flatMap(SettingsWindow.Tab.init(rawValue:))
+                SettingsWindow.shared.show(host: self, tab: tab)
+            }
+        }
+    }
+
     private func watchAccessibilityChanges() {
         DistributedNotificationCenter.default().addObserver(forName: NSNotification.Name("com.apple.accessibility.api"), object: nil, queue: .main) { [weak self] _ in
             // 알림 직후에는 값이 아직 바뀌지 않았을 수 있어 잠시 뒤 확인

@@ -115,18 +115,19 @@ final class OrganizeEditorModel: ObservableObject {
 
 struct OrganizeEditorView: View {
     @ObservedObject var model: OrganizeEditorModel
-    let close: () -> Void
+    /// 따로 띄운 창이면 닫기 버튼, 환경 설정 탭에 넣으면 nil
+    let close: (() -> Void)?
 
     var body: some View {
         VStack(spacing: 0) {
             HSplitView {
-                ruleList.frame(minWidth: 220, idealWidth: 250, maxWidth: 320)
-                detail.frame(minWidth: 460, maxWidth: .infinity, maxHeight: .infinity)
+                ruleList.frame(minWidth: 200, idealWidth: 230, maxWidth: 300)
+                detail.frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity)
             }
             Divider()
             footer.padding(12)
         }
-        .frame(minWidth: 760, minHeight: 520)
+        .frame(minWidth: 620, minHeight: 480)
     }
 
     // MARK: - 왼쪽: 규칙 목록 + 감시 폴더
@@ -220,8 +221,10 @@ struct OrganizeEditorView: View {
                     .help(model.problems.joined(separator: "\n"))
             }
             Button(L("JSON으로 편집…", "Edit as JSON…")) { model.openJSON() }
-            Button(L("닫기", "Close")) { close() }
-                .keyboardShortcut(.cancelAction)
+            if let close {
+                Button(L("닫기", "Close")) { close() }
+                    .keyboardShortcut(.cancelAction)
+            }
             Button(L("저장", "Save")) { model.save() }
                 .keyboardShortcut("s", modifiers: .command)
                 .buttonStyle(.borderedProminent)
@@ -356,38 +359,5 @@ private struct ActionEditor: View {
         panel.canCreateDirectories = true
         guard panel.runModal() == .OK, let url = panel.url else { return }
         row.text = (url.path as NSString).abbreviatingWithTildeInPath
-    }
-}
-
-/// 창과 모델은 열 때 만들고 닫을 때 버린다
-@MainActor
-final class OrganizeEditorWindow: NSObject, NSWindowDelegate {
-    private var window: NSWindow?
-
-    func show(settings: OrganizeSettings, onSave: @escaping (OrganizeSettings) -> Void, openJSON: @escaping () -> Void) {
-        if let window {
-            NSApp.activate()
-            window.makeKeyAndOrderFront(nil)
-            return
-        }
-        let model = OrganizeEditorModel(settings: settings, onSave: onSave, openJSON: openJSON)
-        let window = ClosableWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 620),
-                                    styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
-        window.title = L("자동 정리 규칙 — PolyMac", "Auto-Organize Rules — PolyMac")
-        window.isReleasedWhenClosed = false
-        window.contentViewController = NSHostingController(rootView: OrganizeEditorView(model: model) { [weak window] in window?.close() })
-        window.delegate = self
-        window.center()
-        self.window = window
-        NSApp.activate()
-        window.makeKeyAndOrderFront(nil)
-    }
-
-    func close() {
-        window?.close()
-    }
-
-    func windowWillClose(_ notification: Notification) {
-        window = nil
     }
 }

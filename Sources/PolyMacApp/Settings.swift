@@ -1,5 +1,6 @@
 import AppKit
 import NormalizeModule
+import OrganizeModule
 import PolyMacCore
 import ServiceManagement
 import SwiftUI
@@ -23,7 +24,7 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
     private var model: SettingsModel?
 
     enum Tab: String, CaseIterable, Identifiable {
-        case features, language, notifications, normalize, shortcuts, permissions
+        case features, language, notifications, normalize, organize, shortcuts, permissions
         var id: String { rawValue }
         var title: String {
             switch self {
@@ -31,6 +32,7 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
             case .language: return L("언어", "Language")
             case .notifications: return L("알림", "Notifications")
             case .normalize: return L("한글 파일명", "Korean Filenames")
+            case .organize: return L("자동 정리", "Auto-Organize")
             case .shortcuts: return L("단축키", "Shortcuts")
             case .permissions: return L("권한", "Permissions")
             }
@@ -41,6 +43,7 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
             case .language: return "globe"
             case .notifications: return "text.bubble"
             case .normalize: return "folder.badge.gearshape"
+            case .organize: return "tray.full"
             case .shortcuts: return "command"
             case .permissions: return "lock.shield"
             }
@@ -57,7 +60,7 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
         }
         let model = SettingsModel(host: host)
         if let tab { model.tab = tab }
-        let w = ClosableWindow(contentRect: NSRect(x: 0, y: 0, width: 700, height: 560),
+        let w = ClosableWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 620),
                                styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
         w.title = L("PolyMac 환경 설정", "PolyMac Settings")
         w.isReleasedWhenClosed = false
@@ -194,6 +197,7 @@ struct SettingsView: View {
                 case .language: LanguagePane(model: model)
                 case .notifications: NotificationsPane()
                 case .normalize: NormalizePane()
+                case .organize: OrganizeRulesPane()
                 case .shortcuts: ShortcutSettingsView(model: model.shortcuts)
                 case .permissions: PermissionsPane(model: model)
                 }
