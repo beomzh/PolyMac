@@ -3,6 +3,9 @@
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
 [2026-10-28 10:46]
+- [Changed] - 저장소: 위 변경(커밋 2d016a3)을 push, PR #4 생성
+
+[2026-10-28 10:46]
 - [Added] - Sources/PolyMacApp/Settings.swift: 환경 설정 창(⌘,) — 기능 켜기/끄기·로그인 시 자동 실행·데이터 폴더, 언어, 단축키, 권한(허용 상태·쓰는 기능·설정 바로가기) 네 탭
 - [Changed] - Sources/PolyMacApp/AppDelegate.swift: 메뉴바 메뉴를 앱 삭제·기능 도구·환경 설정·종료로 줄임, 켜진 기능에 권한이 빠지면 "권한이 필요합니다…" 표시, 언어를 바꾸면 켜진 기능을 다시 올려 새 언어 적용
 - [Changed] - Sources/PolyMacApp/ShortcutSettings.swift: 별도 창 대신 환경 설정의 단축키 탭으로
