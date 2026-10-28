@@ -3,6 +3,9 @@
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
 [2026-10-28 15:23]
+- [Changed] - feat/normalize-folders: PR #7에 자동 정리 규칙 환경 설정 탭 push
+
+[2026-10-28 15:23]
 - [Added] - Sources/OrganizeModule/OrganizeStore.swift `OrganizeStore`, `OrganizeRulesPane`: organize.json 읽기·쓰기를 모듈 밖으로 빼 기능이 꺼져 있어도 규칙 편집, 환경 설정에 넣을 자동 정리 탭
 - [Changed] - Sources/OrganizeModule/OrganizeEditor.swift `OrganizeEditorView`: 환경 설정에 들어가도록 닫기 버튼 선택·최소 크기 축소, 별도 창(OrganizeEditorWindow) 삭제
 - [Changed] - Sources/OrganizeModule/OrganizeModule.swift: 저장 알림을 받으면 다시 불러오기, 메뉴 "규칙 편집…"은 환경 설정 › 자동 정리 탭을 염
