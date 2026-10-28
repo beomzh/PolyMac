@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 16:02]
+- [Changed] - feat/organize-background-quarters: PR #8 생성 push
+
 [2026-10-28 16:01]
 - [Changed] - Sources/OrganizeModule/OrganizeModule.swift `scan`, `pendingPlans`: 폴더 검사를 백그라운드로 옮김(큰 파일 내용 비교·Spotlight 조회 동안 메뉴·단축키가 멈추지 않게), 검사 중 새 요청은 겹쳐 돌지 않고 끝난 뒤 한 번 더
 - [Added] - Sources/OrganizeModule/OrganizeModule.swift `FileStamp`, `executeAll`: 옮기기 직전 크기·수정 시각·파일 번호를 다시 비교해 검사 뒤 바뀐(복사·덮어쓰기 중) 파일은 건너뛰고 나중에 재검사
