@@ -102,6 +102,7 @@ struct UninstallerView: View {
                 selectionBar
                 itemList(groups: model.vendorGroups.map { (id: $0.id, title: $0.title, note: $0.note, items: $0.items) })
             }
+            leftBehindNotice
             Divider()
             footer
         }
@@ -241,6 +242,31 @@ struct UninstallerView: View {
             .help(c == .exact ? "앱 ID와 정확히 일치 — 이 앱의 것이 확실합니다"
                   : c == .likely ? "같은 개발사·설치 기록·앱 이름 등으로 이 앱의 것으로 보입니다"
                   : "이름만 비슷합니다 — 확인하고 직접 고르세요")
+    }
+
+    /// 휴지통으로 못 옮긴 항목 안내 — Finder에서 열어 직접 옮기게 한다
+    @ViewBuilder private var leftBehindNotice: some View {
+        if !model.leftBehind.isEmpty {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("\(model.leftBehind.count)개를 휴지통으로 옮기지 못했습니다").font(.callout.weight(.semibold))
+                    Text("\"Finder에서 열기\"를 누르면 그 항목을 골라 둔 채로 Finder가 열립니다. 휴지통으로 끌어다 놓거나 ⌘⌫를 누르세요.")
+                        .font(.caption)
+                    if model.leftBehindHasContainers {
+                        Text("Containers 안의 앱 데이터 폴더는 macOS가 폴더 자체를 지켜 Finder에서도 거절될 수 있습니다. 앱이 없으면 비어 있는 껍데기라 그냥 둬도 됩니다.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    Text(model.leftBehind.prefix(3).map { ($0.path as NSString).abbreviatingWithTildeInPath }.joined(separator: "\n"))
+                        .font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled)
+                }
+                Spacer()
+                Button("Finder에서 열기") { model.revealLeftBehind() }
+            }
+            .padding(10)
+            .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+            .padding(.horizontal, 12).padding(.top, 8)
+        }
     }
 
     private var footer: some View {

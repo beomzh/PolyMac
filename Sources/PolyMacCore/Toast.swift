@@ -9,7 +9,8 @@ public enum Toast {
     public static func show(_ message: String, duration: TimeInterval = 2) {
         let label = NSTextField(wrappingLabelWithString: message)
         label.font = .systemFont(ofSize: 13, weight: .medium)
-        label.textColor = .white
+        // 시스템 라이트·다크 모드를 따르는 글자색 — 흰 글자가 밝은 배경에 묻히지 않게
+        label.textColor = .labelColor
         label.maximumNumberOfLines = 4
         label.lineBreakMode = .byTruncatingTail
         label.preferredMaxLayoutWidth = 420
@@ -20,10 +21,18 @@ public enum Toast {
         self.panel = panel
 
         let background = NSVisualEffectView(frame: NSRect(origin: .zero, size: size))
-        background.material = .hudWindow
+        // 메뉴·팝오버와 같은 재질: 라이트 모드는 밝은 박스, 다크 모드는 어두운 박스
+        background.material = .popover
+        background.blendingMode = .behindWindow
         background.state = .active
         background.wantsLayer = true
         background.layer?.cornerRadius = 10
+        background.layer?.masksToBounds = true
+        background.layer?.borderWidth = 1
+        // 동적 색은 현재 모드로 풀어서 넣어야 라이트·다크가 맞는다
+        NSApp.effectiveAppearance.performAsCurrentDrawingAppearance {
+            background.layer?.borderColor = NSColor.separatorColor.cgColor
+        }
         label.frame = NSRect(x: 14, y: 10, width: textSize.width, height: textSize.height)
         background.addSubview(label)
         panel.contentView = background

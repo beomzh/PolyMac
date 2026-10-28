@@ -33,6 +33,8 @@ final class UninstallerModel: ObservableObject {
     @Published private(set) var isScanning = false
     @Published private(set) var isDeleting = false
     @Published var status: String?
+    /// 휴지통으로 옮기지 못한 항목 — Finder에서 열어 직접 옮기도록 안내한다
+    @Published private(set) var leftBehind: [URL] = []
     @Published var askConfirm = false
 
     private var receipts: [String] = []
@@ -94,6 +96,7 @@ final class UninstallerModel: ObservableObject {
         items = []
         checked = []
         status = nil
+        leftBehind = []
         inUse = [:]
         appLastUsed = Self.lastUsed(app.url)
         guard !app.isSystemApp, app.bundleID != Bundle.main.bundleIdentifier else {
@@ -119,6 +122,7 @@ final class UninstallerModel: ObservableObject {
         orphanGroups = []
         checked = []
         status = nil
+        leftBehind = []
         isScanning = true
         // 설치된 앱 목록이 아직이면 다 읽은 뒤 이어서 한다
         guard appsLoaded else {
@@ -280,10 +284,11 @@ final class UninstallerModel: ObservableObject {
             AppPaths.appendLine("\(Date())  휴지통으로 \(moved)개 이동, 실패 \(failed.count)개: " + targets.map(\.url.path).joined(separator: " | "),
                                 to: AppPaths.dataDirectory.appendingPathComponent("uninstall-log.txt"))
             isDeleting = false
+            leftBehind = failed
             let size = ByteCountFormatter.string(fromByteCount: freed, countStyle: .file)
             status = failed.isEmpty
                 ? "휴지통으로 \(moved)개(\(size))를 옮겼습니다. Finder 휴지통에서 \"되돌려 놓기\"로 복구할 수 있습니다."
-                : "\(moved)개를 옮겼고 \(failed.count)개는 옮기지 못했습니다 — " + failed.prefix(3).map(Self.whyLeft).joined(separator: " · ")
+                : "\(moved)개를 옮겼고 \(failed.count)개는 옮기지 못했습니다."
             if mode == .apps, let app = selectedApp {
                 if !FileManager.default.fileExists(atPath: app.url.path) {
                     apps.removeAll { $0.id == app.id }
@@ -379,12 +384,17 @@ final class UninstallerModel: ObservableObject {
     }
 
     /// 남은 이유를 사람이 알아보게
-    static func whyLeft(_ url: URL) -> String {
-        let path = (url.path as NSString).abbreviatingWithTildeInPath
-        if url.path.contains("/Library/Containers/") || url.path.contains("/Library/Group Containers/") {
-            return "\(path) (macOS가 다른 앱 데이터로 보호 — 허용 창에서 허용하거나 Finder에서 직접 휴지통으로)"
-        }
-        return path
+    /// 못 옮긴 항목을 Finder에서 골라 둔 채로 연다
+    func revealLeftBehind() {
+        let present = leftBehind.filter { (try? FileManager.default.attributesOfItem(atPath: $0.path)) != nil }
+        leftBehind = present
+        guard !present.isEmpty else { status = "남은 항목이 없습니다 — 이미 휴지통으로 옮겨졌습니다"; return }
+        NSWorkspace.shared.activateFileViewerSelecting(present)
+    }
+
+    /// 못 옮긴 항목 중 macOS가 폴더 자체를 지키는 앱 데이터 폴더(Containers)가 있는지
+    var leftBehindHasContainers: Bool {
+        leftBehind.contains { $0.path.contains("/Library/Containers/") || $0.path.contains("/Library/Group Containers/") }
     }
 
     /// NSWorkspace로 휴지통 이동 (Finder가 못 옮긴 항목용). 남은 경로를 돌려준다.
