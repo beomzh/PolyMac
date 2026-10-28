@@ -2,6 +2,59 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-28 15:22]
+- [Changed] - feat/remaining-features: push 후 PR #5 생성 (캡처 도구, Finder 우클릭, 클립보드 파일, 설치 기록, OCR 줄바꿈, 가장자리 배치, 자동 정리 편집)
+
+[2026-10-28 15:18]
+- [Changed] - docs/ROADMAP.md: 체크 항목을 실제 구현 상태로 갱신, 남은 일은 별도 줄로 분리
+
+[2026-10-28 15:10]
+- [Added] - Sources/OrganizeModule/OrganizeEditor.swift: 자동 정리 규칙 편집 창 — 규칙 목록(켜기·추가·삭제·순서), 조건·동작 편집, 감시 폴더 추가·끄기, 미리보기 모드·기다릴 시간, 빈 값 검사 후 저장
+- [Added] - Sources/OrganizeModule/RuleRows.swift: 조건·동작을 편집용 줄로 바꾸고 되돌리기, 파일 종류 이름, 중복 이름 판정("이름 (1).pdf", "이름 2.pdf")
+- [Changed] - Sources/OrganizeModule/OrganizeModule.swift: 메뉴 "규칙 편집…", 저장 시 바로 반영, 중복 판정(번호 뗀 원래 파일과 크기·내용 비교)
+- [Added] - Tests/OrganizeModuleTests/RuleRowsTests.swift: 편집 줄 변환·중복 판정 테스트
+- [Changed] - README.md: 규칙 편집 화면 안내, 중복 조건 설명, 개발 현황 갱신
+
+[2026-10-28 14:52]
+- [Added] - Sources/WindowModule/EdgeSnap.swift: 가장자리 끌기 배치 — 왼쪽·오른쪽 끝 절반, 위 최대화, 모서리 4분의 1, 놓을 자리 미리보기(클릭 통과), 마우스 전역 감시(키 입력은 보지 않음)
+- [Added] - Sources/WindowModule/WindowModule.swift: 메뉴 토글(UserDefaults window.edgeSnap, 기본 꺼짐 — macOS 창 타일링과 겹침 방지), 스냅도 ⌥⌘Z로 되돌리기
+- [Added] - Package.swift, Tests/WindowModuleTests: 스냅 영역·자리 계산 테스트
+- [Changed] - README.md: 가장자리 끌기 안내, 개발 현황 갱신
+
+[2026-10-28 14:40]
+- [Added] - Sources/OCRModule/LineJoiner.swift: 텍스트 추출 줄바꿈 정리 — 보이는 줄 그대로 / 문단으로 잇기(줄 간격·들여쓰기·짧은 줄로 문단 판단) / 한 줄로, 영어 줄 끝 하이픈 잇기
+- [Changed] - Sources/OCRModule/TextRecognizer.swift: 인식한 줄의 위치를 함께 넘겨 줄바꿈 방법대로 합침
+- [Added] - Sources/OCRModule/OCRModule.swift: 메뉴 › 줄바꿈 하위 메뉴 (UserDefaults ocr.lineMode)
+- [Added] - Package.swift, Tests/OCRModuleTests: 줄바꿈 정리 테스트
+- [Changed] - README.md: OCR 줄바꿈 안내, 개발 현황 표(OCR 줄바꿈·Core 환경설정) 갱신
+
+[2026-10-28 14:34]
+- [Added] - Sources/UninstallerCore/LeftoverItem.swift, Sources/UninstallerModule/UninstallerModel.swift: 설치 기록(pkg)은 휴지통 대신 pkgutil --forget(관리자 암호 한 번), 패키지 ID는 영문·숫자·.-_만 허용
+- [Added] - Sources/UninstallerModule/UninstallerModel.swift, UninstallerView.swift: "목록 저장…" — 지우기 전 고른 항목(없으면 전체)을 .tsv로
+- [Added] - Tests/UninstallerCoreTests: 설치 기록 ID 검사 테스트
+- [Changed] - README.md, docs/UNINSTALLER.md: 설치 기록 정리·목록 저장 안내
+
+[2026-10-28 14:32]
+- [Added] - Sources/ClipboardModule/ClipboardItem.swift, ClipboardModule.swift, ClipboardPanel.swift: Finder에서 복사한 파일·폴더 기록(경로만, 고르면 다시 파일로 들어가 Finder ⌘V), 목록·미리보기에 파일 표시
+- [Added] - Sources/ClipboardModule/ClipboardModule.swift: 기록하지 않을 앱 — 메뉴에서 앞에 있는 앱을 바로 제외·다시 포함
+- [Added] - Tests/ClipboardModuleTests: 파일 항목·앱 제외 테스트
+- [Changed] - README.md: 클립보드 단축키 표를 실제 동작(↩ 복사, ⇧↩ 붙여넣기, ⌘1~⌘0, ⌘P, ⌘⌫)으로 바로잡음, 파일 기록·앱 제외 안내
+
+[2026-10-28 14:31]
+- [Added] - Sources/PolyMacApp/ServicesProvider.swift, App/Info.plist(NSServices), App/en.lproj/ServicesMenu.strings: Finder 우클릭 메뉴(macOS 서비스) — 여기서 터미널 열기, 경로 복사, 폴더로 보내기, 한글 파일명 정리, Windows용으로 압축. Finder 확장·Xcode 없이 동작, 자동화 권한 불필요
+- [Added] - Sources/FinderModule/FinderServices.swift: 고른 항목으로 터미널 열기·경로 복사, 지정 폴더로 보내기(이동/복사, 이름 충돌 시 " 2", 마지막 폴더 기억)
+- [Added] - Sources/NormalizeModule/NormalizeServices.swift, HangulNormalizer.swift: 하위 폴더까지 NFC 정리(개수 확인 후, 앱·번들·.git·숨김 제외)
+- [Added] - Sources/NormalizeModule/WindowsZip.swift: UTF-8 이름 플래그를 켠 zip 작성기(deflate, NFC 이름, .DS_Store·__MACOSX 제외, 4 GB까지) — macOS 기본 압축은 이 표시가 없어 Windows에서 한글이 깨짐
+- [Added] - Tests/NormalizeModuleTests: 하위 폴더 정리, zip 플래그·내용 왕복 테스트 (총 32개)
+- [Changed] - README.md: 우클릭 메뉴 사용법, 개발 상태
+
+[2026-10-28 11:00]
+- [Removed] - README.md: "같은 일을 하는 앱 끄기" 안내 단계
+- [Added] - Sources/PolyMacCore/Annotation.swift: 표시 도구 글자(E)·모자이크(M)·번호(N), 글자 입력 칸(↩ 확정·Esc 취소), 모자이크는 원본을 10pt 칸으로 뭉갬
+- [Changed] - Sources/PolyMacCore/SelectionView.swift, Sources/CaptureModule/PinPanel.swift: 캡처 화면·핀 표시 편집에서 새 도구 사용, 단축키 안내에 E M N
+- [Fixed] - Sources/PolyMacCore/RegionCapture.swift: 글자 입력 중 Esc가 캡처 전체를 취소하지 않게
+- [Added] - Tests/PolyMacCoreTests/AnnotationTests.swift: 모자이크·번호·글자 렌더링 테스트
+
 [2026-10-28 10:52]
 - [Fixed] - Sources/PolyMacApp/Settings.swift: 환경 설정 사이드바를 접으면 여는 버튼이 툴바 오른쪽 위로 옮겨 가던 문제 — 사이드바를 항상 펼치고 접기 버튼 제거
 

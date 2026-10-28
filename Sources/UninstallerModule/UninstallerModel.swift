@@ -2,6 +2,7 @@ import AppKit
 import PolyMacCore
 import Security
 import UninstallerCore
+import UniformTypeIdentifiers
 import os
 
 /// 앱 삭제 창의 상태. 창을 열 때 만들어지고 닫으면 버린다 (평소에는 메모리를 쓰지 않음).
@@ -283,9 +284,15 @@ final class UninstallerModel: ObservableObject {
             await Self.unloadLaunchAgents(targets)
             // 폴더와 그 안의 항목을 같이 골랐으면 폴더만 (앱이 든 폴더 등)
             let urls = targets.map(\.url).filter { url in !targets.contains { $0.url != url && url.path.hasPrefix($0.url.path + "/") } }
-            var failed = await FinderTrash.move(urls)
+            // 설치 기록은 pkgutil --forget으로 (관리자 암호를 한 번 묻는다)
+            let receiptURLs = urls.filter { PkgReceipt.id(fromFile: $0) != nil }
+            let receiptIDs = Array(Set(receiptURLs.compactMap(PkgReceipt.id(fromFile:)))).sorted()
+            if !receiptIDs.isEmpty { await PkgForget.run(receiptIDs) }
+            var failed = receiptURLs.filter { FileManager.default.fileExists(atPath: $0.path) }
+            failed += await FinderTrash.move(urls.filter { PkgReceipt.id(fromFile: $0) == nil })
             // Finder가 못 옮긴 것(다른 앱의 샌드박스 데이터 등 macOS 보호 항목)은 macOS에 직접 요청 — 허용 창이 뜰 수 있다
-            if !failed.isEmpty { failed = await Self.recycle(failed) }
+            let protected = failed.filter { PkgReceipt.id(fromFile: $0) == nil }
+            if !protected.isEmpty { failed = failed.filter { PkgReceipt.id(fromFile: $0) != nil } + (await Self.recycle(protected)) }
             let moved = targets.count - failed.count
             logger.notice("uninstall moved=\(moved) failed=\(failed.count)")
             AppPaths.appendLine("\(Date())  휴지통으로 \(moved)개 이동, 실패 \(failed.count)개: " + targets.map(\.url.path).joined(separator: " | "),
@@ -391,6 +398,31 @@ final class UninstallerModel: ObservableObject {
     }
 
     /// 남은 이유를 사람이 알아보게
+    /// 지우기 전에 목록을 파일로 남긴다 (고른 항목, 없으면 전체). 탭으로 나눈 글 — 표 앱에서 바로 열린다.
+    func exportList() {
+        let rows = checkedItems.isEmpty ? currentItems : checkedItems
+        guard !rows.isEmpty else { return }
+        let panel = NSSavePanel()
+        let name = mode == .apps ? (selectedApp?.name ?? "PolyMac") : L("남은 흔적", "Leftovers")
+        panel.nameFieldStringValue = "\(name) — \(Date().formatted(date: .numeric, time: .omitted)).tsv".replacingOccurrences(of: "/", with: "-")
+        panel.allowedContentTypes = [.tabSeparatedText]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        let header = [L("확실도", "Confidence"), L("종류", "Kind"), L("크기", "Size"), L("수정", "Modified"), L("경로", "Path"), L("이유", "Reason")]
+        let lines = rows.map { item -> String in
+            let size = sizes[item.id].map { ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) } ?? ""
+            let date = modified[item.id].map { $0.formatted(date: .numeric, time: .shortened) } ?? ""
+            return [item.confidence.title, item.kind.title, size, date, item.url.path, item.reason]
+                .map { $0.replacingOccurrences(of: "\t", with: " ").replacingOccurrences(of: "\n", with: " ") }
+                .joined(separator: "\t")
+        }
+        do {
+            try ([header.joined(separator: "\t")] + lines).joined(separator: "\n").appending("\n").write(to: url, atomically: true, encoding: .utf8)
+            status = L("목록 \(rows.count)개를 저장했습니다: \(url.lastPathComponent)", "Saved a list of \(rows.count) item(s): \(url.lastPathComponent)")
+        } catch {
+            status = L("목록 저장 실패: ", "Could not save the list: ") + error.localizedDescription
+        }
+    }
+
     /// 못 옮긴 항목을 Finder에서 골라 둔 채로 연다
     func revealLeftBehind() {
         let present = leftBehind.filter { (try? FileManager.default.attributesOfItem(atPath: $0.path)) != nil }
@@ -492,6 +524,32 @@ final class UninstallerModel: ObservableObject {
 
 /// Finder에게 휴지통으로 옮겨 달라고 부탁한다 — "되돌려 놓기"가 되고, 관리자 권한이 필요한 항목은 Finder가 직접 암호를 묻는다.
 /// 경로는 스크립트 문자열에 끼워 넣지 않고 인수로 넘긴다 (파일 이름으로 스크립트가 조작되지 않게).
+/// `pkgutil --forget` 을 관리자 권한으로 한 번에 (macOS 암호 창). ID는 PkgReceipt가 검사한 것만 들어온다.
+enum PkgForget {
+    private static let script = """
+    on run argv
+        set cmd to ""
+        repeat with i in argv
+            set cmd to cmd & "/usr/sbin/pkgutil --forget " & quoted form of (contents of i) & " >/dev/null 2>&1; "
+        end repeat
+        do shell script cmd with administrator privileges
+    end run
+    """
+
+    static func run(_ ids: [String]) async {
+        await Task.detached {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+            process.arguments = ["-e", script] + ids
+            process.standardOutput = Pipe()
+            process.standardError = Pipe()
+            let done = DispatchSemaphore(value: 0)
+            process.terminationHandler = { _ in done.signal() }
+            if (try? process.run()) != nil, done.wait(timeout: .now() + 120) == .timedOut { process.terminate() }
+        }.value
+    }
+}
+
 enum FinderTrash {
     private static let script = """
     on run argv

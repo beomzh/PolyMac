@@ -30,3 +30,16 @@ import Testing
     #expect(ClipboardPrivacy.shouldIgnore(types: ["public.utf8-plain-text"], frontmostBundleID: "com.bitwarden.desktop"))
     #expect(!ClipboardPrivacy.shouldIgnore(types: ["public.utf8-plain-text"], frontmostBundleID: "com.apple.Terminal"))
 }
+
+@Test func filesKeepPathsAndExcludedAppsAreSkipped() throws {
+    let item = ClipboardItem.files(["/tmp/a.txt", "/tmp/b 폴더"], sourceApp: "com.apple.finder")
+    #expect(item.isFiles && !item.isImage && item.storedFiles.isEmpty) // 파일 내용은 따로 저장하지 않는다
+    let back = try JSONDecoder().decode(ClipboardItem.self, from: JSONEncoder().encode(item))
+    #expect(back.files == ["/tmp/a.txt", "/tmp/b 폴더"])
+    #expect(back.text.contains("b 폴더")) // 검색용
+
+    #expect(ClipboardPrivacy.shouldIgnore(types: ["public.utf8-plain-text"], frontmostBundleID: "com.tinyspeck.slackmacgap",
+                                          excludedApps: ["com.tinyspeck.slackmacgap"]))
+    #expect(!ClipboardPrivacy.shouldIgnore(types: ["public.utf8-plain-text"], frontmostBundleID: "com.apple.Safari",
+                                           excludedApps: ["com.tinyspeck.slackmacgap"]))
+}

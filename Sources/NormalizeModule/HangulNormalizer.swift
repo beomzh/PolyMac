@@ -55,6 +55,60 @@ public enum HangulNormalizer {
         }
     }
 
+    /// 고른 항목과 그 안쪽 전부를 NFC로 (Finder 우클릭 "한글 파일명 정리").
+    /// 앱·번들 같은 패키지 안과 .git 폴더, 숨김 항목은 건드리지 않는다. 바뀐 경로를 돌려준다.
+    public static func normalizeTree(_ url: URL, fileManager: FileManager = .default) throws -> [String] {
+        let parent = (url.path as NSString).deletingLastPathComponent
+        // URL은 이름 형태를 잃으므로 디스크에 있는 실제 이름을 찾는다
+        let wanted = nfc((url.path as NSString).lastPathComponent)
+        guard let onDisk = try fileManager.contentsOfDirectory(atPath: parent).first(where: { nfc($0) == wanted }) else { return [] }
+        var renamed = try normalizeInside(parent + "/" + onDisk, fileManager: fileManager)
+        if let target = try renameToNFC(name: onDisk, inDirectory: parent) { renamed.append(target) }
+        return renamed
+    }
+
+    /// NFC가 아닌 이름이 몇 개인지만 센다 (바꾸기 전 확인용)
+    public static func countTree(_ url: URL, fileManager: FileManager = .default) -> Int {
+        let parent = (url.path as NSString).deletingLastPathComponent
+        let wanted = nfc((url.path as NSString).lastPathComponent)
+        let onDisk = (try? fileManager.contentsOfDirectory(atPath: parent))?.first { nfc($0) == wanted }
+        var count = onDisk.map(needsNFC) == true ? 1 : 0
+        guard isPlainFolder(url.path, fileManager),
+              let enumerator = fileManager.enumerator(atPath: url.path) else { return count }
+        while let relative = enumerator.nextObject() as? String {
+            let name = (relative as NSString).lastPathComponent
+            if name.hasPrefix(".") || isPackageName(name) {
+                enumerator.skipDescendants()
+                if name.hasPrefix(".") { continue }
+            }
+            if needsNFC(name) { count += 1 }
+        }
+        return count
+    }
+
+    private static func normalizeInside(_ dir: String, fileManager: FileManager) throws -> [String] {
+        guard isPlainFolder(dir, fileManager) else { return [] }
+        var renamed: [String] = []
+        for name in try fileManager.contentsOfDirectory(atPath: dir) where !name.hasPrefix(".") {
+            renamed += try normalizeInside(dir + "/" + name, fileManager: fileManager)
+            if let target = try renameToNFC(name: name, inDirectory: dir) { renamed.append(target) }
+        }
+        return renamed
+    }
+
+    /// 안으로 들어가도 되는 일반 폴더인지 (링크·패키지·.git 제외)
+    private static func isPlainFolder(_ path: String, _ fileManager: FileManager) -> Bool {
+        guard let attributes = try? fileManager.attributesOfItem(atPath: path),
+              attributes[.type] as? FileAttributeType == .typeDirectory
+        else { return false }
+        return !isPackageName((path as NSString).lastPathComponent)
+    }
+
+    private static func isPackageName(_ name: String) -> Bool {
+        let ext = (name as NSString).pathExtension.lowercased()
+        return name == ".git" || ["app", "bundle", "framework", "plugin", "kext", "xcodeproj", "xcworkspace", "photoslibrary", "pkg"].contains(ext)
+    }
+
     private static func posixRename(_ from: String, _ to: String) throws {
         guard rename(from, to) == 0 else { throw RenameError(path: from, errno: errno) }
     }

@@ -142,11 +142,14 @@ public final class ClipboardModule: PolyMacModule {
         retentionMenu.addItem(retentionNote)
         retentionItem.submenu = retentionMenu
 
+        let excludeItem = NSMenuItem(title: L("기록하지 않을 앱", "Don't Record From"), action: nil, keyEquivalent: "")
+        excludeItem.submenu = excludedAppsMenu()
+
         let imageCount = items.filter(\.isImage).count
         let stats = NSMenuItem(title: L("기록 \(items.count)개 (이미지 \(imageCount)개)", "\(items.count) items (\(imageCount) images)"), action: nil, keyEquivalent: "")
         stats.isEnabled = false
         let clear = NSMenuItem(title: L("기록 지우기 (고정 항목 제외)", "Clear History (keeps pinned)"), action: #selector(clearUnpinned), keyEquivalent: "")
-        return [open, pause, capacityItem, retentionItem, stats, clear].map { $0.target = $0.target ?? self; return $0 }
+        return [open, pause, capacityItem, retentionItem, excludeItem, stats, clear].map { $0.target = $0.target ?? self; return $0 }
     }
 
     // MARK: - 기록
@@ -159,9 +162,13 @@ public final class ClipboardModule: PolyMacModule {
 
         let types = pb.types ?? []
         let front = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
-        guard !ClipboardPrivacy.shouldIgnore(types: types.map(\.rawValue), frontmostBundleID: front) else { return }
+        guard !ClipboardPrivacy.shouldIgnore(types: types.map(\.rawValue), frontmostBundleID: front, excludedApps: excludedApps) else { return }
 
-        if let text = pb.string(forType: .string) {
+        // Finder에서 파일을 복사하면 이름 글자도 함께 들어오므로 파일을 먼저 본다
+        if types.contains(.fileURL),
+           let urls = pb.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL], !urls.isEmpty {
+            record(files: urls.map { $0.path.precomposedStringWithCanonicalMapping }, from: front)
+        } else if let text = pb.string(forType: .string) {
             let bytes = text.utf8.count
             guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
             guard bytes <= maxTextBytes else {
@@ -183,8 +190,20 @@ public final class ClipboardModule: PolyMacModule {
         }
     }
 
+    private func record(files paths: [String], from app: String?) {
+        if let index = items.firstIndex(where: { $0.files == paths }) {
+            var item = items.remove(at: index)
+            item.copiedAt = Date()
+            item.sourceApp = app
+            items.insert(item, at: 0)
+        } else {
+            items.insert(.files(paths, sourceApp: app), at: 0)
+        }
+        didChange()
+    }
+
     private func record(text: String, from app: String?) {
-        if let index = items.firstIndex(where: { !$0.isImage && !$0.isLargeText && $0.text == text }) {
+        if let index = items.firstIndex(where: { !$0.isImage && !$0.isLargeText && !$0.isFiles && $0.text == text }) {
             var item = items.remove(at: index)
             item.copiedAt = Date()
             item.sourceApp = app
@@ -297,6 +316,8 @@ public final class ClipboardModule: PolyMacModule {
                     self.pasteIntoFrontApp()
                 } else if item.isImage {
                     self.context.toast(L("이미지를 클립보드에 복사했습니다", "Image copied to the clipboard"))
+                } else if let files = item.files {
+                    self.context.toast(L("파일 \(files.count)개를 클립보드에 넣었습니다 — Finder에서 ⌘V", "Put \(files.count) file(s) on the clipboard — ⌘V in Finder"))
                 } else if item.isLargeText {
                     let size = ByteCountFormatter.string(fromByteCount: Int64(item.textBytes ?? 0), countStyle: .file)
                     self.context.toast(L("긴 텍스트 전체(\(size))를 클립보드에 복사했습니다", "Copied the full long text (\(size)) to the clipboard"))
@@ -320,6 +341,18 @@ public final class ClipboardModule: PolyMacModule {
     }
 
     private func copyToPasteboard(_ item: ClipboardItem) {
+        if let paths = item.files, !paths.isEmpty {
+            let present = paths.filter { FileManager.default.fileExists(atPath: $0) }
+            guard !present.isEmpty else {
+                context.toast(L("복사했던 파일이 더 이상 없습니다", "Those files no longer exist"))
+                return
+            }
+            // Finder에서 ⌘V로 다시 붙여넣을 수 있게 파일로 넣는다 (다른 앱에는 경로 글자로)
+            let pb = NSPasteboard.general
+            pb.clearContents()
+            pb.writeObjects(present.map { URL(fileURLWithPath: $0) as NSURL })
+            return
+        }
         guard let file = item.imageFile else {
             PasteboardWriter.copy(fullText(item))
             return
@@ -368,6 +401,67 @@ public final class ClipboardModule: PolyMacModule {
         items.removeAll { $0.id == id }
         deleteFiles(of: removed)
         scheduleSave()
+    }
+
+    // MARK: - 기록하지 않을 앱
+
+    private static let excludedAppsKey = "clipboard.excludedApps"
+
+    private var excludedApps: Set<String> {
+        Set(UserDefaults.standard.stringArray(forKey: Self.excludedAppsKey) ?? [])
+    }
+
+    private func setExcluded(_ id: String, _ on: Bool) {
+        var apps = excludedApps
+        if on { apps.insert(id) } else { apps.remove(id) }
+        UserDefaults.standard.set(apps.sorted(), forKey: Self.excludedAppsKey)
+    }
+
+    /// 메뉴바 메뉴를 열어도 앞의 앱은 그대로라, "지금 쓰던 앱 제외"를 바로 고를 수 있다
+    private func excludedAppsMenu() -> NSMenu {
+        let menu = NSMenu()
+        if let front = NSWorkspace.shared.frontmostApplication, let id = front.bundleIdentifier,
+           id != Bundle.main.bundleIdentifier, !excludedApps.contains(id), !ClipboardPrivacy.defaultIgnoredApps.contains(id) {
+            let add = NSMenuItem(title: L("'\(front.localizedName ?? id)'에서 복사한 것은 기록 안 함", "Don't record copies from '\(front.localizedName ?? id)'"),
+                                 action: #selector(excludeApp(_:)), keyEquivalent: "")
+            add.representedObject = id
+            add.target = self
+            menu.addItem(add)
+            menu.addItem(.separator())
+        }
+        let apps = excludedApps.sorted { AppInfo.name(for: $0).localizedStandardCompare(AppInfo.name(for: $1)) == .orderedAscending }
+        if apps.isEmpty {
+            let none = NSMenuItem(title: L("직접 제외한 앱 없음", "No apps excluded yet"), action: nil, keyEquivalent: "")
+            none.isEnabled = false
+            menu.addItem(none)
+        }
+        for id in apps {
+            let item = NSMenuItem(title: AppInfo.name(for: id), action: #selector(includeApp(_:)), keyEquivalent: "")
+            item.representedObject = id
+            item.target = self
+            item.state = .on
+            item.toolTip = L("눌러서 다시 기록", "Click to record again")
+            item.image = AppInfo.icon(for: id).resizedForMenu()
+            menu.addItem(item)
+        }
+        menu.addItem(.separator())
+        let note = NSMenuItem(title: L("항상 제외: 키체인 접근, 암호, 1Password, Bitwarden, 암호로 표시된 복사", "Always excluded: Keychain Access, Passwords, 1Password, Bitwarden, copies marked as concealed"),
+                              action: nil, keyEquivalent: "")
+        note.isEnabled = false
+        menu.addItem(note)
+        return menu
+    }
+
+    @objc private func excludeApp(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? String else { return }
+        setExcluded(id, true)
+        context.toast(L("\(AppInfo.name(for: id))에서 복사한 것은 기록하지 않습니다", "Copies from \(AppInfo.name(for: id)) won't be recorded"))
+    }
+
+    @objc private func includeApp(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? String else { return }
+        setExcluded(id, false)
+        context.toast(L("\(AppInfo.name(for: id))에서 복사한 것을 다시 기록합니다", "Recording copies from \(AppInfo.name(for: id)) again"))
     }
 
     @objc private func openFromMenu() {
@@ -441,5 +535,14 @@ public final class ClipboardModule: PolyMacModule {
                 logger.error("clipboard save failed: \(error.localizedDescription, privacy: .public)")
             }
         }
+    }
+}
+
+private extension NSImage {
+    /// 메뉴 항목 옆 작은 아이콘
+    func resizedForMenu() -> NSImage {
+        let copy = (self.copy() as? NSImage) ?? self
+        copy.size = NSSize(width: 16, height: 16)
+        return copy
     }
 }

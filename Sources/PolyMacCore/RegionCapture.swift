@@ -182,6 +182,8 @@ final class RegionSelector {
         let isEscape: (NSEvent) -> Bool = { $0.keyCode == 53 }
         if let local = NSEvent.addLocalMonitorForEvents(matching: .keyDown, handler: { [weak self] event in
             guard isEscape(event) else { return event }
+            // 글자 도구로 입력 중이면 Esc는 입력 취소에 쓴다
+            if NSApp.keyWindow?.firstResponder is NSTextView { return event }
             MainActor.assumeIsolated { self?.finish(nil) }
             return nil
         }) { monitors.append(local) }
