@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-29 13:51]
+- [Fixed] - Sources/ClipboardModule/ClipboardPanel.swift `ClipboardRow`, `ClipboardPreview`: 기록 창 이미지가 한참 뒤에야 보이던 문제 — 줄·미리보기가 썸네일을 직접 꺼내 model 변화를 지켜보지 않아, 다 읽혀도 스크롤·선택 이동 전까지 다시 그려지지 않음, 썸네일을 부모에서 넘겨 도착하면 그 줄만 다시 그림 (복호화 비용은 50 MB 이미지도 7.5 ms로 원인 아님)
+
 [2026-10-29 13:47]
 - [Changed] - feat/clipboard-encryption: PR #13 썸네일 수정 push
 

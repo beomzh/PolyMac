@@ -407,7 +407,10 @@ struct ClipboardPanelView: View {
 
             if model.previewOpen {
                 Divider()
-                ClipboardPreview(item: model.selected, model: model)
+                // 썸네일은 여기서 꺼내 넘긴다 — 미리보기는 model을 지켜보지 않아서, 다 읽혀도 다시 그려지지 않는다
+                ClipboardPreview(item: model.selected,
+                                 image: model.selected.flatMap { $0.isImage ? model.thumbnail($0, maxPixel: 1400) : nil },
+                                 model: model)
                     .frame(width: ClipboardPanelController.previewWidth)
             }
         }
@@ -455,7 +458,8 @@ struct ClipboardPanelView: View {
                             .padding(.top, 40)
                     }
                     ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                        ClipboardRow(item: item, index: index, isSelected: item.id == highlighted, model: model)
+                        ClipboardRow(item: item, index: index, isSelected: item.id == highlighted,
+                                     thumbnail: item.isImage ? model.thumbnail(item) : nil, model: model)
                             .id(item.id)
                             .contentShape(Rectangle())
                             .onTapGesture(count: 2) { onPick(item) }
@@ -490,6 +494,8 @@ private struct ClipboardRow: View {
     let item: ClipboardItem
     let index: Int
     let isSelected: Bool
+    /// 백그라운드에서 다 읽히면 값이 바뀌어 이 줄만 다시 그려진다
+    let thumbnail: NSImage?
     let model: ClipboardPanelModel
 
     var body: some View {
@@ -500,7 +506,7 @@ private struct ClipboardRow: View {
                 .opacity(0.9)
             if item.isImage {
                 Group {
-                    if let thumb = model.thumbnail(item) {
+                    if let thumb = thumbnail {
                         Image(nsImage: thumb).resizable().aspectRatio(contentMode: .fit)
                     } else {
                         RoundedRectangle(cornerRadius: 3).fill(.quaternary).aspectRatio(1.6, contentMode: .fit)
@@ -552,6 +558,7 @@ private struct ClipboardRow: View {
 
 private struct ClipboardPreview: View {
     let item: ClipboardItem?
+    let image: NSImage?
     let model: ClipboardPanelModel
 
     var body: some View {
@@ -559,7 +566,7 @@ private struct ClipboardPreview: View {
             VStack(alignment: .leading, spacing: 0) {
                 if item.isImage {
                     ScrollView {
-                        if let image = model.thumbnail(item, maxPixel: 1400) {
+                        if let image {
                             Image(nsImage: image)
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
