@@ -3,7 +3,7 @@ import OCRModule
 import PolyMacCore
 import UniformTypeIdentifiers
 
-/// 화면 위에 떠 있는 캡처(핀). 드래그로 이동, 스크롤로 확대/축소, ⌥+스크롤로 투명도, 더블클릭으로 닫기.
+/// 화면 위에 떠 있는 캡처(핀). 드래그로 이동, ⌘드래그로 다른 앱에 PNG로 넣기, 스크롤로 확대/축소, ⌥+스크롤로 투명도, 더블클릭으로 닫기.
 /// 표시(사각형·화살표·펜)는 이미지에 굽지 않고 따로 들고 있어 우클릭 › 표시 편집으로 다시 고칠 수 있다.
 @MainActor
 final class PinPanel: NSPanel {
@@ -53,6 +53,13 @@ final class PinPanel: NSPanel {
         open.forEach { $0.closePin() }
     }
 
+    /// 클릭 통과 중인 핀 — 핀을 클릭할 수 없으니 메뉴바에서 끈다
+    static var clickThroughCount: Int { open.filter(\.ignoresMouseEvents).count }
+
+    static func endClickThroughAll() {
+        open.filter(\.ignoresMouseEvents).forEach { $0.setClickThrough(false) }
+    }
+
     private init(image: CGImage, scale: CGFloat, annotations: [Annotation], frame: NSRect) {
         self.image = image
         self.scale = scale
@@ -67,7 +74,8 @@ final class PinPanel: NSPanel {
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
 
         let view = PinCanvasView(frame: NSRect(origin: .zero, size: frame.size), image: image)
-        view.toolTip = L("Esc·⌫ 닫기 · 스크롤 확대 · ⌥스크롤 투명도 · 우클릭 메뉴", "Esc/⌫ close · scroll to zoom · ⌥-scroll opacity · right-click for menu")
+        view.toolTip = L("Esc·⌫ 닫기 · ⌘드래그로 다른 앱에 넣기 · 스크롤 확대 · ⌥스크롤 투명도 · 우클릭 메뉴",
+                         "Esc/⌫ close · ⌘-drag into another app · scroll to zoom · ⌥-scroll opacity · right-click for menu")
         view.autoresizingMask = [.width, .height]
         view.wantsLayer = true
         view.layer?.borderWidth = 1
@@ -97,6 +105,22 @@ final class PinPanel: NSPanel {
     private func resize(to size: NSSize) {
         setFrame(NSRect(x: frame.midX - size.width / 2, y: frame.midY - size.height / 2, width: size.width, height: size.height), display: true)
         placeEditBar()
+    }
+
+    /// 켜면 핀 아래 창을 그대로 클릭·스크롤할 수 있다. 테두리를 주황으로 바꿔 구분한다.
+    func setClickThrough(_ on: Bool) {
+        ignoresMouseEvents = on
+        guard let layer = contentView?.layer else { return }
+        layer.borderColor = (on ? NSColor.systemOrange : NSColor.systemBlue).withAlphaComponent(on ? 0.8 : 0.6).cgColor
+        layer.borderWidth = on ? 2 : 1
+    }
+
+    @objc private func turnOnClickThrough() {
+        endEditing()
+        setClickThrough(true)
+        Toast.show(L("클릭 통과 — 핀 아래 창을 그대로 쓸 수 있습니다", "Click-through — use the window under the pin"),
+                   content: L("끄기: 메뉴바 › 캡처 · 핀 › 클릭 통과 끄기 · 닫기: 핀 위에서 Esc",
+                              "Turn off: menu bar › Capture & Pin › Turn Off Click-Through · Close: Esc over the pin"), duration: 4)
     }
 
     func adjustOpacity(by delta: CGFloat) {
@@ -176,6 +200,7 @@ final class PinPanel: NSPanel {
         opacity.submenu = sub
         menu.addItem(opacity)
         menu.addItem(add(L("원래 크기", "Actual Size"), #selector(resetZoom)))
+        menu.addItem(add(L("클릭 통과 (핀 아래 창 쓰기)", "Click-Through (use the window below)"), #selector(turnOnClickThrough)))
         menu.addItem(.separator())
         menu.addItem(add(L("닫기", "Close"), #selector(closeFromMenu)))
         return menu
@@ -235,7 +260,7 @@ final class PinPanel: NSPanel {
     }
 }
 
-private final class PinCanvasView: NSView {
+private final class PinCanvasView: NSView, NSDraggingSource {
     weak var pin: PinPanel?
     private let image: CGImage
     private var drawing: Annotation?
@@ -319,9 +344,31 @@ private final class PinCanvasView: NSView {
         }
         if event.clickCount == 2 {
             pin?.closePin()
+        } else if event.modifierFlags.contains(.command) {
+            beginExport(with: event)
         } else {
             window?.performDrag(with: event)
         }
+    }
+
+    /// ⌘드래그: 표시까지 합친 PNG 파일로 Finder·메신저·메일 등에 넣는다
+    private func beginExport(with event: NSEvent) {
+        guard let pin else { return }
+        let url: URL
+        do {
+            url = try PinExport.write(pin.composite)
+        } catch {
+            Toast.show(L("끌어 넣을 파일을 만들지 못했습니다", "Could not prepare the file to drag"), content: error.localizedDescription)
+            return
+        }
+        let item = NSDraggingItem(pasteboardWriter: url as NSURL)
+        let preview = NSImage(cgImage: pin.composite, size: bounds.size)
+        item.setDraggingFrame(bounds, contents: preview)
+        beginDraggingSession(with: [item], event: event, source: self)
+    }
+
+    func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
+        context == .outsideApplication ? .copy : []
     }
 
     override func mouseDragged(with event: NSEvent) {
