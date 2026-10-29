@@ -2,6 +2,19 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-29 16:46]
+- [Changed] - feat/capture-pins: PR #18 push (첫 클릭 수정)
+
+[2026-10-29 16:45]
+- [Fixed] - Sources/CaptureModule/PinPanel.swift `acceptsFirstMouse`: 다른 앱을 쓰다 핀을 누르면 첫 클릭이 창을 앞으로 가져오는 데만 쓰여 두 번 눌러야 옮기기·그리기가 되던 문제 (배경 끌기를 끈 뒤 드러남)
+- [Fixed] - Sources/PolyMacCore/Annotation.swift `FirstClickButton`, `SwatchButton`: 표시 도구 막대(앞으로 오지 않는 패널) 버튼·색상도 첫 클릭에 바로 눌리게
+
+[2026-10-29 16:36]
+- [Changed] - feat/capture-pins: PR #18 push (표시 편집 중 핀 이동 수정)
+
+[2026-10-29 16:35]
+- [Fixed] - Sources/CaptureModule/PinPanel.swift `PinPanel.init`, `mouseDownCanMoveWindow`: 표시 편집 중 그리려고 끌면 핀이 같이 움직이던 문제. 배경 끌기(isMovableByWindowBackground)는 macOS가 끌 영역을 미리 정해 편집 여부를 다시 묻지 않아서, 끄고 편집 중이 아닐 때만 performDrag로 옮김
+
 [2026-10-29 16:22]
 - [Changed] - feat/ocr-tables: PR #19 push (표 인식 TSV·Markdown, 단축어용 polymac:// URL)
 
@@ -15,6 +28,20 @@
 - [Added] - Sources/OCRBench/Tables.swift `runTableBench`, scripts/make-table-samples.swift, Tests/OCRSamples/tables: 표 인식 측정 (scripts/ocr-bench.sh --tables)
 - [Added] - Tests/OCRModuleTests/TableGridTests.swift, Tests/PolyMacCoreTests/URLActionsTests.swift: 표 변환, URL 파싱·복귀 주소 제한, HTML 복사 테스트
 - [Changed] - README.md, docs/OCR-BENCH.md, docs/ROADMAP.md: 표 추출·단축어 사용법, 표 측정 결과 반영
+
+[2026-10-29 15:41]
+- [Changed] - feat/capture-pins: PR #18 push (핀 클릭 통과·드래그 내보내기·최근 캡처, 클립보드 이미지 핀)
+
+[2026-10-29 15:39]
+- [Added] - Sources/PolyMacCore/RegionCapture.swift `PinService`: 다른 모듈(클립보드)이 캡처 모듈을 직접 참조하지 않고 이미지를 핀으로 띄우는 통로
+- [Added] - Sources/CaptureModule/RecentCaptures.swift `RecentCaptures`, `PinExport`: 최근 캡처 10개를 메모리에만(PNG + 표시) 보관, ⌘드래그용 임시 PNG를 사용자 임시 폴더(0700/0600)에 쓰고 1시간 뒤 정리
+- [Added] - Sources/CaptureModule/PinPanel.swift `setClickThrough`, `beginExport`: 핀 우클릭 › 클릭 통과(주황 테두리, 안내 토스트), ⌘드래그로 표시까지 합친 PNG를 다른 앱에 넣기
+- [Added] - Sources/CaptureModule/CaptureModule.swift `menuItems`: 메뉴바에 클릭 통과 끄기, 최근 캡처 다시 고정(썸네일·시각·크기), 목록 지우기. 끌 때 PinService 해제·최근 기록·임시 파일 삭제
+- [Added] - Sources/ClipboardModule/ClipboardPanel.swift `handle`: 이미지 항목에서 ⌘↩, 미리보기 "화면에 고정" 버튼, 하단 안내 갱신
+- [Added] - Sources/ClipboardModule/ClipboardModule.swift `pinOnScreen`: 봉인된 이미지를 읽어 PinService로 핀 표시, 캡처 · 핀이 꺼져 있으면 안내
+- [Added] - Tests/CaptureModuleTests/RecentCapturesTests.swift: 최근 캡처 개수·순서·복원, 내보내기 PNG 권한·정리 테스트 (임시 폴더를 따로 써 실행 중인 앱 파일을 건드리지 않음)
+- [Changed] - Package.swift: CaptureModuleTests 테스트 대상 추가
+- [Changed] - README.md, docs/ROADMAP.md: 핀 클릭 통과·⌘드래그·최근 캡처·클립보드 ⌘↩ 반영, 상태표와 로드맵 체크
 
 [2026-10-29 15:30]
 - [Changed] - CHANGELOG.md: PR #17 push 기록 (리뷰 후 수정)

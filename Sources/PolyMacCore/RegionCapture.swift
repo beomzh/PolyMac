@@ -3,6 +3,14 @@ import PolyMacL10n
 import ScreenCaptureKit
 import os
 
+/// 다른 모듈이 이미지를 화면에 고정해 달라고 할 때 (예: 클립보드 기록의 이미지).
+/// 캡처 모듈이 켜져 있을 때만 handler가 있다 — 모듈끼리 직접 참조하지 않는다.
+@MainActor
+public enum PinService {
+    /// (이미지, 픽셀/포인트 비율)
+    public static var handler: ((CGImage, CGFloat) -> Void)?
+}
+
 public struct CaptureResult {
     /// 선택 영역의 원본 이미지 (표시 없음)
     public let image: CGImage

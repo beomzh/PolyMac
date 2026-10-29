@@ -321,7 +321,7 @@ public final class AnnotationToolbar: NSView {
     private func button(_ symbol: String, _ tip: String, _ action: Selector) -> NSButton {
         let config = NSImage.SymbolConfiguration(pointSize: 15, weight: .medium)
         let image = NSImage(systemSymbolName: symbol, accessibilityDescription: tip)?.withSymbolConfiguration(config) ?? NSImage()
-        let b = NSButton(image: image, target: self, action: action)
+        let b = FirstClickButton(image: image, target: self, action: action)
         b.bezelStyle = .accessoryBarAction
         b.isBordered = true
         b.toolTip = tip
@@ -368,10 +368,17 @@ public final class AnnotationToolbar: NSView {
     @objc private func doneTapped() { onAction?(.done) }
 }
 
+/// 도구 막대는 앞으로 오지 않는 패널에 있어 첫 클릭이 "창 앞으로"에 쓰이지 않게
+private final class FirstClickButton: NSButton {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+}
+
 /// 색상 동그라미 버튼 (고른 색은 흰 테두리)
 private final class SwatchButton: NSButton {
     private let swatch: NSColor
     var isChosen = false { didSet { needsDisplay = true } }
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     init(color: NSColor) {
         swatch = color

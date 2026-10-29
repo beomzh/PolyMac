@@ -405,8 +405,27 @@ public final class ClipboardModule: PolyMacModule {
                 }
             },
             togglePin: { [weak self] id in self?.togglePin(id) },
-            delete: { [weak self] id in self?.delete(id) }
+            delete: { [weak self] id in self?.delete(id) },
+            pin: { [weak self] item in self?.pinOnScreen(item) }
         ))
+    }
+
+    /// 캡처 · 핀 모듈의 핀으로 띄운다 (모듈끼리는 PolyMacCore의 PinService로만 잇는다)
+    private func pinOnScreen(_ item: ClipboardItem) {
+        guard let handler = PinService.handler else {
+            context.toast(L("화면에 고정하려면 캡처 · 핀 기능을 켜세요", "Turn on Capture & Pin to pin images on screen"))
+            return
+        }
+        guard let file = item.imageFile,
+              let png = try? store?.read(imageDirectory.appendingPathComponent(file)),
+              let source = CGImageSourceCreateWithData(png as CFData, nil),
+              let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
+        else {
+            context.toast(L("이미지 파일을 찾지 못했습니다", "Image file not found"))
+            return
+        }
+        // 기록에는 픽셀만 있어 지금 화면의 배율로 본다 (Retina 캡처가 두 배로 커 보이지 않게)
+        handler(image, NSScreen.main?.backingScaleFactor ?? 2)
     }
 
     /// 큰 텍스트는 파일에서 전체를 읽는다
