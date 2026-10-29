@@ -3,6 +3,9 @@
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
 [2026-10-29 15:30]
+- [Changed] - CHANGELOG.md: PR #17 push 기록 (리뷰 후 수정)
+
+[2026-10-29 15:30]
 - [Fixed] - Sources/OCRModule/TextRecognizer.swift `recognize`: 기호 정리를 줄을 잇기 전에 — "한 줄로"·"문단으로 잇기"에서 줄 맨 앞 글머리표가 가운뎃점으로 바뀌던 문제
 - [Fixed] - Sources/OCRBench/main.swift: 측정 전에 모든 설정을 한 번씩 돌려, 첫 설정에만 모델 준비 시간이 붙어 느려 보이던 문제 (실제 차이 +11 ms)
 - [Added] - Tests/OCRModuleTests/OCRCleanupTests.swift `bulletsSurviveSingleLineJoin`: 한 줄로 이어도 글머리표 유지
