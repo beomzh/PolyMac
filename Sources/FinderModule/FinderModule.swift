@@ -235,7 +235,7 @@ public final class FinderModule: PolyMacModule {
             }
             // 경로의 한글을 NFC로 — 다른 곳에 붙여넣어도 자소분리 없음
             let text = raw.precomposedStringWithCanonicalMapping
-            PasteboardWriter.copy(text)
+            PasteboardWriter.copy(text, origin: .paths)
             let count = text.split(separator: "\n").count
             self.context.toast(count == 1 ? L("경로를 복사했습니다\n\(text)", "Path copied\n\(text)") : L("경로 \(count)개를 복사했습니다", "Copied \(count) paths"))
         }

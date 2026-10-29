@@ -2,6 +2,28 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-29 14:57]
+- [Changed] - CHANGELOG.md: PR #16 push 기록 (링크 복사 수정)
+
+[2026-10-29 14:57]
+- [Fixed] - Sources/ClipboardModule/ClipboardModule.swift `poll`: Chrome 등에서 링크가 든 글을 복사하면 링크가 사라지던 문제 — RTF뿐 아니라 HTML도 해석 없이 그대로 보관·복원
+- [Fixed] - Sources/ClipboardModule/ClipboardModule.swift `poll`: 글자 없이 URL만 들어오는 링크 복사(Safari 우클릭 등)가 기록되지 않던 문제
+- [Added] - Sources/ClipboardModule/ClipboardItem.swift `RichFormats`: 서식 타입별 데이터를 plist 파일 하나로, 예전 .rtf 파일도 읽음
+- [Added] - Tests/ClipboardModuleTests/ClipboardItemTests.swift: HTML·RTF 왕복, 빈 값·큰 값 제외
+- [Changed] - README.md: 서식 보관 안내에 HTML·링크 복사 반영
+
+[2026-10-29 14:45]
+- [Changed] - CHANGELOG.md: PR #16 push 기록 (feat/clipboard-rich-text)
+
+[2026-10-29 14:44]
+- [Added] - Sources/PolyMacCore/SystemSupport.swift `PasteboardOrigin`: PolyMac이 복사한 것에 기능별 출처 표식 타입을 붙임 (붙여넣기에는 영향 없음)
+- [Changed] - Sources/OCRModule/TextRecognizer.swift, Sources/CaptureModule/CaptureModule.swift, Sources/CaptureModule/PinPanel.swift, Sources/FinderModule/FinderModule.swift, Sources/FinderModule/FinderServices.swift, Sources/PolyMacCore/SelectionView.swift: 복사할 때 출처(ocr·capture·paths·color) 넘김
+- [Added] - Sources/ClipboardModule/ClipboardItem.swift `richFile`/`origin`: 서식 RTF 파일과 출처 필드, 모르는 출처 값은 무시
+- [Added] - Sources/ClipboardModule/ClipboardModule.swift `record(text:rich:)`/`copyToPasteboard(plain:)`/`pastePlainNow`: RTF를 봉인 파일로 보관(5MB, HTML은 원격 리소스 때문에 제외)·다시 복사 시 서식 복원, 서식 없이 복사, 단축키(기본 없음)로 서식 없이 붙여넣기; 중복 처리 `bump`로 정리
+- [Added] - Sources/ClipboardModule/ClipboardPanel.swift: ⌥↩/⌥⇧↩ 서식 없이, 목록·미리보기에 출처 태그와 서식 아이콘, 태그·"서식" 검색
+- [Added] - Tests/ClipboardModuleTests/ClipboardItemTests.swift, Tests/PolyMacCoreTests/PasteboardOriginTests.swift: RTF 항목·모르는 출처·출처 표식 테스트
+- [Changed] - README.md, docs/ROADMAP.md: 서식·출처 태그·서식 없이 붙여넣기 안내, 데이터 표에 clipboard-rich
+
 [2026-10-29 14:17]
 - [Changed] - CHANGELOG.md: PR #15 push 기록 (환경 설정 Finder 도구 탭)
 

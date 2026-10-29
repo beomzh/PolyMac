@@ -47,6 +47,14 @@ public final class ClipboardModule: PolyMacModule {
         return url
     }
 
+    var richDirectory: URL {
+        let url = context.dataDirectory.appendingPathComponent("clipboard-rich", isDirectory: true)
+        if !FileManager.default.fileExists(atPath: url.path) {
+            try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        }
+        return url
+    }
+
     var textDirectory: URL {
         let url = context.dataDirectory.appendingPathComponent("clipboard-texts", isDirectory: true)
         if !FileManager.default.fileExists(atPath: url.path) {
@@ -91,6 +99,10 @@ public final class ClipboardModule: PolyMacModule {
 
         context.hotkey("showHistory", KeyCombo(kVK_ANSI_V, [.shift, .command]), L("클립보드 히스토리 열기", "Open clipboard history")) { [weak self] in
             self?.showPopup()
+        }
+        // 기본 없음 — 많은 앱이 ⌥⇧⌘V를 "서식 없이 붙여넣기"로 이미 쓴다. 단축키 탭에서 지정해 쓴다.
+        context.hotkey("pastePlain", nil, L("지금 클립보드를 서식 없이 붙여넣기", "Paste the clipboard without formatting")) { [weak self] in
+            self?.pastePlainNow()
         }
         // 창은 아직 만들지 않고 썸네일·앱 아이콘만 미리 (실행 직후를 무겁게 하지 않게 조금 뒤에)
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
@@ -167,12 +179,14 @@ public final class ClipboardModule: PolyMacModule {
         let types = pb.types ?? []
         let front = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
         guard !ClipboardPrivacy.shouldIgnore(types: types.map(\.rawValue), frontmostBundleID: front, excludedApps: excludedApps) else { return }
+        let origin = types.contains(PasteboardOrigin.type) ? pb.string(forType: PasteboardOrigin.type) : nil
 
         // Finder에서 파일을 복사하면 이름 글자도 함께 들어오므로 파일을 먼저 본다
         if types.contains(.fileURL),
            let urls = pb.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL], !urls.isEmpty {
-            record(files: urls.map { $0.path.precomposedStringWithCanonicalMapping }, from: front)
-        } else if let text = pb.string(forType: .string) {
+            record(files: urls.map { $0.path.precomposedStringWithCanonicalMapping }, from: front, origin: origin)
+        } else if let text = pb.string(forType: .string) ?? pb.string(forType: .URL) {
+            // Safari 우클릭 › 링크 복사는 글자 없이 URL만 넣기도 한다
             let bytes = text.utf8.count
             guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
             guard bytes <= maxTextBytes else {
@@ -181,45 +195,83 @@ public final class ClipboardModule: PolyMacModule {
                 return
             }
             if bytes > inlineTextBytes {
-                record(largeText: text, bytes: bytes, from: front)
+                record(largeText: text, bytes: bytes, from: front, origin: origin)
             } else {
-                record(text: text, from: front)
+                // 서식(RTF·HTML)은 해석하지 않고 바이트 그대로 보관한다
+                var formats: [String: Data] = [:]
+                for type in RichFormats.types where types.contains(NSPasteboard.PasteboardType(type)) {
+                    formats[type] = pb.data(forType: NSPasteboard.PasteboardType(type))
+                }
+                let rich = RichFormats.encode(formats)
+                if rich == nil && !formats.isEmpty {
+                    context.logger.info("clipboard formatting dropped: \(formats.values.reduce(0) { $0 + $1.count }) bytes")
+                }
+                record(text: text, rich: rich, from: front, origin: origin)
             }
         } else if let data = pb.data(forType: .png) ?? pb.data(forType: .tiff) {
             guard data.count <= maxImageBytes else {
                 context.logger.info("clipboard image skipped: \(data.count) bytes")
                 return
             }
-            record(imageData: data, from: front)
+            record(imageData: data, from: front, origin: origin)
         }
     }
 
-    private func record(files paths: [String], from app: String?) {
+    /// 이미 있는 항목을 맨 위로 (복사한 시간·앱·출처만 새로)
+    private func bump(_ index: Int, app: String?, origin: String?) {
+        var item = items.remove(at: index)
+        item.copiedAt = Date()
+        item.sourceApp = app
+        item.origin = origin
+        items.insert(item, at: 0)
+    }
+
+    private func record(files paths: [String], from app: String?, origin: String?) {
         if let index = items.firstIndex(where: { $0.files == paths }) {
-            var item = items.remove(at: index)
-            item.copiedAt = Date()
-            item.sourceApp = app
-            items.insert(item, at: 0)
+            bump(index, app: app, origin: origin)
         } else {
-            items.insert(.files(paths, sourceApp: app), at: 0)
+            var item = ClipboardItem.files(paths, sourceApp: app)
+            item.origin = origin
+            items.insert(item, at: 0)
         }
         didChange()
     }
 
-    private func record(text: String, from app: String?) {
+    /// rich: 함께 복사된 서식 (RichFormats.encode). 같은 글자의 항목이 있으면 그것을 올리되, 서식이 없던 항목에 서식이 생기면 새로 만든다.
+    private func record(text: String, rich: Data?, from app: String?, origin: String?) {
         if let index = items.firstIndex(where: { !$0.isImage && !$0.isLargeText && !$0.isFiles && $0.text == text }) {
-            var item = items.remove(at: index)
-            item.copiedAt = Date()
-            item.sourceApp = app
-            items.insert(item, at: 0)
-        } else {
-            items.insert(ClipboardItem(text: text, sourceApp: app), at: 0)
+            guard rich != nil, !items[index].isRich else {
+                bump(index, app: app, origin: origin)
+                didChange()
+                return
+            }
+            items.remove(at: index)
         }
-        didChange()
+        // 키가 없으면 파일을 쓸 수 없으니 글자만 (메모리에)
+        guard let rich, store != nil else {
+            var item = ClipboardItem(text: text, sourceApp: app)
+            item.origin = origin
+            items.insert(item, at: 0)
+            didChange()
+            return
+        }
+        let directory = richDirectory
+        ioQueue.async { [weak self] in
+            let hash = SHA256.hash(data: Data(text.utf8) + rich).map { String(format: "%02x", $0) }.joined()
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    let file = UUID().uuidString + ".rich"
+                    var item = ClipboardItem.richText(text, file: file, hash: hash, sourceApp: app)
+                    item.origin = origin
+                    self.keep(rich, at: directory.appendingPathComponent(file), as: item)
+                }
+            }
+        }
     }
 
     /// 긴 로그 등: 전체는 별도 파일, 목록에는 앞부분만 (해시·파일 쓰기는 백그라운드)
-    private func record(largeText text: String, bytes: Int, from app: String?) {
+    private func record(largeText text: String, bytes: Int, from app: String?, origin: String?) {
         let directory = textDirectory
         let preview = String(text.prefix(previewCharacters))
         ioQueue.async { [weak self] in
@@ -229,23 +281,21 @@ public final class ClipboardModule: PolyMacModule {
                 MainActor.assumeIsolated {
                     guard let self else { return }
                     if let index = self.items.firstIndex(where: { $0.contentHash == hash }) {
-                        var item = self.items.remove(at: index)
-                        item.copiedAt = Date()
-                        item.sourceApp = app
-                        self.items.insert(item, at: 0)
+                        self.bump(index, app: app, origin: origin)
                         self.didChange()
                         return
                     }
                     let file = UUID().uuidString + ".txt"
-                    self.keep(data, at: directory.appendingPathComponent(file),
-                              as: .largeText(preview: preview, file: file, bytes: bytes, hash: hash, sourceApp: app))
+                    var item = ClipboardItem.largeText(preview: preview, file: file, bytes: bytes, hash: hash, sourceApp: app)
+                    item.origin = origin
+                    self.keep(data, at: directory.appendingPathComponent(file), as: item)
                 }
             }
         }
     }
 
     /// PNG 변환·해시·파일 쓰기는 무거울 수 있어 백그라운드에서
-    private func record(imageData: Data, from app: String?) {
+    private func record(imageData: Data, from app: String?, origin: String?) {
         let directory = imageDirectory
         ioQueue.async { [weak self] in
             let hash = SHA256.hash(data: imageData).map { String(format: "%02x", $0) }.joined()
@@ -256,16 +306,14 @@ public final class ClipboardModule: PolyMacModule {
                 MainActor.assumeIsolated {
                     guard let self else { return }
                     if let index = self.items.firstIndex(where: { $0.contentHash == hash }) {
-                        var item = self.items.remove(at: index)
-                        item.copiedAt = Date()
-                        item.sourceApp = app
-                        self.items.insert(item, at: 0)
+                        self.bump(index, app: app, origin: origin)
                         self.didChange()
                         return
                     }
                     let file = UUID().uuidString + ".png"
-                    self.keep(png, at: directory.appendingPathComponent(file),
-                              as: .image(file: file, width: width, height: height, bytes: png.count, hash: hash, sourceApp: app))
+                    var item = ClipboardItem.image(file: file, width: width, height: height, bytes: png.count, hash: hash, sourceApp: app)
+                    item.origin = origin
+                    self.keep(png, at: directory.appendingPathComponent(file), as: item)
                 }
             }
         }
@@ -290,10 +338,7 @@ public final class ClipboardModule: PolyMacModule {
                     guard let self else { return }
                     // 쓰는 사이 같은 내용이 먼저 들어왔으면 방금 쓴 파일은 버리고 있던 항목을 맨 위로
                     if let index = self.items.firstIndex(where: { $0.contentHash == item.contentHash }) {
-                        var existing = self.items.remove(at: index)
-                        existing.copiedAt = Date()
-                        existing.sourceApp = item.sourceApp
-                        self.items.insert(existing, at: 0)
+                        self.bump(index, app: item.sourceApp, origin: item.origin)
                         self.ioQueue.async { try? FileManager.default.removeItem(at: url) }
                     } else {
                         self.items.insert(item, at: 0)
@@ -340,11 +385,13 @@ public final class ClipboardModule: PolyMacModule {
     private func showPopup() {
         if !panel.isPrepared { panel.prepare(items: items, imageDirectory: imageDirectory, textDirectory: textDirectory, store: store) }
         panel.show(callbacks: .init(
-            choose: { [weak self] item, pasteNow in
+            choose: { [weak self] item, pasteNow, plain in
                 guard let self else { return }
-                self.copyToPasteboard(item)
+                self.copyToPasteboard(item, plain: plain)
                 if pasteNow {
                     self.pasteIntoFrontApp()
+                } else if plain && item.isRich {
+                    self.context.toast(L("서식 없이 글자만 복사했습니다", "Copied as plain text"))
                 } else if item.isImage {
                     self.context.toast(L("이미지를 클립보드에 복사했습니다", "Image copied to the clipboard"))
                 } else if let files = item.files {
@@ -371,7 +418,8 @@ public final class ClipboardModule: PolyMacModule {
         return text
     }
 
-    private func copyToPasteboard(_ item: ClipboardItem) {
+    /// plain: 서식(RTF)을 빼고 글자만
+    private func copyToPasteboard(_ item: ClipboardItem, plain: Bool = false) {
         if let paths = item.files, !paths.isEmpty {
             let present = paths.filter { FileManager.default.fileExists(atPath: $0) }
             guard !present.isEmpty else {
@@ -385,7 +433,18 @@ public final class ClipboardModule: PolyMacModule {
             return
         }
         guard let file = item.imageFile else {
-            PasteboardWriter.copy(fullText(item))
+            let text = fullText(item)
+            guard !plain, let richFile = item.richFile,
+                  let data = try? store?.read(richDirectory.appendingPathComponent(richFile)) else {
+                PasteboardWriter.copy(text)
+                return
+            }
+            let formats = RichFormats.decode(data, file: richFile)
+            let pb = NSPasteboard.general
+            pb.clearContents()
+            pb.declareTypes(formats.keys.sorted().map { NSPasteboard.PasteboardType($0) } + [.string], owner: nil)
+            for (type, value) in formats { pb.setData(value, forType: NSPasteboard.PasteboardType(type)) }
+            pb.setString(text, forType: .string)
             return
         }
         let url = imageDirectory.appendingPathComponent(file)
@@ -398,6 +457,22 @@ public final class ClipboardModule: PolyMacModule {
         pb.declareTypes([.png, .tiff], owner: nil)
         pb.setData(png, forType: .png)
         if let tiff = NSImage(data: png)?.tiffRepresentation { pb.setData(tiff, forType: .tiff) }
+    }
+
+    /// 단축키: 지금 클립보드의 글자만 남기고 앞의 앱에 붙여넣는다. 클립보드에도 글자만 남는다 (기록에는 서식이 그대로).
+    private func pastePlainNow() {
+        let pb = NSPasteboard.general
+        guard let text = pb.string(forType: .string), !text.isEmpty else {
+            context.toast(L("붙여넣을 글자가 클립보드에 없습니다", "No text on the clipboard to paste"))
+            return
+        }
+        if pb.types != [.string] {
+            pb.clearContents()
+            pb.setString(text, forType: .string)
+            // 기록이 이 변화를 새 복사로 보지 않게
+            lastChangeCount = pb.changeCount
+        }
+        pasteIntoFrontApp()
     }
 
     /// 앞의 앱에 바로 ⌘V (⇧↩︎)
