@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-29 16:22]
+- [Changed] - feat/ocr-tables: PR #19 push (표 인식 TSV·Markdown, 단축어용 polymac:// URL)
+
 [2026-10-29 16:20]
 - [Added] - Sources/OCRModule/TableRecognizer.swift `TableGrid`, `TableRecognizer`, `TableFormat`: macOS 26 문서 인식으로 표를 찾아 TSV·Markdown·HTML로 변환 (합친 칸은 왼쪽 위만, 칸 안 줄바꿈은 한 칸). 표는 확대해도 나아지지 않아 확대 없이 읽음
 - [Added] - Sources/OCRModule/TextRecognizer.swift `recognizeTableAndCopy`: 표를 클립보드에 (TSV면 서식 앱용 HTML 표도), 표가 없거나 macOS 26 미만이면 일반 텍스트로. 두 복사 함수가 성공 여부를 돌려주도록 변경 (단축어에 결과 알림)
