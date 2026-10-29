@@ -30,12 +30,19 @@ final class OnboardingWindow: NSObject, NSWindowDelegate {
             return
         }
         let model = SettingsModel(host: host)
-        let w = ClosableWindow(contentRect: NSRect(x: 0, y: 0, width: 640, height: 560),
-                               styleMask: [.titled, .closable], backing: .buffered, defer: false)
+        let w = ClosableWindow(contentRect: NSRect(x: 0, y: 0, width: 680, height: 600),
+                               styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
         w.title = L("PolyMac 시작하기", "Welcome to PolyMac")
         w.isReleasedWhenClosed = false
-        w.contentViewController = NSHostingController(rootView: OnboardingView(model: model) { [weak w] in w?.performClose(nil) })
-        w.setContentSize(NSSize(width: 640, height: 560))
+        let hosting = NSHostingController(rootView: OnboardingView(model: model) { [weak w] in w?.performClose(nil) })
+        // 내용 높이에 맞춰 창이 화면 밖까지 늘어나지 않게 — 최소 크기만 따르고, 넘치는 내용은 각 단계 안에서 스크롤
+        hosting.sizingOptions = [.minSize]
+        w.contentViewController = hosting
+        var size = NSSize(width: 680, height: 600)
+        if let visible = NSScreen.main?.visibleFrame {
+            size.height = min(size.height, visible.height - 40)
+        }
+        w.setContentSize(size)
         w.delegate = self
         w.center()
         window = w
@@ -84,6 +91,7 @@ private struct OnboardingView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipped()
             Divider()
             HStack {
                 if step != .welcome {
@@ -98,16 +106,24 @@ private struct OnboardingView: View {
             }
             .padding(14)
         }
+        .frame(minWidth: 560, minHeight: 440)
     }
 
     private var progress: some View {
         HStack(spacing: 16) {
+            // 단계 이름을 눌러 바로 넘어간다 (다음·이전 버튼과 같은 동작)
             ForEach(Step.allCases, id: \.self) { s in
-                HStack(spacing: 6) {
-                    Image(systemName: s.rawValue < step.rawValue ? "checkmark.circle.fill" : (s == step ? "circle.inset.filled" : "circle"))
-                        .foregroundStyle(s.rawValue <= step.rawValue ? Color.accentColor : .secondary)
-                    Text(s.title).font(.callout).foregroundStyle(s == step ? .primary : .secondary)
+                Button { go(to: s) } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: s.rawValue < step.rawValue ? "checkmark.circle.fill" : (s == step ? "circle.inset.filled" : "circle"))
+                            .foregroundStyle(s.rawValue <= step.rawValue ? Color.accentColor : .secondary)
+                        Text(s.title).font(.callout).foregroundStyle(s == step ? .primary : .secondary)
+                    }
+                    .padding(.horizontal, 6).padding(.vertical, 3)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
+                .help(L("\(s.title)(으)로 이동", "Go to \(s.title)"))
             }
         }
         .padding(.vertical, 12)
@@ -115,6 +131,11 @@ private struct OnboardingView: View {
 
     private func move(_ delta: Int) {
         guard let next = Step(rawValue: step.rawValue + delta) else { return }
+        go(to: next)
+    }
+
+    private func go(to next: Step) {
+        guard next != step else { return }
         model.refresh()
         step = next
     }
@@ -122,6 +143,12 @@ private struct OnboardingView: View {
 
 private struct WelcomeStep: View {
     var body: some View {
+        ScrollView {
+            content.frame(maxWidth: .infinity)
+        }
+    }
+
+    private var content: some View {
         VStack(spacing: 14) {
             Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 96, height: 96)
             Text(L("PolyMac에 오신 것을 환영합니다", "Welcome to PolyMac")).font(.title2.bold())
