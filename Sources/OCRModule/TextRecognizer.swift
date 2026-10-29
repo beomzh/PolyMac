@@ -2,24 +2,44 @@ import AppKit
 import PolyMacCore
 import Vision
 
+/// 인식 설정. 기본값이 앱에서 쓰는 값이고, 측정 도구(scripts/ocr-bench.sh)가 바꿔 가며 비교한다.
+/// 측정 결과(합성 샘플 14개, docs/OCR-BENCH.md): 예전 설정 글자 오류율 1.58% → 지금 0.93%, 정확히 맞힌 샘플 9 → 11개.
+public struct OCROptions: Sendable {
+    /// 한국어가 앞이어야 한다 — 영어를 앞에 두면 한글을 거의 못 읽는다 (오류율 62%)
+    public var languages = ["ko-KR", "en-US"]
+    public var languageCorrection = true
+    /// 이미지를 이만큼 키워서 읽는다. 줄 첫 글자를 빠뜨리거나 기호를 잘못 읽는 일이 줄었다 (1 = 그대로).
+    /// 이미 큰 캡처(upscaleMaxPixels 넘음)는 키우지 않는다 — 큰 글자엔 도움이 없고 시간만 든다 (2000×1870에서 +0.24초).
+    public var upscale: CGFloat = 2
+    public var upscaleMaxPixels = 2_000_000
+    /// 흔한 기호 오인식 고치기 (OCRCleanup)
+    public var cleanup = true
+
+    public init() {}
+}
+
 /// Apple Vision 온디바이스 OCR. 네트워크를 쓰지 않는다.
 public enum TextRecognizer {
     /// QR·바코드 내용이 있으면 먼저, 그 뒤에 인식한 글자를 줄 단위로.
-    public static func recognize(_ image: CGImage, languages: [String] = ["ko-KR", "en-US"],
+    public static func recognize(_ image: CGImage, options: OCROptions = OCROptions(),
                                  lineMode: OCRLineMode = .current) async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 let textRequest = VNRecognizeTextRequest()
                 textRequest.recognitionLevel = .accurate
-                textRequest.recognitionLanguages = languages
-                textRequest.usesLanguageCorrection = true
+                textRequest.recognitionLanguages = options.languages
+                textRequest.usesLanguageCorrection = options.languageCorrection
                 let barcodeRequest = VNDetectBarcodesRequest()
-                let handler = VNImageRequestHandler(cgImage: image, options: [:])
+                let factor = image.width * image.height <= options.upscaleMaxPixels ? options.upscale : 1
+                let handler = VNImageRequestHandler(cgImage: scaled(image, by: factor), options: [:])
                 do {
                     try handler.perform([textRequest, barcodeRequest])
                     let codes = (barcodeRequest.results ?? []).compactMap(\.payloadStringValue)
+                    // 기호 정리는 줄을 잇기 전에 — 이은 뒤에 하면 줄 맨 앞 글머리표가 줄 가운데로 와서 가운뎃점이 된다
                     let lines = (textRequest.results ?? []).compactMap { observation in
-                        observation.topCandidates(1).first.map { LineJoiner.Line(text: $0.string, box: observation.boundingBox) }
+                        observation.topCandidates(1).first.map {
+                            LineJoiner.Line(text: options.cleanup ? OCRCleanup.fixLine($0.string) : $0.string, box: observation.boundingBox)
+                        }
                     }
                     var parts = codes
                     if !lines.isEmpty { parts.append(LineJoiner.join(lines, mode: lineMode)) }
@@ -29,6 +49,18 @@ public enum TextRecognizer {
                 }
             }
         }
+    }
+
+    /// 고품질 보간으로 키운다
+    static func scaled(_ image: CGImage, by factor: CGFloat) -> CGImage {
+        guard factor > 1 else { return image }
+        let width = Int(CGFloat(image.width) * factor), height = Int(CGFloat(image.height) * factor)
+        guard let ctx = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+                                  space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        else { return image }
+        ctx.interpolationQuality = .high
+        ctx.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        return ctx.makeImage() ?? image
     }
 }
 
