@@ -25,8 +25,9 @@
 - [ ] 공백 보존 (언어 우선순위·사용자 단어장은 측정 결과 효과가 없거나 나빠서 하지 않음)
 - [x] QR·바코드
 - [ ] URL 감지, 핀 위 라이브 텍스트 선택
-- [ ] macOS 26+: 표 인식 → TSV/Markdown
-- [ ] Shortcuts 앱 액션, `polymac://ocr` URL 스킴
+- [x] macOS 26+: 표 인식 → TSV/Markdown
+- [x] `polymac://ocr`·`ocr-table` URL 스킴 (단축어 X-Callback, 허용해야 동작)
+- [ ] Shortcuts 앱 목록에 뜨는 동작 (App Intents — Xcode 빌드 필요)
 - [x] 한글 OCR 정확도 샘플셋 + 측정 스크립트 (`scripts/ocr-bench.sh`)
 
 ## 0.4.0 — 클립보드 히스토리 (Maccy 졸업)

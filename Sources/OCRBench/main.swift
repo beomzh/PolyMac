@@ -36,6 +36,11 @@ func option(_ change: (inout OCROptions) -> Void) -> OCROptions {
 let args = CommandLine.arguments.dropFirst()
 let folder = URL(fileURLWithPath: args.first { !$0.hasPrefix("-") } ?? "Tests/OCRSamples", isDirectory: true)
 let verbose = args.contains("-v")
+if args.contains("--tables") {
+    let tables = URL(fileURLWithPath: args.first { !$0.hasPrefix("-") } ?? "Tests/OCRSamples/tables", isDirectory: true)
+    try await runTableBench(folder: tables, verbose: verbose)
+    exit(0)
+}
 // 다른 설정을 시험하려면 여기에 더한다
 let configs: [Config] = [
     Config(name: "app", options: OCROptions()),

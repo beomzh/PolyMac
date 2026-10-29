@@ -12,6 +12,7 @@ scripts/ocr-bench.sh
 - 다른 폴더를 재려면 `scripts/ocr-bench.sh <폴더>`.
 - 샘플 다시 만들기: `swift scripts/make-ocr-samples.swift`
 - 다른 설정을 시험하려면 `Sources/OCRBench/main.swift`의 `configs`에 더합니다.
+- 표 인식: `scripts/ocr-bench.sh --tables` (아래 [표 인식](#표-인식))
 
 ## 샘플
 
@@ -74,3 +75,44 @@ avg ms          124            113            112            122
 | 언어 교정 끄기 | 기호 일부가 나아지나 확대+정리보다 못함 | 켜 둠 |
 
 남은 오류: 한국어 모델이 영어 낱말의 대소문자를 잃음 (`macOS`→`macos`, `isPinned`→`ispinned`), 코드의 `$0`→`$o`, 줄표 `—`→`-`.
+
+## 표 인식
+
+macOS 26의 Vision 문서 인식(`RecognizeDocumentsRequest`)으로 표를 찾아 칸 단위로 비교합니다.
+
+```bash
+scripts/ocr-bench.sh --tables      # -v: 틀린 표 전체
+swift scripts/make-table-samples.swift   # 샘플 다시 만들기
+```
+
+샘플은 `Tests/OCRSamples/tables/`에 `<이름>.png`와 `<이름>.tsv`(정답, 탭으로 나눈 칸)가 짝으로 있습니다.
+
+| 샘플 | 내용 |
+|---|---|
+| ko-grid, dark-grid | 칸마다 선이 있는 한글 표, 어두운 배경 |
+| mixed-numbers | 한영·숫자·쉼표·따옴표, 빈 칸 |
+| sheet-light, stripes-en | 옅은 가로선만 (스프레드시트), 줄무늬 (선 없음) |
+| ko-small-1x | 11pt 글자를 1배율로 |
+
+지표: **cells right** = 정답과 같은 칸 / 전체 칸, **cell CER** = 칸 글자 오류율, **shape** = 행·열 수가 맞은 표
+
+### 결과 (2026-10-29, macOS 26.6, Apple Silicon)
+
+```
+sample          app                   upscale-2x            no-cleanup
+dark-grid       9/12 4×3              9/12 4×3              9/12 4×3
+ko-grid         16/16 4×4             16/16 4×4             16/16 4×4
+ko-small-1x     15/16 4×4             15/16 4×4             15/16 4×4
+mixed-numbers   20/20 5×4             20/20 5×4             20/20 5×4
+sheet-light     16/16 4×4             16/16 4×4             16/16 4×4
+stripes-en      15/15 5×3             15/15 5×3             15/15 5×3
+
+cells right     95.8%                 95.8%                 95.8%
+cell CER        1.88%                 1.88%                 1.88%
+shape           6/6                   6/6                   6/6
+avg ms          221                   266                   216
+```
+
+- 선이 없는 표(줄무늬·옅은 가로선)도 행·열을 모두 맞혔습니다.
+- 2배 확대는 표에서는 나아지는 게 없고 45 ms 더 걸려 **표는 확대하지 않습니다** (`TableRecognizer.defaultOptions`).
+- 틀린 칸: `⌃⇧1` 같은 키 기호(dark-grid 3칸), 작은 글씨의 쉼표를 마침표로 읽음(ko-small-1x `6,108`→`6.108`, 확대해도 같음).

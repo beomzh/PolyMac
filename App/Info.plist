@@ -27,6 +27,17 @@
     <string>__BUILD__</string>
     <key>PolyMacVersion</key>
     <string>__VERSION__</string>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>dev.polymac.actions</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>polymac</string>
+            </array>
+        </dict>
+    </array>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>LSUIElement</key>

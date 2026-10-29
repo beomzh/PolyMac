@@ -67,18 +67,53 @@ public enum TextRecognizer {
 @MainActor
 public enum OCRRunner {
     /// 인식 → NFC 정규화 → 클립보드 → 미리보기 안내
-    public static func recognizeAndCopy(_ image: CGImage) async {
+    /// 돌려주는 값: 클립보드에 넣었는지 (단축어에 성공·실패를 알릴 때 쓴다)
+    @discardableResult
+    public static func recognizeAndCopy(_ image: CGImage) async -> Bool {
         do {
             let text = try await TextRecognizer.recognize(image).precomposedStringWithCanonicalMapping
             guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 Toast.show(L("글자를 찾지 못했습니다", "No text found"))
-                return
+                return false
             }
             PasteboardWriter.copy(text, origin: .ocr)
             let preview = text.count > 120 ? String(text.prefix(120)) + "…" : text
             Toast.show(L("텍스트를 클립보드에 복사했습니다", "Text copied to the clipboard"), content: preview, duration: 3)
+            return true
         } catch {
             Toast.show(L("텍스트 추출 실패: \(error.localizedDescription)", "Text recognition failed: \(error.localizedDescription)"))
+            return false
+        }
+    }
+
+    /// 표 인식 → 표 형식에 따라 TSV(+ 서식 앱용 HTML 표) 또는 Markdown. 표가 없으면 일반 텍스트로.
+    @discardableResult
+    public static func recognizeTableAndCopy(_ image: CGImage, format: TableFormat = .current) async -> Bool {
+        guard TableRecognizer.isAvailable else {
+            Toast.show(L("표 인식은 macOS 26 이상에서 됩니다 — 일반 텍스트로 복사합니다", "Table recognition needs macOS 26 or later — copying as plain text"))
+            return await recognizeAndCopy(image)
+        }
+        do {
+            let tables = try await TableRecognizer.recognize(image)
+            guard !tables.isEmpty else {
+                Toast.show(L("표를 찾지 못해 일반 텍스트로 복사합니다", "No table found — copying as plain text"))
+                return await recognizeAndCopy(image)
+            }
+            let text = tables.map { $0.text(format) }.joined(separator: "\n\n")
+            if format == .tsv {
+                PasteboardWriter.copy(text, html: tables.map(\.html).joined(separator: "<br>"), origin: .ocr)
+            } else {
+                PasteboardWriter.copy(text, origin: .ocr)
+            }
+            let shape = tables.map { "\($0.rows.count)×\($0.columnCount)" }.joined(separator: ", ")
+            let title = format == .tsv
+                ? L("표(\(shape))를 복사했습니다 — 엑셀·Numbers·구글 시트에 붙여넣기", "Copied the table (\(shape)) — paste into Excel, Numbers or Sheets")
+                : L("표(\(shape))를 Markdown으로 복사했습니다", "Copied the table (\(shape)) as Markdown")
+            Toast.show(title, content: text.count > 160 ? String(text.prefix(160)) + "…" : text, duration: 3)
+            return true
+        } catch {
+            Toast.show(L("표 인식 실패: \(error.localizedDescription)", "Table recognition failed: \(error.localizedDescription)"))
+            return false
         }
     }
 }

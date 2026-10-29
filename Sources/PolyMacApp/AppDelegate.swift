@@ -75,6 +75,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Settin
     }
 
     /// Dock 아이콘을 누르거나, 실행 중에 Spotlight·Finder로 다시 열었을 때 — 열려 있는 창을 앞으로
+    /// polymac://… (단축어 등) — 허용 여부와 동작은 URLActions가 판단한다
+    func application(_ application: NSApplication, open urls: [URL]) {
+        urls.forEach(URLActions.handle)
+    }
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         DockPresence.bringWindowsForward()
         return false
