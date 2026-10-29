@@ -36,7 +36,13 @@ fi
 echo "▶ 묶기 — $NAME"
 rm -rf "$OUT"
 mkdir -p "$OUT"
-ditto -c -k --keepParent build/PolyMac.app "$OUT/$NAME.zip"
+# 확장 속성(com.apple.provenance 등)을 넣으면 zip 안에 ._ 파일이 생겨, unzip으로 풀었을 때 서명이 깨진다
+ditto -c -k --norsrc --noextattr --noacl --keepParent build/PolyMac.app "$OUT/$NAME.zip"
+CHECK="$(mktemp -d)"
+trap 'rm -rf "$CHECK"' EXIT
+if unzip -Z1 "$OUT/$NAME.zip" | grep -qE '(^|/)\._'; then echo "✗ zip에 ._ 파일이 들어갔습니다"; exit 1; fi
+unzip -q "$OUT/$NAME.zip" -d "$CHECK" && codesign --verify --strict "$CHECK/PolyMac.app" \
+    || { echo "✗ 압축을 푼 앱의 서명이 유효하지 않습니다"; exit 1; }
 (cd "$OUT" && shasum -a 256 "$NAME.zip" > "$NAME.zip.sha256" && shasum -a 256 -c "$NAME.zip.sha256")
 
 echo "✅ $OUT/$NAME.zip"

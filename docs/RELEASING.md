@@ -121,6 +121,7 @@ CHANGELOG 항목 형식:
    - 자체 서명 인증서는 **잃어버리면 같은 것을 다시 만들 수 없다** — 새 인증서로 서명한 업데이트는 다른 앱으로 취급돼 모든 사용자가 권한을 다시 줘야 한다. 백업 `.p12`를 저장소 밖 안전한 곳에 보관한다.
    - **공증하지 않는다** (Apple 개발자 프로그램 미가입). Hardened Runtime은 켜 둔다. 받는 사람은 처음 한 번 "그래도 열기"가 필요하다 — README "처음 열 때 막히면".
    - 스크립트는 VERSION이 사전 배포(`-alpha` 등)가 아니고 작업 트리가 깨끗하며 `vX.Y.Z` 태그가 HEAD에 있을 때만 묶는다.
+   - zip에는 확장 속성을 넣지 않는다(`ditto --norsrc --noextattr`). 넣으면 `._` 파일이 앱 안에 생겨 `unzip`으로 푼 사람에게 서명이 깨진다. 스크립트가 묶은 뒤 `unzip`으로 풀어 서명을 다시 확인한다.
 7. **배포 파일** — `build/release/PolyMac-X.Y.Z.zip` + `.zip.sha256`
    ```bash
    gh release create vX.Y.Z build/release/PolyMac-X.Y.Z.zip build/release/PolyMac-X.Y.Z.zip.sha256 --title "PolyMac X.Y.Z" --notes-file <노트 파일>
