@@ -2,6 +2,7 @@ import AppKit
 import ImageIO
 import PolyMacCore
 import SwiftUI
+import os
 
 /// 클립보드 히스토리 창. 평소에는 좁은 목록만, ⌘→ 또는 오른쪽 위 버튼으로 미리보기 패널을 옆으로 펼친다.
 /// 앞에 있던 앱의 포커스를 빼앗지 않는 패널이라 ⇧↩︎로 그 앱에 바로 붙여넣을 수 있다.
@@ -199,6 +200,9 @@ final class ClipboardPanelModel: ObservableObject {
     /// 봉인된 기록 파일을 여는 열쇠 (없으면 디스크 기록 없이 메모리만)
     let store: SealedFiles?
     private var loadingThumbnails = Set<String>()
+    private static let logger = Logger(subsystem: "dev.polymac", category: "clipboard")
+    /// 썸네일을 못 읽은 횟수 — 잠깐 뒤 다시 시도하되 끝없이 되풀이하지 않게
+    private var thumbnailFailures: [String: Int] = [:]
     private var previewCache: (id: UUID, text: String, truncated: Bool)?
 
     init(items: [ClipboardItem], imageDirectory: URL, textDirectory: URL, store: SealedFiles?, previewOpen: Bool) {
@@ -289,6 +293,23 @@ final class ClipboardPanelModel: ObservableObject {
         return result
     }
 
+    /// 못 읽었으면 잠깐 뒤 다시 그리게 한다 (3번까지). 그다음은 이유를 남기고 빈 칸으로 둔다
+    private func thumbnailFailed(_ key: String, reason: String) {
+        let count = (thumbnailFailures[key] ?? 0) + 1
+        thumbnailFailures[key] = count
+        guard count <= 3 else {
+            if count == 4 { Self.logger.error("clipboard thumbnail failed \(key, privacy: .public): \(reason, privacy: .public)") }
+            return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5 * Double(count)) { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.loadingThumbnails.remove(key)
+                self.objectWillChange.send() // 다시 그리면 thumbnail()이 한 번 더 읽는다
+            }
+        }
+    }
+
     private func pruneThumbnails() {
         let live = Set(items.compactMap(\.imageFile))
         thumbnails = thumbnails.filter { key, _ in live.contains(String(key.split(separator: "@").first ?? "")) }
@@ -306,16 +327,31 @@ final class ClipboardPanelModel: ObservableObject {
         let url = imageDirectory.appendingPathComponent(file)
         let store = self.store
         Task.detached(priority: .userInitiated) {
-            guard let png = try? store?.read(url),
-                  let source = CGImageSourceCreateWithData(png as CFData, nil),
-                  let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, [
-                      kCGImageSourceCreateThumbnailFromImageAlways: true,
-                      kCGImageSourceThumbnailMaxPixelSize: maxPixel,
-                      kCGImageSourceCreateThumbnailWithTransform: true,
-                  ] as CFDictionary)
-            else { return }
+            var reason = "no storage key"
+            var image: CGImage?
+            if let store {
+                do {
+                    let png = try store.read(url)
+                    if let source = CGImageSourceCreateWithData(png as CFData, nil) {
+                        image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                            kCGImageSourceCreateThumbnailFromImageAlways: true,
+                            kCGImageSourceThumbnailMaxPixelSize: maxPixel,
+                            kCGImageSourceCreateThumbnailWithTransform: true,
+                        ] as CFDictionary)
+                    }
+                    reason = "not an image"
+                } catch {
+                    reason = String(describing: error)
+                }
+            }
+            let loaded = image, why = reason
             await MainActor.run {
-                self.thumbnails[key] = NSImage(cgImage: cg, size: NSSize(width: cg.width, height: cg.height))
+                if let loaded {
+                    self.thumbnails[key] = NSImage(cgImage: loaded, size: NSSize(width: loaded.width, height: loaded.height))
+                    self.thumbnailFailures[key] = nil
+                } else {
+                    self.thumbnailFailed(key, reason: why)
+                }
             }
         }
         return nil

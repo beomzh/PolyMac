@@ -236,15 +236,9 @@ public final class ClipboardModule: PolyMacModule {
                         self.didChange()
                         return
                     }
-                    guard let store = self.store else {
-                        self.context.logger.info("clipboard long text not kept: no storage key")
-                        return
-                    }
                     let file = UUID().uuidString + ".txt"
-                    let url = directory.appendingPathComponent(file)
-                    self.ioQueue.async { try? store.write(data, to: url) }
-                    self.items.insert(.largeText(preview: preview, file: file, bytes: bytes, hash: hash, sourceApp: app), at: 0)
-                    self.didChange()
+                    self.keep(data, at: directory.appendingPathComponent(file),
+                              as: .largeText(preview: preview, file: file, bytes: bytes, hash: hash, sourceApp: app))
                 }
             }
         }
@@ -269,14 +263,41 @@ public final class ClipboardModule: PolyMacModule {
                         self.didChange()
                         return
                     }
-                    guard let store = self.store else {
-                        self.context.logger.info("clipboard image not kept: no storage key")
-                        return
-                    }
                     let file = UUID().uuidString + ".png"
-                    let url = directory.appendingPathComponent(file)
-                    self.ioQueue.async { try? store.write(png, to: url) }
-                    self.items.insert(.image(file: file, width: width, height: height, bytes: png.count, hash: hash, sourceApp: app), at: 0)
+                    self.keep(png, at: directory.appendingPathComponent(file),
+                              as: .image(file: file, width: width, height: height, bytes: png.count, hash: hash, sourceApp: app))
+                }
+            }
+        }
+    }
+
+    /// 파일을 다 쓴 뒤에 목록에 넣는다 — 목록에 먼저 보이면 썸네일·미리보기가 아직 없는 파일을 읽으려다 실패한다
+    private func keep(_ data: Data, at url: URL, as item: ClipboardItem) {
+        guard let store else {
+            context.logger.info("clipboard \(item.isImage ? "image" : "long text", privacy: .public) not kept: no storage key")
+            return
+        }
+        let logger = context.logger
+        ioQueue.async { [weak self] in
+            do {
+                try store.write(data, to: url)
+            } catch {
+                logger.error("clipboard file write failed: \(error.localizedDescription, privacy: .public)")
+                return
+            }
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    // 쓰는 사이 같은 내용이 먼저 들어왔으면 방금 쓴 파일은 버리고 있던 항목을 맨 위로
+                    if let index = self.items.firstIndex(where: { $0.contentHash == item.contentHash }) {
+                        var existing = self.items.remove(at: index)
+                        existing.copiedAt = Date()
+                        existing.sourceApp = item.sourceApp
+                        self.items.insert(existing, at: 0)
+                        self.ioQueue.async { try? FileManager.default.removeItem(at: url) }
+                    } else {
+                        self.items.insert(item, at: 0)
+                    }
                     self.didChange()
                 }
             }
