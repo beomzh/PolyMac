@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-29 10:22]
+- [Changed] - chore/release-0.1.0: PR #10 인증서 스크립트 push
+
 ## 0.1.0 (2026-10-29)
 [2026-10-29 10:22]
 - [Added] - scripts/make-signing-cert.sh: 배포용 자체 서명 인증서 PolyMac Local(10년, 코드 서명 전용) 생성 — 서명에 개인정보가 드러나지 않고 매년 바뀌지 않게, 백업 .p12 암호는 화면에 보이지 않게 입력받음
