@@ -3,6 +3,9 @@
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
 [2026-10-29 13:47]
+- [Changed] - feat/clipboard-encryption: PR #13 썸네일 수정 push
+
+[2026-10-29 13:47]
 - [Fixed] - Sources/ClipboardModule/ClipboardModule.swift `keep`: 방금 복사한 이미지가 기록 창에서 안 보이던 문제 — 파일을 쓰기 전에 목록에 먼저 넣어 썸네일이 없는 파일을 읽고 실패한 채 다시 시도하지 않음, 파일을 다 쓴 뒤 목록에 넣고 그사이 같은 내용이 들어왔으면 방금 쓴 파일은 버림
 - [Fixed] - Sources/ClipboardModule/ClipboardPanel.swift `thumbnail`, `thumbnailFailed`: 썸네일을 못 읽으면 0.5·1·1.5초 뒤 다시 시도(3번), 그래도 안 되면 이유를 로그에 남김
 
