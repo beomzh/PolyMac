@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import FinderModule
 import NormalizeModule
 import OrganizeModule
 import PolyMacCore
@@ -25,13 +26,14 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
     private var model: SettingsModel?
 
     enum Tab: String, CaseIterable, Identifiable {
-        case features, language, notifications, normalize, organize, shortcuts, permissions
+        case features, language, notifications, finder, normalize, organize, shortcuts, permissions
         var id: String { rawValue }
         var title: String {
             switch self {
             case .features: return L("기능", "Features")
             case .language: return L("언어", "Language")
             case .notifications: return L("알림", "Notifications")
+            case .finder: return L("Finder 도구", "Finder Tools")
             case .normalize: return L("한글 파일명", "Korean Filenames")
             case .organize: return L("자동 정리", "Auto-Organize")
             case .shortcuts: return L("단축키", "Shortcuts")
@@ -43,6 +45,7 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
             case .features: return "square.grid.2x2"
             case .language: return "globe"
             case .notifications: return "text.bubble"
+            case .finder: return "macwindow.on.rectangle"
             case .normalize: return "folder.badge.gearshape"
             case .organize: return "tray.full"
             case .shortcuts: return "command"
@@ -266,6 +269,7 @@ struct SettingsView: View {
                 case .features: FeaturesPane(model: model)
                 case .language: LanguagePane(model: model)
                 case .notifications: NotificationsPane()
+                case .finder: FinderAppsPane()
                 case .normalize: NormalizePane()
                 case .organize: OrganizeRulesPane()
                 case .shortcuts: ShortcutSettingsView(model: model.shortcuts)

@@ -74,7 +74,7 @@ extension Permission {
         case .accessibility: return L("창 배치, Finder ⌘X, 클립보드 자동 붙여넣기", "Window layout, Finder ⌘X, clipboard auto-paste")
         case .screenRecording: return L("캡처, 텍스트 추출(OCR) — 허용한 뒤 PolyMac을 다시 실행해야 적용됩니다",
                                         "Capture, text recognition (OCR) — takes effect after PolyMac restarts")
-        case .automationFinder: return L("터미널 열기, 경로 복사, 앱 삭제(휴지통으로 옮기기)", "Open Terminal, copy path, uninstall (move to Trash)")
+        case .automationFinder: return L("터미널 열기, 에디터로 열기, 경로 복사, 앱 삭제(휴지통으로 옮기기)", "Open Terminal or editor, copy path, uninstall (move to Trash)")
         case .filesAndFolders: return L("한글 파일명 정리, 자동 정리 — 처음 폴더를 볼 때 macOS가 묻습니다",
                                         "Korean filename fix, auto-organize — macOS asks the first time a folder is read")
         case .fullDiskAccess: return ""
