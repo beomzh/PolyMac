@@ -9,6 +9,10 @@
 - [Changed] - chore/release-0.1.0: PR #10 인증서 스크립트 push
 
 ## 0.1.0 (2026-10-29)
+[2026-10-29 10:39]
+- [Fixed] - Sources/FinderModule/FinderKeyTap.swift `handle`, `send`: Finder ⌘X 후 ⌘V가 아무 동작도 안 하던 문제 — 지나가는 키 이벤트의 키 코드만 고쳐 쓰면 Finder가 원래 키(⌘X)로 받아 복사가 안 됨, 원래 키는 버리고 ⌘C·⌥⌘V를 새 이벤트로 보냄
+- [Changed] - Sources/FinderModule/FinderKeyTap.swift: 잘라내기·일반 붙여넣기 로그에 클립보드 변경 번호와 파일 여부 기록 (다음 진단용)
+
 [2026-10-29 10:27]
 - [Changed] - scripts/make-signing-cert.sh: 인증서 이름을 PolyMac Beomzh로
 - [Changed] - scripts/build-app.sh: "PolyMac "으로 시작하는 자체 서명 인증서를 찾도록 — 이름을 바꿔도 Apple Development로 잘못 서명하지 않게
