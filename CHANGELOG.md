@@ -2,6 +2,11 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-29 14:17]
+- [Added] - Sources/FinderModule/FinderAppsPane.swift `FinderAppsPane`: 환경 설정에서 터미널 앱·에디터 앱 고르기 (메뉴와 같은 설정, 다른 앱 고르기 포함)
+- [Added] - Sources/PolyMacApp/Settings.swift `SettingsWindow.Tab.finder`: 환경 설정에 Finder 도구 탭
+- [Changed] - README.md: 환경 설정 탭 표와 앱 고르기 안내에 Finder 도구 탭 추가
+
 [2026-10-29 14:14]
 - [Changed] - CHANGELOG.md: PR #15 push 기록 (feat/finder-open-in-editor)
 
