@@ -65,41 +65,26 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
         w.title = L("PolyMac 환경 설정", "PolyMac Settings")
         w.isReleasedWhenClosed = false
         let hosting = NSHostingController(rootView: SettingsView(model: model))
-        // 내용 크기에 맞춰 창이 저절로 줄었다 늘었다 하지 않게 — 최소 크기만 따른다 (크기는 fit에서)
+        // 내용 크기에 맞춰 창이 저절로 줄었다 늘었다 하지 않게 — 최소 크기만 따른다 (크기는 defaultSize)
         hosting.sizingOptions = [.minSize]
         w.contentViewController = hosting
-        w.setContentSize(Self.size(for: model.tab))
+        w.setContentSize(Self.defaultSize(on: NSScreen.main))
         w.delegate = self
         w.center()
         window = w
         self.model = model
-        tabObserver = model.$tab.dropFirst().sink { [weak self] tab in self?.fit(tab) }
         w.bringToFront()
     }
 
-    private var tabObserver: AnyCancellable?
-
-    /// 탭마다 알맞은 창 크기 — 자동 정리(규칙 목록 + 편집)는 넓어야 한다
-    private static func size(for tab: Tab) -> NSSize {
-        tab == .organize ? NSSize(width: 1000, height: 680) : NSSize(width: 760, height: 560)
-    }
-
-    /// 지금 창이 그 탭에 작으면 키운다 (사용자가 키워 둔 크기는 줄이지 않는다). 왼쪽 위 모서리는 그대로, 화면 밖으로 나가지 않게.
-    private func fit(_ tab: Tab) {
-        guard let window else { return }
-        let need = Self.size(for: tab)
-        let current = window.contentRect(forFrameRect: window.frame).size
-        guard current.width < need.width || current.height < need.height else { return }
-        let content = NSSize(width: max(current.width, need.width), height: max(current.height, need.height))
-        var frame = window.frameRect(forContentRect: NSRect(origin: .zero, size: content))
-        frame.origin = NSPoint(x: window.frame.minX, y: window.frame.maxY - frame.height)
-        if let visible = window.screen?.visibleFrame {
-            frame.size.width = min(frame.width, visible.width)
-            frame.size.height = min(frame.height, visible.height)
-            frame.origin.x = min(max(frame.minX, visible.minX), visible.maxX - frame.width)
-            frame.origin.y = min(max(frame.minY, visible.minY), visible.maxY - frame.height)
+    /// 모든 탭에 같은 크기 — 가장 넓은 자동 정리(규칙 목록 + 편집)에 맞춰, 탭을 바꿔도 창이 커졌다 작아졌다 하지 않게.
+    /// 작은 화면에서는 화면 안에 들어오게 줄인다.
+    private static func defaultSize(on screen: NSScreen?) -> NSSize {
+        var size = NSSize(width: 1000, height: 680)
+        if let visible = screen?.visibleFrame {
+            size.width = min(size.width, visible.width - 40)
+            size.height = min(size.height, visible.height - 40)
         }
-        window.setFrame(frame, display: true, animate: true)
+        return size
     }
 
     /// 언어가 바뀌면 창 제목도 새 언어로
@@ -110,7 +95,6 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         model?.shortcuts.stopRecording()
         model?.stopWatching()
-        tabObserver = nil
         window?.contentViewController = nil
         window = nil
         model = nil

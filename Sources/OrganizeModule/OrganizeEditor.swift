@@ -1,6 +1,7 @@
 import AppKit
 import PolyMacCore
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// 편집 중인 규칙. 저장할 때 OrganizeRule로 바꾼다.
 struct RuleDraft: Identifiable, Equatable {
@@ -89,6 +90,70 @@ final class OrganizeEditorModel: ObservableObject {
         rules.swapAt(i, i + offset)
     }
 
+    /// 목록에서 끌어 옮기기 — 위에 있는 규칙부터 검사한다
+    func move(from source: IndexSet, to destination: Int) {
+        rules.move(fromOffsets: source, toOffset: destination)
+    }
+
+    /// 지금 편집 중인 규칙(저장 전 고친 것 포함)을 규칙 파일로
+    func exportRules() {
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "PolyMac-rules.json"
+        panel.allowedContentTypes = [.json]
+        panel.canCreateDirectories = true
+        panel.message = L("감시 폴더·미리보기 모드는 빼고 규칙만 저장합니다.", "Only rules are saved, not watched folders or preview mode.")
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            try RuleTransfer.encode(rules.map(\.rule)).write(to: url, options: .atomic)
+            Toast.show(L("규칙 \(rules.count)개를 내보냈습니다", "Exported \(rules.count) rules"), content: url.lastPathComponent)
+        } catch {
+            Toast.show(L("내보내지 못했습니다", "Could not export"), content: error.localizedDescription, duration: 4)
+        }
+    }
+
+    /// 규칙 파일이나 organize.json에서 읽어 꺼진 상태로 넣는다. 저장을 눌러야 파일에 반영된다.
+    func importRules() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.json]
+        panel.allowsMultipleSelection = false
+        panel.message = L("가져온 규칙은 꺼진 상태로 들어갑니다. 확인하고 켠 뒤 저장하세요.", "Imported rules come in turned off. Review, turn on, then Save.")
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        let imported: [OrganizeRule]
+        do {
+            let size = (try url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+            guard size <= RuleTransfer.maxBytes else { throw ModuleError(L("파일이 너무 큽니다 (1MB 넘음)", "The file is too large (over 1 MB)")) }
+            imported = try RuleTransfer.decode(Data(contentsOf: url), existingIDs: Set(rules.map(\.id)))
+        } catch {
+            Toast.show(L("가져오지 못했습니다", "Could not import"), content: error.localizedDescription, duration: 5)
+            return
+        }
+        guard !imported.isEmpty else {
+            Toast.show(L("가져올 규칙이 없습니다", "No rules to import"), content: url.lastPathComponent)
+            return
+        }
+
+        var replace = false
+        if !rules.isEmpty {
+            let alert = NSAlert()
+            alert.messageText = L("규칙 \(imported.count)개를 가져옵니다", "Import \(imported.count) rules")
+            alert.informativeText = L("지금 규칙 \(rules.count)개 뒤에 붙이거나, 지금 규칙을 모두 바꿀 수 있습니다. 가져온 규칙은 꺼진 상태이며 저장을 눌러야 적용됩니다.",
+                                      "Add them after your \(rules.count) rules, or replace all of them. Imported rules are off and apply only after you Save.")
+            alert.addButton(withTitle: L("뒤에 붙이기", "Add"))
+            alert.addButton(withTitle: L("모두 바꾸기", "Replace All"))
+            alert.addButton(withTitle: L("취소", "Cancel"))
+            switch alert.runModal() {
+            case .alertFirstButtonReturn: break
+            case .alertSecondButtonReturn: replace = true
+            default: return
+            }
+        }
+        if replace { rules.removeAll() }
+        rules.append(contentsOf: imported.map(RuleDraft.init))
+        selection = imported.first?.id
+        Toast.show(L("규칙 \(imported.count)개를 가져왔습니다 (꺼짐)", "Imported \(imported.count) rules (off)"),
+                   content: L("확인하고 켠 뒤 저장을 누르세요", "Review, turn on, then press Save"))
+    }
+
     func addFolder() {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
@@ -135,7 +200,7 @@ struct OrganizeEditorView: View {
     private var ruleList: some View {
         VStack(alignment: .leading, spacing: 0) {
             List(selection: $model.selection) {
-                Section(L("규칙 (위에서부터 검사)", "Rules (checked top to bottom)")) {
+                Section(L("규칙 (위에서부터 검사, 끌어서 순서 바꾸기)", "Rules (checked top to bottom, drag to reorder)")) {
                     ForEach($model.rules) { $rule in
                         HStack {
                             Toggle("", isOn: $rule.isEnabled).labelsHidden().toggleStyle(.checkbox)
@@ -145,6 +210,7 @@ struct OrganizeEditorView: View {
                         }
                         .tag(rule.id)
                     }
+                    .onMove { model.move(from: $0, to: $1) }
                 }
             }
             HStack(spacing: 4) {
@@ -160,8 +226,12 @@ struct OrganizeEditorView: View {
                     .disabled(model.selection == nil)
                     .help(L("아래로", "Move down"))
                 Spacer()
-                Menu(L("기본 규칙", "Presets")) {
+                Menu(L("더 보기", "More")) {
                     Button(L("빠진 기본 규칙 다시 넣기 (꺼진 상태)", "Add missing presets (off)")) { model.addPresets() }
+                    Divider()
+                    Button(L("규칙 가져오기…", "Import Rules…")) { model.importRules() }
+                    Button(L("규칙 내보내기…", "Export Rules…")) { model.exportRules() }
+                        .disabled(model.rules.isEmpty || !model.problems.isEmpty)
                 }
                 .menuStyle(.borderlessButton)
                 .fixedSize()
