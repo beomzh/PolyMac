@@ -2,6 +2,42 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-29 10:39]
+- [Changed] - chore/release-0.1.0: PR #10 Finder 잘라내기 수정 push
+
+[2026-10-29 10:27]
+- [Changed] - chore/release-0.1.0: PR #10 인증서 적용 push
+
+[2026-10-29 10:22]
+- [Changed] - chore/release-0.1.0: PR #10 인증서 스크립트 push
+
+## 0.1.0 (2026-10-29)
+[2026-10-29 10:39]
+- [Fixed] - Sources/FinderModule/FinderKeyTap.swift `handle`, `send`: Finder ⌘X 후 ⌘V가 아무 동작도 안 하던 문제 — 지나가는 키 이벤트의 키 코드만 고쳐 쓰면 Finder가 원래 키(⌘X)로 받아 복사가 안 됨, 원래 키는 버리고 ⌘C·⌥⌘V를 새 이벤트로 보냄
+- [Changed] - Sources/FinderModule/FinderKeyTap.swift: 잘라내기·일반 붙여넣기 로그에 클립보드 변경 번호와 파일 여부 기록 (다음 진단용)
+
+[2026-10-29 10:27]
+- [Changed] - scripts/make-signing-cert.sh: 인증서 이름을 PolyMac Beomzh로
+- [Changed] - scripts/build-app.sh: "PolyMac "으로 시작하는 자체 서명 인증서를 찾도록 — 이름을 바꿔도 Apple Development로 잘못 서명하지 않게
+- [Changed] - scripts/package-release.sh, README.md, docs/RELEASING.md: 인증서 이름 반영
+
+[2026-10-29 10:22]
+- [Added] - scripts/make-signing-cert.sh: 배포용 자체 서명 인증서 PolyMac Local(10년, 코드 서명 전용) 생성 — 서명에 개인정보가 드러나지 않고 매년 바뀌지 않게, 백업 .p12 암호는 화면에 보이지 않게 입력받음
+- [Changed] - scripts/package-release.sh: Apple Development 인증서로 서명되면 묶지 않음 (이메일·실명 노출, 1년 만료)
+- [Changed] - README.md, docs/RELEASING.md: 고정 인증서는 스크립트 권장, Apple Development를 배포에 쓰지 않는 이유와 백업 필요성
+
+[2026-10-29 10:11]
+- [Changed] - chore/release-0.1.0: PR #10 생성 push
+
+[2026-10-29 10:09]
+- [Added] - Sources/PolyMacCore/SystemSupport.swift `AppPaths.appendLine`, `rotateIfNeeded`: 기록 파일(organize-log·uninstall-log)이 끝없이 커지지 않게 1 MB를 넘으면 `.1`로 넘기고 하나만 남김
+- [Added] - Tests/PolyMacCoreTests/AppPathsTests.swift `logRotatesAtLimitAndKeepsOnePrevious`: 한도에서 넘기기, 이전 파일 하나만, 권한 0600 유지
+- [Added] - scripts/package-release.sh: 태그 찍힌 깨끗한 main에서 zip + sha256 만들기 (사전 배포 번호·ad-hoc 서명이면 멈춤)
+- [Changed] - docs/RELEASING.md: 공증 없이 배포(Apple 개발자 프로그램 미가입), 고정 인증서 서명·인증서 이름 노출 주의, 묶기·올리기 명령
+- [Changed] - docs/ARCHITECTURE.md, docs/CONCEPT.md, docs/ROADMAP.md: 공증·공식 Homebrew cask 전제를 GitHub Releases + 개인 tap으로
+- [Changed] - README.md: 0.1.0 표기, 받아서 설치·체크섬 확인, "처음 열 때 막히면"(그래도 열기) 안내, 기록 파일 로테이트·uninstall-log 데이터 표
+- [Changed] - VERSION: 0.1.0-alpha.1 → 0.1.0 (첫 공개 버전)
+
 [2026-10-28 16:10]
 - [Changed] - fix/capture-number-position: PR #9 생성 push
 

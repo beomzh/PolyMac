@@ -112,11 +112,20 @@ CHANGELOG 항목 형식:
    git tag -a vX.Y.Z -m "PolyMac X.Y.Z"
    git push origin main --tags
    ```
-6. **빌드 · 서명**
-   - 개인용: 고정 자체 서명 인증서로 서명 (TCC 권한이 빌드마다 초기화되지 않게)
-   - 공개 배포: Developer ID 서명 + Hardened Runtime + 공증(notarytool) + staple
-7. **배포 파일** — `PolyMac-X.Y.Z.zip` + `PolyMac-X.Y.Z.zip.sha256` 를 GitHub Release에 첨부, 릴리즈 노트 작성
-8. **(1.0.0 이후)** Homebrew cask 버전·해시 갱신
+6. **빌드 · 서명 · 묶기** — 태그를 찍은 main에서
+   ```bash
+   scripts/package-release.sh
+   ```
+   - 고정 인증서(이름이 `PolyMac `으로 시작하는 자체 서명 인증서)로 서명한다. 매번 같은 인증서여야 받는 사람의 macOS 권한(손쉬운 사용·화면 녹음)이 업데이트 뒤에도 유지된다. 고를 때는 `POLYMAC_SIGN_IDENTITY`.
+   - 배포용 인증서는 `PolyMac Beomzh`(자체 서명, 10년, 백업 `~/Documents/PolyMac-signing.p12`) — `scripts/make-signing-cert.sh`로 만들었다. `Apple Development`는 쓰지 않는다: 서명에 이메일·실명·팀 ID가 드러나고(`codesign -dvv`), 1년마다 만료되며 시각 기록이 없어 만료 뒤 새로 받는 사람에게 무효로 보일 수 있다.
+   - 자체 서명 인증서는 **잃어버리면 같은 것을 다시 만들 수 없다** — 새 인증서로 서명한 업데이트는 다른 앱으로 취급돼 모든 사용자가 권한을 다시 줘야 한다. 백업 `.p12`를 저장소 밖 안전한 곳에 보관한다.
+   - **공증하지 않는다** (Apple 개발자 프로그램 미가입). Hardened Runtime은 켜 둔다. 받는 사람은 처음 한 번 "그래도 열기"가 필요하다 — README "처음 열 때 막히면".
+   - 스크립트는 VERSION이 사전 배포(`-alpha` 등)가 아니고 작업 트리가 깨끗하며 `vX.Y.Z` 태그가 HEAD에 있을 때만 묶는다.
+7. **배포 파일** — `build/release/PolyMac-X.Y.Z.zip` + `.zip.sha256`
+   ```bash
+   gh release create vX.Y.Z build/release/PolyMac-X.Y.Z.zip build/release/PolyMac-X.Y.Z.zip.sha256 --title "PolyMac X.Y.Z" --notes-file <노트 파일>
+   ```
+8. **(1.0.0 이후)** 개인 Homebrew tap(`beomzh/homebrew-tap`) cask 버전·해시 갱신. 공식 cask 저장소는 공증 안 된 앱을 받지 않는다.
 
 ## 5. 지원 정책
 

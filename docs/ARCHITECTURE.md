@@ -33,7 +33,7 @@
 ### 2.1 왜 "동적 플러그인(.bundle) 로드"가 아닌가
 
 macOS에서 런타임에 `.bundle`을 로드하는 플러그인 구조도 가능하지만:
-- Hardened Runtime + 공증 환경에서 서명이 다른 번들 로드는 막히거나(`library validation`) 예외 entitlement가 필요 → 보안 약화
+- Hardened Runtime(라이브러리 검증) 환경에서 서명이 다른 번들 로드는 막히거나(`library validation`) 예외 entitlement가 필요 → 보안 약화
 - 한 번 로드한 Mach-O는 언로드가 사실상 안 됨 → "끄면 메모리 0"을 달성 못함
 
 그래서 **두 가지 방식을 섞는다**:
@@ -95,7 +95,7 @@ public protocol PolyMacModule: AnyObject {
 | OCR | Vision (+ VisionKit 라이브 텍스트) | 온디바이스, 한국어, 무료 |
 | 단축키 | Carbon `RegisterEventHotKey` | 권한 불필요, 가장 가벼움 (KeyboardShortcuts 라이브러리 검토) |
 | 자동 업데이트 | Sparkle 2 | 오픈소스 앱 표준 |
-| 배포 | Developer ID 서명 + 공증 + Homebrew cask | App Store 불가(샌드박스) |
+| 배포 | 고정 인증서 서명 + Hardened Runtime + GitHub Releases(zip·sha256), 공증 없음 | App Store 불가(샌드박스), 유료 개발자 프로그램 미가입 — 받는 사람이 처음 한 번 "그래도 열기" |
 | 최소 OS | macOS 14 | ScreenCaptureKit 스크린샷 API. 표 인식 등은 `if #available(macOS 26, *)` |
 
 ## 5-1. 모듈별 사용 기술

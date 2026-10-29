@@ -5,6 +5,7 @@ import PolyMacCore
 import os
 
 /// ⌘X 잘라내기용 키 이벤트 탭 (⌘X → ⌘C, 대기 중 ⌘V → ⌘⌥V).
+/// 누른 키는 버리고 바꿀 키를 새로 보낸다 — 지나가는 이벤트의 키 코드만 고쳐 쓰면 Finder가 원래 키로 받는 경우가 있다.
 ///
 /// 활성 이벤트 탭은 Mac 전체의 키 입력이 콜백을 거쳐 가므로, 콜백이 막히면 시스템 키 입력이 멈춘다.
 /// 그래서 메인 스레드(AppleScript·메뉴·모달로 잠깐씩 막힐 수 있음)가 아닌 전용 스레드에서 돌리고,
@@ -113,14 +114,14 @@ final class FinderKeyTap: @unchecked Sendable {
             return pass
         }
 
-        let base = event.flags.subtracting(modifierMask)
         if pressed == cut {
             // Finder의 "복사"(⌘C)로 바꾸고, 다음 붙여넣기를 "이동"으로 바꿀 준비
             let count = NSPasteboard.general.changeCount
-            rewrite(event, keyCode: kVK_ANSI_C, character: 0x63, flags: base.union(.maskCommand))
             state.withLock { $0.cutChangeCount = count }
-            logger.notice("cut in Finder: sent as copy")
+            send(kVK_ANSI_C, [.maskCommand])
+            logger.notice("cut in Finder: sent as copy (clipboard=\(count))")
             onCut()
+            return nil
         } else if pressed == paste {
             let cutAt = state.withLock { s -> Int? in
                 defer { s.cutChangeCount = nil }
@@ -129,10 +130,13 @@ final class FinderKeyTap: @unchecked Sendable {
             // 잘라낸 뒤 클립보드가 Finder의 복사로 한 번만 바뀌었으면 "여기로 항목 이동"(⌥⌘V)
             let now = NSPasteboard.general.changeCount
             if let cutAt, now == cutAt + 1 {
-                rewrite(event, keyCode: kVK_ANSI_V, character: 0x76, flags: base.union([.maskCommand, .maskAlternate]))
+                send(kVK_ANSI_V, [.maskCommand, .maskAlternate])
                 logger.notice("paste in Finder: sent as move")
-            } else if cutAt != nil {
-                logger.notice("paste in Finder: clipboard changed after cut — normal paste")
+                return nil
+            } else if let cutAt {
+                // 번호가 그대로면 ⌘C가 Finder에 닿지 않은 것, 2 이상 늘었으면 다른 앱이 클립보드를 썼다
+                let hasFiles = NSPasteboard.general.canReadObject(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true])
+                logger.notice("paste in Finder: clipboard changed after cut (cut=\(cutAt) now=\(now) files=\(hasFiles)) — normal paste")
             }
         } else {
             state.withLock { $0.cutChangeCount = nil } // 그냥 복사하면 잘라내기 취소
@@ -140,11 +144,18 @@ final class FinderKeyTap: @unchecked Sendable {
         return pass
     }
 
-    private func rewrite(_ event: CGEvent, keyCode: Int, character: UniChar, flags: CGEventFlags) {
-        event.setIntegerValueField(.keyboardEventKeycode, value: Int64(keyCode))
-        var c = character
-        event.keyboardSetUnicodeString(stringLength: 1, unicodeString: &c)
-        event.flags = flags
+    /// 키 한 번(누름·뗌)을 새로 보낸다. 이 탭 뒤쪽(annotated session)에 넣고 표식을 붙여 다시 가로채지 않는다.
+    private func send(_ keyCode: Int, _ flags: CGEventFlags) {
+        let source = CGEventSource(stateID: .privateState)
+        for down in [true, false] {
+            guard let key = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(keyCode), keyDown: down) else {
+                logger.error("could not create key event \(keyCode)")
+                return
+            }
+            key.flags = flags
+            key.setIntegerValueField(.eventSourceUserData, value: SyntheticEvent.marker)
+            key.post(tap: .cgAnnotatedSessionEventTap)
+        }
     }
 
     private static func modifiers(_ flags: CGEventFlags) -> KeyCombo.Modifiers {
