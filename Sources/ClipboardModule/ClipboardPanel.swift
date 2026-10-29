@@ -30,8 +30,8 @@ final class ClipboardPanelController {
     var isPrepared: Bool { model != nil }
 
     /// 모듈이 켜질 때: 화면은 아직 만들지 않고 목록·썸네일·앱 아이콘만 미리 준비
-    func prepare(items: [ClipboardItem], imageDirectory: URL, textDirectory: URL) {
-        let model = ClipboardPanelModel(items: items, imageDirectory: imageDirectory, textDirectory: textDirectory,
+    func prepare(items: [ClipboardItem], imageDirectory: URL, textDirectory: URL, store: SealedFiles?) {
+        let model = ClipboardPanelModel(items: items, imageDirectory: imageDirectory, textDirectory: textDirectory, store: store,
                                         previewOpen: UserDefaults.standard.bool(forKey: Self.previewKey))
         self.model = model
         model.prefetch()
@@ -196,13 +196,16 @@ final class ClipboardPanelModel: ObservableObject {
 
     let imageDirectory: URL
     let textDirectory: URL
+    /// 봉인된 기록 파일을 여는 열쇠 (없으면 디스크 기록 없이 메모리만)
+    let store: SealedFiles?
     private var loadingThumbnails = Set<String>()
     private var previewCache: (id: UUID, text: String, truncated: Bool)?
 
-    init(items: [ClipboardItem], imageDirectory: URL, textDirectory: URL, previewOpen: Bool) {
+    init(items: [ClipboardItem], imageDirectory: URL, textDirectory: URL, store: SealedFiles?, previewOpen: Bool) {
         self.items = items
         self.imageDirectory = imageDirectory
         self.textDirectory = textDirectory
+        self.store = store
         self.previewOpen = previewOpen
         refilter()
         selectedID = filtered.first?.id
@@ -274,9 +277,9 @@ final class ClipboardPanelModel: ObservableObject {
     func previewText(_ item: ClipboardItem) -> (text: String, truncated: Bool) {
         if let cache = previewCache, cache.id == item.id { return (cache.text, cache.truncated) }
         var result = (text: item.text, truncated: false)
-        if let file = item.textFile, let handle = try? FileHandle(forReadingFrom: textDirectory.appendingPathComponent(file)) {
-            defer { try? handle.close() }
-            let data = (try? handle.read(upToCount: Self.previewLimit)) ?? Data()
+        // 봉인된 파일은 통째로 열어야 해서 전체를 읽고 앞부분만 보여 준다 (같은 항목은 아래에서 기억)
+        if let file = item.textFile, let full = try? store?.read(textDirectory.appendingPathComponent(file)) {
+            let data = full.prefix(Self.previewLimit)
             // 잘린 끝의 깨진 UTF-8 바이트는 버린다
             var text = String(decoding: data, as: UTF8.self)
             if text.hasSuffix("\u{FFFD}") { text.removeLast() }
@@ -301,8 +304,10 @@ final class ClipboardPanelModel: ObservableObject {
         if let cached = thumbnails[key] { return cached }
         guard loadingThumbnails.insert(key).inserted else { return nil }
         let url = imageDirectory.appendingPathComponent(file)
+        let store = self.store
         Task.detached(priority: .userInitiated) {
-            guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+            guard let png = try? store?.read(url),
+                  let source = CGImageSourceCreateWithData(png as CFData, nil),
                   let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, [
                       kCGImageSourceCreateThumbnailFromImageAlways: true,
                       kCGImageSourceThumbnailMaxPixelSize: maxPixel,
