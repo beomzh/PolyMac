@@ -7,7 +7,8 @@ public enum OCRCleanup {
         text.split(separator: "\n", omittingEmptySubsequences: false).map { fixLine(String($0)) }.joined(separator: "\n")
     }
 
-    static func fixLine(_ line: String) -> String {
+    /// 인식한 한 줄 (줄을 잇기 전에 부른다)
+    public static func fixLine(_ line: String) -> String {
         // 점 모양 기호 세 개 → 말줄임 (마침표 "..."는 코드·글에서 그대로 쓰므로 건드리지 않는다)
         var out = line.replacingOccurrences(of: "[•·∙⋅]{3}", with: "…", options: .regularExpression)
         // 줄 맨 앞의 •는 글머리표, 줄 가운데의 •는 가운뎃점

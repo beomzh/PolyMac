@@ -35,14 +35,14 @@ public enum TextRecognizer {
                 do {
                     try handler.perform([textRequest, barcodeRequest])
                     let codes = (barcodeRequest.results ?? []).compactMap(\.payloadStringValue)
+                    // 기호 정리는 줄을 잇기 전에 — 이은 뒤에 하면 줄 맨 앞 글머리표가 줄 가운데로 와서 가운뎃점이 된다
                     let lines = (textRequest.results ?? []).compactMap { observation in
-                        observation.topCandidates(1).first.map { LineJoiner.Line(text: $0.string, box: observation.boundingBox) }
+                        observation.topCandidates(1).first.map {
+                            LineJoiner.Line(text: options.cleanup ? OCRCleanup.fixLine($0.string) : $0.string, box: observation.boundingBox)
+                        }
                     }
                     var parts = codes
-                    if !lines.isEmpty {
-                        let joined = LineJoiner.join(lines, mode: lineMode)
-                        parts.append(options.cleanup ? OCRCleanup.apply(joined) : joined)
-                    }
+                    if !lines.isEmpty { parts.append(LineJoiner.join(lines, mode: lineMode)) }
                     continuation.resume(returning: parts.joined(separator: "\n"))
                 } catch {
                     continuation.resume(throwing: error)

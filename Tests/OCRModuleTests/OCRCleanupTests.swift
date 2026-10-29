@@ -29,3 +29,11 @@ import Testing
     #expect(options.languages.first == "ko-KR")
     #expect(options.upscale == 2 && options.upscaleMaxPixels == 2_000_000 && options.cleanup)
 }
+
+/// 한 줄로 이어도 각 줄 맨 앞 글머리표는 글머리표로 남는다 (정리를 잇기 전에 하므로)
+@Test func bulletsSurviveSingleLineJoin() {
+    let lines = ["• 첫 항목", "• 둘째 • 설명"].enumerated().map { i, text in
+        LineJoiner.Line(text: OCRCleanup.fixLine(text), box: CGRect(x: 0.1, y: 0.8 - Double(i) * 0.1, width: 0.5, height: 0.05))
+    }
+    #expect(LineJoiner.join(lines, mode: .singleLine) == "• 첫 항목 • 둘째 · 설명")
+}

@@ -49,6 +49,12 @@ let names = (try FileManager.default.contentsOfDirectory(atPath: folder.path))
     .filter { FileManager.default.fileExists(atPath: folder.appendingPathComponent($0 + ".txt").path) }
 guard !names.isEmpty else { print("샘플이 없습니다: \(folder.path)"); exit(1) }
 
+// Vision 모델을 처음 불러오는 시간이 첫 설정에만 붙지 않게 한 번 먼저 돌린다
+if let first = names.first,
+   let warm = NSImage(contentsOf: folder.appendingPathComponent(first + ".png"))?.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+    for config in configs { _ = try await TextRecognizer.recognize(warm, options: config.options, lineMode: .keep) }
+}
+
 var totals = [String: (errors: Int, chars: Int, exact: Int, seconds: Double)]()
 print("sample".padding(toLength: 16, withPad: " ", startingAt: 0) + configs.map { $0.name.padding(toLength: 15, withPad: " ", startingAt: 0) }.joined())
 for name in names {
