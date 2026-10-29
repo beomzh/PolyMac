@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-29 16:35]
+- [Fixed] - Sources/CaptureModule/PinPanel.swift `PinPanel.init`, `mouseDownCanMoveWindow`: 표시 편집 중 그리려고 끌면 핀이 같이 움직이던 문제. 배경 끌기(isMovableByWindowBackground)는 macOS가 끌 영역을 미리 정해 편집 여부를 다시 묻지 않아서, 끄고 편집 중이 아닐 때만 performDrag로 옮김
+
 [2026-10-29 15:41]
 - [Changed] - feat/capture-pins: PR #18 push (핀 클릭 통과·드래그 내보내기·최근 캡처, 클립보드 이미지 핀)
 

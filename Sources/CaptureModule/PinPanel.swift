@@ -68,7 +68,9 @@ final class PinPanel: NSPanel {
         super.init(contentRect: frame, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         level = .floating
         hasShadow = true
-        isMovableByWindowBackground = true
+        // 배경 끌기로 옮기지 않는다 — macOS가 끌 수 있는 영역을 미리 정해 두어 표시 편집 중에도 핀이 움직였다.
+        // 옮기기는 PinCanvasView.mouseDown에서 편집 중이 아닐 때만 performDrag로 한다.
+        isMovableByWindowBackground = false
         isReleasedWhenClosed = false
         backgroundColor = .clear
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
@@ -396,5 +398,5 @@ private final class PinCanvasView: NSView, NSDraggingSource {
 
     override func menu(for event: NSEvent) -> NSMenu? { pin?.makeMenu() }
 
-    override var mouseDownCanMoveWindow: Bool { pin?.isEditingMarkup != true }
+    override var mouseDownCanMoveWindow: Bool { false }
 }
