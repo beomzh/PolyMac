@@ -43,3 +43,23 @@ import Testing
     #expect(!ClipboardPrivacy.shouldIgnore(types: ["public.utf8-plain-text"], frontmostBundleID: "com.apple.Safari",
                                            excludedApps: ["com.tinyspeck.slackmacgap"]))
 }
+
+@Test func richTextKeepsPlainTextAndStoresRTFFile() throws {
+    var item = ClipboardItem.richText("굵은 글자", file: "r.rtf", hash: "h", sourceApp: "com.apple.Safari")
+    item.origin = "ocr"
+    #expect(item.isRich && !item.isImage && !item.isLargeText)
+    #expect(item.text == "굵은 글자") // 서식 없이 붙여넣기에 쓴다
+    #expect(item.storedFiles == ["clipboard-rich/r.rtf"]) // 지울 때 같이 지운다
+    let back = try JSONDecoder().decode(ClipboardItem.self, from: JSONEncoder().encode(item))
+    #expect(back.richFile == "r.rtf")
+    #expect(back.originKind == .ocr)
+}
+
+/// 새 버전이 모르는 출처 값을 남겨도 기록 전체가 깨지지 않는다
+@Test func unknownOriginIsIgnored() throws {
+    let json = #"{"id":"6F1C2A4E-0000-4000-8000-000000000002","text":"x","copiedAt":0,"isPinned":false,"origin":"somethingNew"}"#
+    let item = try JSONDecoder().decode(ClipboardItem.self, from: Data(json.utf8))
+    #expect(item.origin == "somethingNew")
+    #expect(item.originKind == nil)
+    #expect(!item.isRich)
+}

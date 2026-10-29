@@ -11,7 +11,8 @@ import os
 final class ClipboardPanelController {
     struct Callbacks {
         /// pasteNow == false: 클립보드로 복사만 (기본), true: 복사 후 앞의 앱에 바로 붙여넣기 (⇧↩︎)
-        let choose: (ClipboardItem, _ pasteNow: Bool) -> Void
+        /// plain: 서식 없이 글자만 (⌥)
+        let choose: (ClipboardItem, _ pasteNow: Bool, _ plain: Bool) -> Void
         let togglePin: (UUID) -> Void
         let delete: (UUID) -> Void
     }
@@ -101,7 +102,7 @@ final class ClipboardPanelController {
             guard let self else { return }
             let callbacks = self.callbacks
             self.close()
-            callbacks?.choose(item, false)
+            callbacks?.choose(item, false, false)
         }))
         return panel
     }
@@ -142,10 +143,10 @@ final class ClipboardPanelController {
         case 124 where cmd, 123 where cmd: // ⌘→ ⌘← 미리보기 펼치기/접기
             model.setPreview(event.keyCode == 124)
             return true
-        case 36, 76: // ↩︎ 복사 · ⇧↩︎ 바로 붙여넣기
+        case 36, 76: // ↩︎ 복사 · ⇧↩︎ 바로 붙여넣기 · ⌥를 더하면 서식 없이
             guard let item = model.selected else { return true }
             close()
-            callbacks.choose(item, event.modifierFlags.contains(.shift))
+            callbacks.choose(item, event.modifierFlags.contains(.shift), event.modifierFlags.contains(.option))
             return true
         case 51 where cmd: // ⌘⌫ 삭제
             if let id = model.selected?.id { callbacks.delete(id); model.remove(id) }
@@ -165,7 +166,7 @@ final class ClipboardPanelController {
             guard index < model.filtered.count else { return true }
             let item = model.filtered[index]
             close()
-            callbacks.choose(item, false)
+            callbacks.choose(item, false, false)
             return true
         }
         return false
@@ -244,8 +245,12 @@ final class ClipboardPanelModel: ObservableObject {
         guard !words.isEmpty else { filtered = ordered; return }
         filtered = ordered.filter { item in
             let text = (item.isImage ? "이미지 image" : item.text).precomposedStringWithCanonicalMapping.lowercased()
-            let app = AppInfo.name(for: item.sourceApp).lowercased()
-            return words.allSatisfy { text.contains($0) || app.contains($0) }
+            // 앱 이름·출처 태그·"서식"으로도 찾는다
+            var tags = AppInfo.name(for: item.sourceApp)
+            if let origin = item.originKind { tags += " " + origin.title }
+            if item.isRich { tags += " 서식 rtf rich" }
+            let meta = tags.precomposedStringWithCanonicalMapping.lowercased()
+            return words.allSatisfy { text.contains($0) || meta.contains($0) }
         }
     }
 
@@ -478,7 +483,7 @@ struct ClipboardPanelView: View {
         VStack(spacing: 0) {
             Divider()
             HStack {
-                Text(L("↩ 복사 · ⇧↩ 바로 붙여넣기 · ⌘P 고정 · ⌘⌫ 삭제", "↩ copy · ⇧↩ paste · ⌘P pin · ⌘⌫ delete"))
+                Text(L("↩ 복사 · ⇧↩ 붙여넣기 · ⌥ 서식 없이 · ⌘P 고정 · ⌘⌫ 삭제", "↩ copy · ⇧↩ paste · ⌥ plain · ⌘P pin · ⌘⌫ delete"))
                 Spacer()
                 Text(L("\(model.filtered.count)개", "\(model.filtered.count) items"))
             }
@@ -526,6 +531,14 @@ private struct ClipboardRow: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Spacer(minLength: 4)
+            }
+            if let origin = item.originKind {
+                Image(systemName: origin.symbol).font(.caption2).foregroundStyle(isSelected ? .white : .secondary)
+                    .help(origin.title)
+            }
+            if item.isRich {
+                Image(systemName: "textformat").font(.caption2).foregroundStyle(isSelected ? .white : .secondary)
+                    .help(L("서식 있음 (⌥↩ 서식 없이)", "Formatted (⌥↩ for plain)"))
             }
             if item.isPinned {
                 Image(systemName: "pin.fill").font(.caption2).foregroundStyle(isSelected ? .white : .orange)
@@ -596,6 +609,12 @@ private struct ClipboardPreview: View {
                     HStack(spacing: 6) {
                         Image(nsImage: AppInfo.icon(for: item.sourceApp)).resizable().frame(width: 16, height: 16)
                         Text(AppInfo.name(for: item.sourceApp)).font(.callout.weight(.semibold))
+                        if let origin = item.originKind {
+                            Label(origin.title, systemImage: origin.symbol)
+                                .font(.caption)
+                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                .background(.quaternary, in: Capsule())
+                        }
                         Spacer()
                         if item.isPinned { Label(L("고정됨", "Pinned"), systemImage: "pin.fill").font(.caption).foregroundStyle(.orange) }
                     }
@@ -628,7 +647,8 @@ private struct ClipboardPreview: View {
             return L("긴 텍스트 \(size) (전체 보관)", "Long text \(size) (stored in full)")
         }
         let lines = item.text.reduce(1) { $1 == "\n" ? $0 + 1 : $0 }
-        return L("\(item.text.count)자 · \(lines)줄", "\(item.text.count) chars · \(lines) lines")
+        let base = L("\(item.text.count)자 · \(lines)줄", "\(item.text.count) chars · \(lines) lines")
+        return item.isRich ? base + L(" · 서식 있음 (⌥↩ 서식 없이)", " · formatted (⌥↩ for plain)") : base
     }
 }
 

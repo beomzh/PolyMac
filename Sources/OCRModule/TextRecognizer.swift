@@ -42,7 +42,7 @@ public enum OCRRunner {
                 Toast.show(L("글자를 찾지 못했습니다", "No text found"))
                 return
             }
-            PasteboardWriter.copy(text)
+            PasteboardWriter.copy(text, origin: .ocr)
             let preview = text.count > 120 ? String(text.prefix(120)) + "…" : text
             Toast.show(L("텍스트를 클립보드에 복사했습니다", "Text copied to the clipboard"), content: preview, duration: 3)
         } catch {

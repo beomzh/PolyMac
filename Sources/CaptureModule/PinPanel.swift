@@ -186,7 +186,7 @@ final class PinPanel: NSPanel {
     func copyFromKeyboard() { copyImage() }
 
     @objc private func copyImage() {
-        PasteboardWriter.copy(composite, scale: scale)
+        PasteboardWriter.copy(composite, scale: scale, origin: .capture)
         Toast.show(L("이미지를 복사했습니다", "Image copied"))
     }
 

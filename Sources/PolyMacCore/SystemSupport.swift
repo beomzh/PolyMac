@@ -161,18 +161,52 @@ public enum Permissions {
 }
 
 @MainActor
-public enum PasteboardWriter {
-    public static func copy(_ text: String) {
-        let pb = NSPasteboard.general
-        pb.clearContents()
-        pb.setString(text, forType: .string)
+/// PolyMac의 어느 기능이 클립보드에 넣었는지. 클립보드 기록이 읽어 출처 태그로 보여 준다.
+/// 다른 앱에는 보이지 않는 PolyMac 전용 타입 하나만 더한다 (붙여넣기에는 영향 없음).
+public enum PasteboardOrigin: String, Sendable, CaseIterable {
+    case ocr, capture, paths, color
+
+    nonisolated public static var type: NSPasteboard.PasteboardType { .init("dev.polymac.origin") }
+
+    public var title: String {
+        switch self {
+        case .ocr: return L("텍스트 추출", "OCR")
+        case .capture: return L("캡처", "Capture")
+        case .paths: return L("경로 복사", "Path")
+        case .color: return L("색상", "Color")
+        }
     }
 
-    public static func copy(_ image: CGImage, scale: CGFloat) {
+    public var symbol: String {
+        switch self {
+        case .ocr: return "text.viewfinder"
+        case .capture: return "camera.viewfinder"
+        case .paths: return "folder"
+        case .color: return "eyedropper"
+        }
+    }
+}
+
+public enum PasteboardWriter {
+    /// to: 테스트용 (기본은 시스템 클립보드)
+    public static func copy(_ text: String, origin: PasteboardOrigin? = nil, to pb: NSPasteboard = .general) {
+        pb.clearContents()
+        pb.setString(text, forType: .string)
+        mark(pb, origin)
+    }
+
+    public static func copy(_ image: CGImage, scale: CGFloat, origin: PasteboardOrigin? = nil) {
         let size = NSSize(width: CGFloat(image.width) / scale, height: CGFloat(image.height) / scale)
         let pb = NSPasteboard.general
         pb.clearContents()
         pb.writeObjects([NSImage(cgImage: image, size: size)])
+        mark(pb, origin)
+    }
+
+    private static func mark(_ pb: NSPasteboard, _ origin: PasteboardOrigin?) {
+        guard let origin else { return }
+        pb.addTypes([PasteboardOrigin.type], owner: nil)
+        pb.setString(origin.rawValue, forType: PasteboardOrigin.type)
     }
 }
 

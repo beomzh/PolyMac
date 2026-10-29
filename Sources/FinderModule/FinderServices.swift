@@ -43,7 +43,7 @@ public extension FinderModule {
     func copyPaths(of urls: [URL]) {
         guard !urls.isEmpty else { return }
         let text = urls.map(\.path).joined(separator: "\n").precomposedStringWithCanonicalMapping
-        PasteboardWriter.copy(text)
+        PasteboardWriter.copy(text, origin: .paths)
         context.toast(urls.count == 1 ? L("경로를 복사했습니다\n\(text)", "Path copied\n\(text)") : L("경로 \(urls.count)개를 복사했습니다", "Copied \(urls.count) paths"))
     }
 

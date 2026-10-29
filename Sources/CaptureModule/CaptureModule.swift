@@ -52,7 +52,7 @@ public final class CaptureModule: PolyMacModule {
     private static func finish(_ capture: CaptureResult, _ action: CaptureAction) {
         switch action {
         case .copy:
-            PasteboardWriter.copy(capture.compositeImage, scale: capture.scale)
+            PasteboardWriter.copy(capture.compositeImage, scale: capture.scale, origin: .capture)
             Toast.show(L("캡처를 클립보드에 복사했습니다", "Capture copied to the clipboard"))
         case .pin:
             PinPanel.show(capture, at: capture.screenRect)

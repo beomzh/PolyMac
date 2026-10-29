@@ -1,8 +1,9 @@
 import Foundation
+import PolyMacCore
 
 /// 클립보드 히스토리 한 항목 — 텍스트, 이미지 또는 Finder에서 복사한 파일.
-/// 이미지와 큰 텍스트(긴 로그 등)는 JSON에 넣지 않고 데이터 폴더에 따로 저장한다 (0600):
-/// clipboard-images/<파일>.png, clipboard-texts/<파일>.txt
+/// 이미지와 큰 텍스트(긴 로그 등), 서식(RTF)은 JSON에 넣지 않고 데이터 폴더에 따로 저장한다 (0600):
+/// clipboard-images/<파일>.png, clipboard-texts/<파일>.txt, clipboard-rich/<파일>.rtf
 public struct ClipboardItem: Codable, Sendable, Identifiable, Equatable {
     public var id: UUID
     /// 이미지 항목이면 빈 문자열, 큰 텍스트면 앞부분(미리보기·검색용)만
@@ -24,14 +25,22 @@ public struct ClipboardItem: Codable, Sendable, Identifiable, Equatable {
     public var contentHash: String?
     /// Finder에서 복사한 파일·폴더 경로 (파일 내용은 저장하지 않고 경로만). text에는 경로를 줄마다 담아 검색·미리보기에 쓴다.
     public var files: [String]?
+    /// 서식 있는 텍스트(RTF) 파일. text는 같은 내용의 글자만 — 서식 없이 붙여넣을 때 쓴다
+    public var richFile: String?
+    /// PolyMac의 어느 기능이 복사했는지 (PasteboardOrigin.rawValue). 모르는 값은 무시 — 새 버전 기록을 열어도 깨지지 않게
+    public var origin: String?
 
     public var isImage: Bool { imageFile != nil }
     public var isFiles: Bool { !(files ?? []).isEmpty }
     /// 앞부분만 들고 있는 큰 텍스트
     public var isLargeText: Bool { textFile != nil }
+    public var isRich: Bool { richFile != nil }
+    public var originKind: PasteboardOrigin? { origin.flatMap(PasteboardOrigin.init(rawValue:)) }
 
     /// 이 항목이 쓰는 별도 파일 (지울 때 같이 지운다)
-    public var storedFiles: [String] { [imageFile.map { "clipboard-images/" + $0 }, textFile.map { "clipboard-texts/" + $0 }].compactMap { $0 } }
+    public var storedFiles: [String] {
+        [imageFile.map { "clipboard-images/" + $0 }, textFile.map { "clipboard-texts/" + $0 }, richFile.map { "clipboard-rich/" + $0 }].compactMap { $0 }
+    }
 
     public init(id: UUID = UUID(), text: String, sourceApp: String?, copiedAt: Date = Date(), isPinned: Bool = false) {
         self.id = id
@@ -45,6 +54,13 @@ public struct ClipboardItem: Codable, Sendable, Identifiable, Equatable {
         var item = ClipboardItem(text: preview, sourceApp: sourceApp)
         item.textFile = file
         item.textBytes = bytes
+        item.contentHash = hash
+        return item
+    }
+
+    public static func richText(_ text: String, file: String, hash: String, sourceApp: String?) -> ClipboardItem {
+        var item = ClipboardItem(text: text, sourceApp: sourceApp)
+        item.richFile = file
         item.contentHash = hash
         return item
     }

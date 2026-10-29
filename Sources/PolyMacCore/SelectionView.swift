@@ -339,7 +339,7 @@ final class SelectionView: NSView {
         let (px, py) = pixel(at: mouse)
         guard let rgb = color(atPixel: px, py) else { return }
         let value = showsHex ? String(format: "#%02X%02X%02X", rgb.0, rgb.1, rgb.2) : "\(rgb.0), \(rgb.1), \(rgb.2)"
-        PasteboardWriter.copy(value)
+        PasteboardWriter.copy(value, origin: .color)
         colorCopiedAt = Date()
         refresh()
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) { [weak self] in
