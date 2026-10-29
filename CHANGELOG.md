@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-29 16:46]
+- [Changed] - feat/capture-pins: PR #18 push (첫 클릭 수정)
+
 [2026-10-29 16:45]
 - [Fixed] - Sources/CaptureModule/PinPanel.swift `acceptsFirstMouse`: 다른 앱을 쓰다 핀을 누르면 첫 클릭이 창을 앞으로 가져오는 데만 쓰여 두 번 눌러야 옮기기·그리기가 되던 문제 (배경 끌기를 끈 뒤 드러남)
 - [Fixed] - Sources/PolyMacCore/Annotation.swift `FirstClickButton`, `SwatchButton`: 표시 도구 막대(앞으로 오지 않는 패널) 버튼·색상도 첫 클릭에 바로 눌리게
