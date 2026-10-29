@@ -32,8 +32,6 @@ public final class ClipboardModule: PolyMacModule {
     private let previewCharacters = 4000
     /// 이미지 한 장 최대 크기 (원본 데이터 기준)
     private let maxImageBytes = 30 * 1024 * 1024
-    /// 서식(RTF) 최대 크기 — 넘으면 글자만 기록한다 (그림이 든 RTF 등)
-    private let maxRichBytes = 5 * 1024 * 1024
     private var pendingSave: DispatchWorkItem?
     /// 기록 파일 봉인 (키는 키체인). nil이면 키를 못 읽은 것 — 디스크에 쓰지도 읽지도 않고 메모리에만 둔다
     private var store: SealedFiles?
@@ -187,7 +185,8 @@ public final class ClipboardModule: PolyMacModule {
         if types.contains(.fileURL),
            let urls = pb.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL], !urls.isEmpty {
             record(files: urls.map { $0.path.precomposedStringWithCanonicalMapping }, from: front, origin: origin)
-        } else if let text = pb.string(forType: .string) {
+        } else if let text = pb.string(forType: .string) ?? pb.string(forType: .URL) {
+            // Safari 우클릭 › 링크 복사는 글자 없이 URL만 넣기도 한다
             let bytes = text.utf8.count
             guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
             guard bytes <= maxTextBytes else {
@@ -198,11 +197,14 @@ public final class ClipboardModule: PolyMacModule {
             if bytes > inlineTextBytes {
                 record(largeText: text, bytes: bytes, from: front, origin: origin)
             } else {
-                // 서식은 RTF만 보관한다 (HTML은 그림 등을 인터넷에서 불러올 수 있어 읽지 않는다)
-                var rich = types.contains(.rtf) ? pb.data(forType: .rtf) : nil
-                if let data = rich, data.count > maxRichBytes {
-                    context.logger.info("clipboard rich text dropped: \(data.count) bytes")
-                    rich = nil
+                // 서식(RTF·HTML)은 해석하지 않고 바이트 그대로 보관한다
+                var formats: [String: Data] = [:]
+                for type in RichFormats.types where types.contains(NSPasteboard.PasteboardType(type)) {
+                    formats[type] = pb.data(forType: NSPasteboard.PasteboardType(type))
+                }
+                let rich = RichFormats.encode(formats)
+                if rich == nil && !formats.isEmpty {
+                    context.logger.info("clipboard formatting dropped: \(formats.values.reduce(0) { $0 + $1.count }) bytes")
                 }
                 record(text: text, rich: rich, from: front, origin: origin)
             }
@@ -235,7 +237,7 @@ public final class ClipboardModule: PolyMacModule {
         didChange()
     }
 
-    /// rich: 함께 복사된 RTF. 같은 글자의 항목이 있으면 그것을 올리되, 서식이 없던 항목에 서식이 생기면 새로 만든다.
+    /// rich: 함께 복사된 서식 (RichFormats.encode). 같은 글자의 항목이 있으면 그것을 올리되, 서식이 없던 항목에 서식이 생기면 새로 만든다.
     private func record(text: String, rich: Data?, from app: String?, origin: String?) {
         if let index = items.firstIndex(where: { !$0.isImage && !$0.isLargeText && !$0.isFiles && $0.text == text }) {
             guard rich != nil, !items[index].isRich else {
@@ -259,7 +261,7 @@ public final class ClipboardModule: PolyMacModule {
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
                     guard let self else { return }
-                    let file = UUID().uuidString + ".rtf"
+                    let file = UUID().uuidString + ".rich"
                     var item = ClipboardItem.richText(text, file: file, hash: hash, sourceApp: app)
                     item.origin = origin
                     self.keep(rich, at: directory.appendingPathComponent(file), as: item)
@@ -433,14 +435,15 @@ public final class ClipboardModule: PolyMacModule {
         guard let file = item.imageFile else {
             let text = fullText(item)
             guard !plain, let richFile = item.richFile,
-                  let rtf = try? store?.read(richDirectory.appendingPathComponent(richFile)) else {
+                  let data = try? store?.read(richDirectory.appendingPathComponent(richFile)) else {
                 PasteboardWriter.copy(text)
                 return
             }
+            let formats = RichFormats.decode(data, file: richFile)
             let pb = NSPasteboard.general
             pb.clearContents()
-            pb.declareTypes([.rtf, .string], owner: nil)
-            pb.setData(rtf, forType: .rtf)
+            pb.declareTypes(formats.keys.sorted().map { NSPasteboard.PasteboardType($0) } + [.string], owner: nil)
+            for (type, value) in formats { pb.setData(value, forType: NSPasteboard.PasteboardType(type)) }
             pb.setString(text, forType: .string)
             return
         }

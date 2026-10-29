@@ -248,7 +248,7 @@ final class ClipboardPanelModel: ObservableObject {
             // 앱 이름·출처 태그·"서식"으로도 찾는다
             var tags = AppInfo.name(for: item.sourceApp)
             if let origin = item.originKind { tags += " " + origin.title }
-            if item.isRich { tags += " 서식 rtf rich" }
+            if item.isRich { tags += " 서식 rtf html rich" }
             let meta = tags.precomposedStringWithCanonicalMapping.lowercased()
             return words.allSatisfy { text.contains($0) || meta.contains($0) }
         }

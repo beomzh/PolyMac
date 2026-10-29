@@ -2,6 +2,13 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-29 14:57]
+- [Fixed] - Sources/ClipboardModule/ClipboardModule.swift `poll`: Chrome 등에서 링크가 든 글을 복사하면 링크가 사라지던 문제 — RTF뿐 아니라 HTML도 해석 없이 그대로 보관·복원
+- [Fixed] - Sources/ClipboardModule/ClipboardModule.swift `poll`: 글자 없이 URL만 들어오는 링크 복사(Safari 우클릭 등)가 기록되지 않던 문제
+- [Added] - Sources/ClipboardModule/ClipboardItem.swift `RichFormats`: 서식 타입별 데이터를 plist 파일 하나로, 예전 .rtf 파일도 읽음
+- [Added] - Tests/ClipboardModuleTests/ClipboardItemTests.swift: HTML·RTF 왕복, 빈 값·큰 값 제외
+- [Changed] - README.md: 서식 보관 안내에 HTML·링크 복사 반영
+
 [2026-10-29 14:45]
 - [Changed] - CHANGELOG.md: PR #16 push 기록 (feat/clipboard-rich-text)
 

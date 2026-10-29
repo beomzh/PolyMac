@@ -45,13 +45,13 @@ import Testing
 }
 
 @Test func richTextKeepsPlainTextAndStoresRTFFile() throws {
-    var item = ClipboardItem.richText("굵은 글자", file: "r.rtf", hash: "h", sourceApp: "com.apple.Safari")
+    var item = ClipboardItem.richText("굵은 글자", file: "r.rich", hash: "h", sourceApp: "com.apple.Safari")
     item.origin = "ocr"
     #expect(item.isRich && !item.isImage && !item.isLargeText)
     #expect(item.text == "굵은 글자") // 서식 없이 붙여넣기에 쓴다
-    #expect(item.storedFiles == ["clipboard-rich/r.rtf"]) // 지울 때 같이 지운다
+    #expect(item.storedFiles == ["clipboard-rich/r.rich"]) // 지울 때 같이 지운다
     let back = try JSONDecoder().decode(ClipboardItem.self, from: JSONEncoder().encode(item))
-    #expect(back.richFile == "r.rtf")
+    #expect(back.richFile == "r.rich")
     #expect(back.originKind == .ocr)
 }
 
@@ -62,4 +62,21 @@ import Testing
     #expect(item.origin == "somethingNew")
     #expect(item.originKind == nil)
     #expect(!item.isRich)
+}
+
+/// Chrome은 HTML만 넣는다 — 링크가 든 글도 서식이 남아야 한다
+@Test func richFormatsKeepHTMLAndRTFRoundTrip() throws {
+    let html = Data(#"<a href="https://example.com">예시</a>"#.utf8)
+    let rtf = Data(#"{\rtf1 x}"#.utf8)
+    let data = try #require(RichFormats.encode(["public.html": html, "public.rtf": rtf, "public.utf8-plain-text": Data("x".utf8)]))
+    let back = RichFormats.decode(data, file: "a.rich")
+    #expect(back == ["public.html": html, "public.rtf": rtf]) // 글자는 item.text에 따로
+    #expect(RichFormats.decode(rtf, file: "old.rtf") == ["public.rtf": rtf]) // 예전 파일
+    #expect(RichFormats.decode(Data("garbage".utf8), file: "b.rich").isEmpty)
+}
+
+@Test func richFormatsSkipEmptyAndOversized() {
+    #expect(RichFormats.encode([:]) == nil)
+    #expect(RichFormats.encode(["public.html": Data()]) == nil)
+    #expect(RichFormats.encode(["public.html": Data(count: RichFormats.maxBytes + 1)]) == nil)
 }
