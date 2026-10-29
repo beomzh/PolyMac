@@ -28,6 +28,10 @@ final class ServicesProvider: NSObject {
         module("finder", as: FinderModule.self)?.openTerminal(at: files(pboard))
     }
 
+    @objc func openInEditor(_ pboard: NSPasteboard, userData: String?, error: AutoreleasingUnsafeMutablePointer<NSString?>) {
+        module("finder", as: FinderModule.self)?.openInEditor(files(pboard))
+    }
+
     @objc func copyPaths(_ pboard: NSPasteboard, userData: String?, error: AutoreleasingUnsafeMutablePointer<NSString?>) {
         module("finder", as: FinderModule.self)?.copyPaths(of: files(pboard))
     }

@@ -8,7 +8,7 @@ public final class FinderModule: PolyMacModule {
     public static let descriptor = ModuleDescriptor(
         id: "finder",
         displayName: ("Finder 도구", "Finder Tools"),
-        summary: ("Finder에서 ⌘X 잘라내기, 터미널 열기, 경로 복사", "Cut with ⌘X in Finder, open Terminal here, copy path"),
+        summary: ("Finder에서 ⌘X 잘라내기, 터미널 열기, 에디터로 열기, 경로 복사", "Cut with ⌘X in Finder, open Terminal or an editor here, copy path"),
         permissions: [.accessibility, .automationFinder]
     )
 
@@ -41,6 +41,9 @@ public final class FinderModule: PolyMacModule {
         }
         context.hotkey("copyPaths", KeyCombo(kVK_ANSI_C, [.control, .option]), L("Finder 선택 항목 경로 복사", "Copy paths of Finder selection")) { [weak self] in
             self?.copyPaths()
+        }
+        context.hotkey("openEditor", KeyCombo(kVK_ANSI_E, [.control, .option]), L("Finder 선택 항목을 에디터로 열기", "Open Finder selection in editor")) { [weak self] in
+            self?.openEditor()
         }
     }
 
@@ -80,7 +83,45 @@ public final class FinderModule: PolyMacModule {
         hint.isEnabled = false
         sub.addItem(hint)
         terminalItem.submenu = sub
-        return [status, terminalItem]
+        return [status, terminalItem, editorMenuItem()]
+    }
+
+    private func editorMenuItem() -> NSMenuItem {
+        let current = EditorApp.current
+        let item = NSMenuItem(title: L("에디터 앱: \(current.name)", "Editor app: \(current.name)"), action: nil, keyEquivalent: "")
+        let sub = NSMenu()
+        var apps = EditorApp.installedKnown
+        // 직접 고른 앱도 목록에 보이게
+        if !apps.contains(current) { apps.insert(current, at: 0) }
+        for app in apps {
+            let entry = NSMenuItem(title: app.name, action: #selector(chooseEditor(_:)), keyEquivalent: "")
+            entry.target = self
+            entry.representedObject = app.bundleID
+            entry.state = app.bundleID == current.bundleID ? .on : .off
+            if let url = EditorApp.appURL(app.bundleID) {
+                let icon = NSWorkspace.shared.icon(forFile: url.path)
+                icon.size = NSSize(width: 16, height: 16)
+                entry.image = icon
+            }
+            sub.addItem(entry)
+        }
+        sub.addItem(.separator())
+        let other = NSMenuItem(title: L("다른 앱 고르기…", "Choose Another App…"), action: #selector(chooseOtherEditor), keyEquivalent: "")
+        other.target = self
+        sub.addItem(other)
+        item.submenu = sub
+        return item
+    }
+
+    @objc private func chooseEditor(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? String else { return }
+        UserDefaults.standard.set(id, forKey: EditorApp.defaultsKey)
+        context.toast(L("에디터로 열기: \(EditorApp.current.name)", "Open in editor with: \(EditorApp.current.name)"))
+    }
+
+    @objc private func chooseOtherEditor() {
+        guard let app = EditorApp.choose() else { return }
+        context.toast(L("에디터로 열기: \(app.name)", "Open in editor with: \(app.name)"))
     }
 
     @objc private func chooseTerminal(_ sender: NSMenuItem) {
@@ -155,22 +196,37 @@ public final class FinderModule: PolyMacModule {
         }
     }
 
+    /// Finder에서 고른 항목 (없으면 맨 앞 창의 폴더) 경로를 줄마다 하나씩
+    private static let selectionScript = """
+    tell application "Finder"
+        set sel to selection as alias list
+        if sel is {} then
+            if (count of Finder windows) = 0 then return ""
+            set sel to {target of front Finder window as alias}
+        end if
+        set out to {}
+        repeat with f in sel
+            set end of out to POSIX path of f
+        end repeat
+    end tell
+    set AppleScript's text item delimiters to linefeed
+    return out as text
+    """
+
+    private func openEditor() {
+        runAppleScript(Self.selectionScript) { [weak self] raw in
+            guard let self else { return }
+            let urls = (raw ?? "").split(separator: "\n").map { URL(fileURLWithPath: String($0)) }
+            guard !urls.isEmpty else {
+                self.context.toast(L("열 Finder 항목이 없습니다", "No Finder items to open"))
+                return
+            }
+            self.openInEditor(urls)
+        }
+    }
+
     private func copyPaths() {
-        let script = """
-        tell application "Finder"
-            set sel to selection as alias list
-            if sel is {} then
-                if (count of Finder windows) = 0 then return ""
-                set sel to {target of front Finder window as alias}
-            end if
-            set out to {}
-            repeat with f in sel
-                set end of out to POSIX path of f
-            end repeat
-        end tell
-        set AppleScript's text item delimiters to linefeed
-        return out as text
-        """
+        let script = Self.selectionScript
         runAppleScript(script) { [weak self] raw in
             guard let self else { return }
             guard let raw, !raw.isEmpty else {

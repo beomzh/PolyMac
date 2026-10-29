@@ -1,5 +1,6 @@
 /* Finder 우클릭 메뉴 이름 — 영어 */
 "PolyMac: 여기서 터미널 열기" = "PolyMac: Open Terminal Here";
+"PolyMac: 에디터로 열기" = "PolyMac: Open in Editor";
 "PolyMac: 경로 복사" = "PolyMac: Copy Path";
 "PolyMac: 폴더로 보내기…" = "PolyMac: Send to Folder…";
 "PolyMac: 한글 파일명 정리" = "PolyMac: Fix Korean Filenames";

@@ -16,6 +16,29 @@ public extension FinderModule {
         }
     }
 
+    /// 고른 파일·폴더를 정해 둔 에디터로. 폴더를 못 여는 앱(텍스트 편집기 등)에는 파일만 넘긴다.
+    func openInEditor(_ urls: [URL]) {
+        guard !urls.isEmpty else { return }
+        let editor = EditorApp.current
+        let (open, skipped) = editor.split(urls, isFolder: { $0.hasDirectoryPath || Self.isFolder($0) })
+        guard !open.isEmpty else {
+            context.toast(L("\(editor.name)은(는) 폴더를 열 수 없습니다\n메뉴 › Finder 도구 › 에디터 앱에서 바꾸세요",
+                            "\(editor.name) can't open folders\nChange it in the menu › Finder Tools › Editor app"), duration: 4)
+            return
+        }
+        do {
+            try editor.open(open)
+            context.logger.info("opened \(open.count) item(s) in \(editor.bundleID, privacy: .public), skipped \(skipped.count) folder(s)")
+            if !skipped.isEmpty {
+                context.toast(L("폴더 \(skipped.count)개는 빼고 열었습니다 (\(editor.name)은(는) 폴더를 열 수 없음)",
+                                "Skipped \(skipped.count) folder(s) (\(editor.name) can't open folders)"))
+            }
+        } catch {
+            context.logger.error("editor open failed: \(error.localizedDescription, privacy: .public)")
+            context.toast(L("\(editor.name)을(를) 열지 못했습니다: \(error.localizedDescription)", "Could not open \(editor.name): \(error.localizedDescription)"))
+        }
+    }
+
     /// 고른 항목의 경로를 줄마다 하나씩 (한글은 NFC로)
     func copyPaths(of urls: [URL]) {
         guard !urls.isEmpty else { return }
