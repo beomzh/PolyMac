@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-29 16:51]
+- [Changed] - feat/ocr-tables: PR #19 push (main 병합, 충돌 정리)
+
 [2026-10-29 16:46]
 - [Changed] - feat/capture-pins: PR #18 push (첫 클릭 수정)
 
