@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-29 10:39]
+- [Changed] - chore/release-0.1.0: PR #10 Finder 잘라내기 수정 push
+
 [2026-10-29 10:27]
 - [Changed] - chore/release-0.1.0: PR #10 인증서 적용 push
 
