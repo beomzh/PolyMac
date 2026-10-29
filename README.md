@@ -74,7 +74,7 @@ git clone https://github.com/beomzh/PolyMac.git && cd PolyMac
 scripts/build-app.sh --install
 ```
 
-`/Applications/PolyMac.app`에 설치되고 실행됩니다. 메뉴바에 PolyMac 아이콘 아이콘이 생깁니다.
+`/Applications/PolyMac.app`에 설치되고 실행됩니다. 메뉴바에 PolyMac 아이콘(큐브)이 생깁니다. 평소에는 Dock에 나오지 않고, 환경 설정·시작 안내·앱 삭제 창이 열려 있는 동안만 Dock과 `⌘Tab`에 나옵니다 — 창이 다른 앱 뒤로 가면 Dock 아이콘을 누르면 다시 앞으로 옵니다.
 
 **2. 권한 주기** — 메뉴바 PolyMac 아이콘 › **환경 설정…**(`⌘,`) › 권한에서 경고 표시가 붙은 항목의 "허용하기…"를 누르면 해당 설정 화면이 열립니다. 켜 둔 기능에 필요한 권한이 빠지면 메뉴 맨 아래에 "권한이 필요합니다…"가 나타납니다.
 - 손쉬운 사용: 창 분할, Finder `⌘X`, 클립보드 자동 붙여넣기

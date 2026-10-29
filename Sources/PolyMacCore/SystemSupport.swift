@@ -238,6 +238,7 @@ public extension NSWindow {
     /// 메뉴바 앱(LSUIElement)의 창을 다른 앱 창보다 앞에 띄운다. macOS 14부터 활성화 요청은 거절될 수 있어
     /// (그러면 창이 다른 앱 뒤에 뜬다) 창 순서는 orderFrontRegardless로 따로 올리고, 메뉴가 닫힌 뒤 한 번 더 시도한다.
     func bringToFront() {
+        if self is ClosableWindow { DockPresence.update(showing: self) } // Dock 아이콘을 먼저 띄워야 앞으로 오기도 쉽다
         NSApp.activate()
         makeKeyAndOrderFront(nil)
         orderFrontRegardless()
@@ -257,5 +258,54 @@ public extension NSWindow {
 public final class ClosableWindow: NSWindow {
     override public func cancelOperation(_ sender: Any?) {
         performClose(sender)
+    }
+}
+
+/// 일반 창(환경 설정·시작 안내·앱 삭제)이 떠 있는 동안만 Dock 아이콘과 ⌘Tab 목록에 나온다.
+/// 메뉴바 앱이라 평소에는 숨어 있지만, 창이 다른 앱 뒤로 가면 다시 찾을 방법이 있어야 한다.
+@MainActor
+public enum DockPresence {
+    private static var started = false
+
+    public static func start() {
+        guard !started else { return }
+        started = true
+        let center = NotificationCenter.default
+        center.addObserver(forName: NSWindow.didBecomeKeyNotification, object: nil, queue: .main) { note in
+            MainActor.assumeIsolated { if note.object is ClosableWindow { update() } }
+        }
+        center.addObserver(forName: NSWindow.willCloseNotification, object: nil, queue: .main) { note in
+            MainActor.assumeIsolated {
+                if let window = note.object as? ClosableWindow { update(closing: window) }
+            }
+        }
+    }
+
+    /// 열려 있는(최소화 포함) 일반 창
+    public static var openWindows: [NSWindow] {
+        NSApp.windows.filter { $0 is ClosableWindow && ($0.isVisible || $0.isMiniaturized) }
+    }
+
+    /// 창이 하나라도 있으면 Dock에 보이고, 마지막 창이 닫히면 다시 메뉴바로만 돌아간다.
+    /// showing: 지금 띄우는 중이라 아직 화면에 없는 창, closing: 닫히는 중이라 아직 화면에 있는 창
+    public static func update(showing: NSWindow? = nil, closing: NSWindow? = nil) {
+        let hasWindow = showing != nil || openWindows.contains { $0 !== closing }
+        let policy: NSApplication.ActivationPolicy = hasWindow ? .regular : .accessory
+        guard NSApp.activationPolicy() != policy else { return }
+        NSApp.setActivationPolicy(policy)
+    }
+
+    /// Dock 아이콘을 누르거나 Spotlight로 다시 열었을 때 — 열린 창을 모두 앞으로. 창이 없으면 false
+    @discardableResult
+    public static func bringWindowsForward() -> Bool {
+        let windows = openWindows
+        guard !windows.isEmpty else { return false }
+        NSApp.activate()
+        for window in windows {
+            if window.isMiniaturized { window.deminiaturize(nil) }
+            window.orderFrontRegardless()
+        }
+        (NSApp.keyWindow.flatMap { w in windows.first { $0 === w } } ?? windows.last)?.makeKeyAndOrderFront(nil)
+        return true
     }
 }

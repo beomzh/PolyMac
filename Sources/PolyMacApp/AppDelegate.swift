@@ -45,6 +45,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Settin
         NSUpdateDynamicServices()
         watchAccessibilityChanges()
         watchSettingsRequests()
+        DockPresence.start()
         logger.info("launched \(self.version, privacy: .public) accessibility=\(Permissions.accessibility)")
         showGuidanceAtLaunch()
     }
@@ -71,6 +72,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Settin
     /// 켜진 기능이 쓰는 권한
     private var neededPermissions: Set<Permission> {
         Set(registry.descriptors.filter { registry.isActive($0.id) }.flatMap(\.permissions))
+    }
+
+    /// Dock 아이콘을 누르거나, 실행 중에 Spotlight·Finder로 다시 열었을 때 — 열려 있는 창을 앞으로
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        DockPresence.bringWindowsForward()
+        return false
     }
 
     /// 앱 아이콘과 같은 다면체 큐브: 윤곽 + 면 경계, 윗면만 채움. 템플릿 이미지라 메뉴바 밝기에 맞춰 색이 바뀐다.
