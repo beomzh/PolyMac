@@ -52,6 +52,16 @@ public enum SyntheticEvent {
     public static let marker: Int64 = 0x504D_4143 // 'PMAC'
 }
 
+/// Finder 자동화 권한 상태
+public enum AutomationState: Sendable, Equatable {
+    case granted
+    case denied
+    /// 아직 묻지 않음 — 처음 쓸 때(또는 "허용하기")에 macOS가 묻는다
+    case notAsked
+    /// Finder가 꺼져 있는 등 지금 확인할 수 없음
+    case unavailable
+}
+
 @MainActor
 public enum Permissions {
     public static var accessibility: Bool { AXIsProcessTrusted() }
@@ -71,6 +81,68 @@ public enum Permissions {
 
     public static func requestScreenRecording() {
         _ = CGRequestScreenCaptureAccess()
+    }
+
+    /// Finder 자동화(Apple Events) 허용 상태. 물어보지 않고 확인만 한다 — Finder가 응답할 때까지 잠깐 걸릴 수 있어 메인 스레드 밖에서 부른다.
+    public nonisolated static func automationFinder() -> AutomationState {
+        determineFinderAutomation(ask: false)
+    }
+
+    /// 아직 묻지 않았으면 macOS가 허용 창을 띄운다 (메인 스레드 밖에서). 결과를 돌려준다.
+    @discardableResult
+    public nonisolated static func requestAutomationFinder() -> AutomationState {
+        determineFinderAutomation(ask: true)
+    }
+
+    private nonisolated static func determineFinderAutomation(ask: Bool) -> AutomationState {
+        if NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.finder").isEmpty { return .unavailable }
+        guard let target = NSAppleEventDescriptor(bundleIdentifier: "com.apple.finder").aeDesc else { return .unavailable }
+        let status = AEDeterminePermissionToAutomateTarget(target, typeWildCard, typeWildCard, ask)
+        switch status {
+        case noErr: return .granted
+        case OSStatus(errAEEventNotPermitted): return .denied
+        case OSStatus(errAEEventWouldRequireUserConsent): return .notAsked
+        default: return .unavailable
+        }
+    }
+
+    /// 화면 녹음처럼 다시 실행해야 적용되는 권한을 위해 PolyMac을 껐다 켠다.
+    public static func relaunch() {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/bin/sh")
+        // 지금 프로세스가 끝난 뒤 같은 앱을 다시 연다 ($0 = 앱 경로, 셸에 문자열로 끼워 넣지 않는다)
+        task.arguments = ["-c", "while /bin/kill -0 \"$1\" 2>/dev/null; do /bin/sleep 0.2; done; /usr/bin/open \"$0\"",
+                          Bundle.main.bundlePath, String(ProcessInfo.processInfo.processIdentifier)]
+        do {
+            try task.run()
+            NSApp.terminate(nil)
+        } catch {
+            Logger(subsystem: "dev.polymac", category: "permissions").error("relaunch failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    /// PolyMac 자신의 권한 기록만 지운다 (다른 앱은 그대로). 서명이 바뀌어 설정에는 켜져 보이는데 동작하지 않을 때.
+    /// 지운 뒤에는 다시 허용해야 한다.
+    @discardableResult
+    public static func resetRecords() -> Bool {
+        guard let bundleID = Bundle.main.bundleIdentifier else { return false }
+        var ok = true
+        for service in ["Accessibility", "ScreenCapture", "AppleEvents"] {
+            let task = Process()
+            task.executableURL = URL(fileURLWithPath: "/usr/bin/tccutil")
+            task.arguments = ["reset", service, bundleID]
+            task.standardOutput = FileHandle.nullDevice
+            task.standardError = FileHandle.nullDevice
+            do {
+                try task.run()
+                task.waitUntilExit()
+                ok = ok && task.terminationStatus == 0
+            } catch {
+                ok = false
+            }
+        }
+        Logger(subsystem: "dev.polymac", category: "permissions").notice("reset permission records ok=\(ok)")
+        return ok
     }
 
     public static func openSettings(for permission: Permission) {

@@ -2,6 +2,15 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-29 11:00]
+- [Added] - Sources/PolyMacApp/Onboarding.swift `OnboardingWindow`: 처음 실행 시 시작 안내(소개 → 기능 고르기 → 권한 → 마무리), 메뉴 › 시작 안내…로 다시 열기, 이미 쓰던 사람에게는 자동으로 띄우지 않음
+- [Added] - Sources/PolyMacApp/PermissionStatus.swift `PermissionState`, `PermissionMemory`: 권한 상태 4종, 한 번 허용됐던 권한을 기억해 나중에 꺼지면(서명 변경 등) 알림
+- [Added] - Sources/PolyMacCore/SystemSupport.swift `Permissions.automationFinder`, `requestAutomationFinder`, `relaunch`, `resetRecords`: Finder 자동화 상태를 묻지 않고 확인, 바로 묻기, 다시 실행, PolyMac 권한 기록만 지우기(tccutil)
+- [Changed] - Sources/PolyMacApp/Settings.swift `PermissionsPane`, `SettingsModel`: 권한 탭에 자동화 상태·켜진 기능 기준 표시·화면 녹음 다시 실행·풀린 권한 경고·권한 기록 지우기
+- [Changed] - Sources/PolyMacApp/AppDelegate.swift `showGuidanceAtLaunch`: 첫 실행 안내, 권한 기록을 지운 뒤 다시 열리면 권한 탭, 풀린 권한 알림, 메뉴에 시작 안내…
+- [Fixed] - Sources/UninstallerModule/UninstallerModel.swift `PkgForget.run`: 비동기 안에서 세마포어로 스레드를 붙잡던 대기(Swift 6 경고)를 continuation으로
+- [Changed] - README.md, docs/ROADMAP.md: 시작 안내·권한 화면 설명, 로드맵 완료 표시
+
 [2026-10-29 10:44]
 - [Changed] - fix/release-zip-xattr: PR #11 생성 push
 
