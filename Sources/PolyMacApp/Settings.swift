@@ -73,7 +73,11 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
         w.center()
         window = w
         self.model = model
-        tabObserver = model.$tab.dropFirst().sink { [weak self] tab in self?.fit(tab) }
+        // @Published는 값이 바뀌기 전에 알린다. 그 자리에서 창 크기를 바꾸면 SwiftUI가 목록 선택을 반영하던 중이라
+        // 첫 클릭에 창만 커지고 탭은 안 바뀐다 — 이번 갱신이 끝난 뒤에 키운다
+        tabObserver = model.$tab.dropFirst().removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] tab in self?.fit(tab) }
         w.bringToFront()
     }
 
@@ -99,7 +103,11 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
             frame.origin.x = min(max(frame.minX, visible.minX), visible.maxX - frame.width)
             frame.origin.y = min(max(frame.minY, visible.minY), visible.maxY - frame.height)
         }
-        window.setFrame(frame, display: true, animate: true)
+        // animate: true는 애니메이션이 끝날 때까지 이벤트 처리를 붙잡는다 — animator()는 붙잡지 않는다
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.2
+            window.animator().setFrame(frame, display: true)
+        }
     }
 
     /// 언어가 바뀌면 창 제목도 새 언어로
