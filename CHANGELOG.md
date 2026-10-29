@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-29 10:11]
+- [Changed] - chore/release-0.1.0: PR #10 생성 push
+
 ## 0.1.0 (2026-10-29)
 [2026-10-29 10:09]
 - [Added] - Sources/PolyMacCore/SystemSupport.swift `AppPaths.appendLine`, `rotateIfNeeded`: 기록 파일(organize-log·uninstall-log)이 끝없이 커지지 않게 1 MB를 넘으면 `.1`로 넘기고 하나만 남김
