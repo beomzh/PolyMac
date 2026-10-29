@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-29 16:51]
+- [Changed] - feat/ocr-tables: PR #19 push (main 병합, 충돌 정리)
+
 [2026-10-29 16:46]
 - [Changed] - feat/capture-pins: PR #18 push (첫 클릭 수정)
 
@@ -14,6 +17,20 @@
 
 [2026-10-29 16:35]
 - [Fixed] - Sources/CaptureModule/PinPanel.swift `PinPanel.init`, `mouseDownCanMoveWindow`: 표시 편집 중 그리려고 끌면 핀이 같이 움직이던 문제. 배경 끌기(isMovableByWindowBackground)는 macOS가 끌 영역을 미리 정해 편집 여부를 다시 묻지 않아서, 끄고 편집 중이 아닐 때만 performDrag로 옮김
+
+[2026-10-29 16:22]
+- [Changed] - feat/ocr-tables: PR #19 push (표 인식 TSV·Markdown, 단축어용 polymac:// URL)
+
+[2026-10-29 16:20]
+- [Added] - Sources/OCRModule/TableRecognizer.swift `TableGrid`, `TableRecognizer`, `TableFormat`: macOS 26 문서 인식으로 표를 찾아 TSV·Markdown·HTML로 변환 (합친 칸은 왼쪽 위만, 칸 안 줄바꿈은 한 칸). 표는 확대해도 나아지지 않아 확대 없이 읽음
+- [Added] - Sources/OCRModule/TextRecognizer.swift `recognizeTableAndCopy`: 표를 클립보드에 (TSV면 서식 앱용 HTML 표도), 표가 없거나 macOS 26 미만이면 일반 텍스트로. 두 복사 함수가 성공 여부를 돌려주도록 변경 (단축어에 결과 알림)
+- [Added] - Sources/OCRModule/OCRModule.swift `activate`, `menuItems`: ⌃⇧6 영역 → 표 복사, 클립보드 이미지에서 표 추출, 표 형식 메뉴, 단축어·URL로 부르기 허용 토글, polymac://ocr·ocr-table 등록·해제
+- [Added] - Sources/PolyMacCore/URLActions.swift `URLActions`: polymac:// 동작 처리. 웹 링크로도 불릴 수 있어 기본 꺼짐, X-Callback 복귀 주소는 shortcuts://만 열어 다른 주소로 튕기지 못하게 함. 주소 전체는 로그에 남기지 않음
+- [Added] - Sources/PolyMacCore/SystemSupport.swift `PasteboardWriter.copy(_:html:)`: 글자와 HTML을 함께 넣기
+- [Added] - Sources/PolyMacApp/AppDelegate.swift `application(_:open:)`, App/Info.plist `CFBundleURLTypes`: polymac 스킴 등록
+- [Added] - Sources/OCRBench/Tables.swift `runTableBench`, scripts/make-table-samples.swift, Tests/OCRSamples/tables: 표 인식 측정 (scripts/ocr-bench.sh --tables)
+- [Added] - Tests/OCRModuleTests/TableGridTests.swift, Tests/PolyMacCoreTests/URLActionsTests.swift: 표 변환, URL 파싱·복귀 주소 제한, HTML 복사 테스트
+- [Changed] - README.md, docs/OCR-BENCH.md, docs/ROADMAP.md: 표 추출·단축어 사용법, 표 측정 결과 반영
 
 [2026-10-29 15:41]
 - [Changed] - feat/capture-pins: PR #18 push (핀 클릭 통과·드래그 내보내기·최근 캡처, 클립보드 이미지 핀)

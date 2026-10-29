@@ -195,6 +195,15 @@ public enum PasteboardWriter {
         mark(pb, origin)
     }
 
+    /// 글자 + HTML (Pages·메모처럼 서식을 받는 앱에는 HTML이, 나머지에는 글자가 들어간다)
+    public static func copy(_ text: String, html: String, origin: PasteboardOrigin? = nil, to pb: NSPasteboard = .general) {
+        pb.clearContents()
+        pb.declareTypes([.html, .string], owner: nil)
+        pb.setString(html, forType: .html)
+        pb.setString(text, forType: .string)
+        mark(pb, origin)
+    }
+
     public static func copy(_ image: CGImage, scale: CGFloat, origin: PasteboardOrigin? = nil) {
         let size = NSSize(width: CGFloat(image.width) / scale, height: CGFloat(image.height) / scale)
         let pb = NSPasteboard.general
