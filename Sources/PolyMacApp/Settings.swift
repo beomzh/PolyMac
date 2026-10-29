@@ -123,7 +123,9 @@ final class SettingsModel: ObservableObject {
     @Published private(set) var active: Set<String> = []
     @Published private(set) var language = L10n.language
     @Published private(set) var loginItem = SMAppService.mainApp.status == .enabled
-    @Published private(set) var granted: [Permission: Bool] = [:]
+    @Published private(set) var states: [Permission: PermissionState] = [:]
+    /// 켜진 기능이 쓰는데, 예전에는 허용됐다가 지금은 꺼진 권한 (서명 변경 등)
+    @Published private(set) var lost: [Permission] = []
     @Published var message: String?
     let shortcuts: ShortcutSettingsModel
 
@@ -156,9 +158,38 @@ final class SettingsModel: ObservableObject {
         shortcuts.reload()
     }
 
+    private var checkingAutomation = false
+
     private func refreshPermissions() {
-        let now: [Permission: Bool] = [.accessibility: Permissions.accessibility, .screenRecording: Permissions.screenRecording]
-        if now != granted { granted = now }
+        var now = PermissionState.current()
+        now[.automationFinder] = states[.automationFinder] ?? .unknown
+        if now != states { states = now }
+        PermissionMemory.note(now)
+        let missing = PermissionMemory.lost(now, needed: neededPermissions)
+        if missing != lost { lost = missing }
+        refreshAutomation()
+    }
+
+    /// Finder에 물어봐야 해서 메인 스레드 밖에서
+    private func refreshAutomation(ask: Bool = false) {
+        guard ask || !checkingAutomation else { return } // "허용하기"는 확인 중이어도 바로 묻는다
+        checkingAutomation = true
+        Task { [weak self] in
+            let result = await Task.detached(priority: .utility) {
+                ask ? Permissions.requestAutomationFinder() : Permissions.automationFinder()
+            }.value
+            self?.applyAutomation(result, asked: ask)
+        }
+    }
+
+    private func applyAutomation(_ result: AutomationState, asked: Bool) {
+        checkingAutomation = false
+        let state = PermissionState(result)
+        let previous = states[.automationFinder]
+        // Finder가 꺼져 있거나 잠깐 응답하지 않으면(unknown) 마지막으로 확인한 값을 그대로 둔다
+        let keep = state == .unknown && previous != nil && previous != .unknown
+        if !keep, previous != state { states[.automationFinder] = state }
+        if asked, result == .denied { Permissions.openSettings(for: .automationFinder) }
     }
 
     // MARK: 기능
@@ -196,16 +227,41 @@ final class SettingsModel: ObservableObject {
 
     /// 이 권한을 쓰는 켜진 기능의 이름
     func users(of permission: Permission) -> [String] {
-        descriptors.filter { $0.permissions.contains(permission) }.map(\.displayName)
+        descriptors.filter { active.contains($0.id) && $0.permissions.contains(permission) }.map(\.displayName)
+    }
+
+    /// 켜진 기능이 쓰는 권한
+    var neededPermissions: Set<Permission> {
+        Set(descriptors.filter { active.contains($0.id) }.flatMap(\.permissions))
     }
 
     func request(_ permission: Permission) {
         switch permission {
         case .accessibility where !Permissions.accessibility: Permissions.requestAccessibility()
         case .screenRecording where !Permissions.screenRecording: Permissions.requestScreenRecording()
+        case .automationFinder where states[.automationFinder] == .notAsked:
+            refreshAutomation(ask: true) // macOS가 허용 창을 띄운다 — 시스템 설정은 열지 않는다
+            return
         default: break
         }
         Permissions.openSettings(for: permission)
+    }
+
+    func relaunch() {
+        Permissions.relaunch()
+    }
+
+    /// PolyMac 권한 기록을 지우고 다시 실행 — 다시 열리면 권한 탭이 열린다
+    func resetPermissionRecords() {
+        let ok = Permissions.resetRecords()
+        PermissionMemory.forget()
+        guard ok else {
+            message = L("권한 기록을 지우지 못했습니다. README의 \"권한 초기화\" 명령을 터미널에서 실행해 보세요.",
+                        "Could not reset the permission records. Try the \"reset permissions\" commands in the README.")
+            return
+        }
+        UserDefaults.standard.set(true, forKey: PermissionMemory.openAfterLaunchKey)
+        Permissions.relaunch()
     }
 }
 
@@ -517,74 +573,88 @@ private struct NormalizePane: View {
     }
 }
 
-private struct PermissionsPane: View {
+/// 권한 탭 (시작 안내의 권한 단계에서도 쓴다)
+struct PermissionsPane: View {
     @ObservedObject var model: SettingsModel
-
-    private struct Row: Identifiable {
-        let permission: Permission
-        let title: String
-        let detail: String
-        /// nil = macOS가 처음 쓸 때 직접 물어서 미리 확인할 수 없음
-        let granted: Bool?
-        var id: String { permission.rawValue }
-    }
-
-    private var rows: [Row] {
-        [
-            Row(permission: .accessibility, title: L("손쉬운 사용", "Accessibility"),
-                detail: L("창 배치, Finder ⌘X, 클립보드 자동 붙여넣기", "Window layout, Finder ⌘X, clipboard auto-paste"),
-                granted: model.granted[.accessibility]),
-            Row(permission: .screenRecording, title: L("화면 및 시스템 오디오 녹음", "Screen & System Audio Recording"),
-                detail: L("캡처, 텍스트 추출(OCR)", "Capture, text recognition (OCR)"),
-                granted: model.granted[.screenRecording]),
-            Row(permission: .automationFinder, title: L("자동화 › Finder", "Automation › Finder"),
-                detail: L("터미널 열기, 경로 복사, 앱 삭제(휴지통으로 옮기기)", "Open Terminal, copy path, uninstall (move to Trash)"),
-                granted: nil),
-            Row(permission: .filesAndFolders, title: L("파일 및 폴더", "Files & Folders"),
-                detail: L("자소분리 정리, 다운로드 자동 정리", "Korean filename fix, Downloads auto-organize"),
-                granted: nil),
-        ]
-    }
+    /// 시작 안내에서는 문제 해결 칸을 줄인다
+    var compact = false
+    @State private var confirmingReset = false
 
     var body: some View {
         Form {
-            Section {
-                ForEach(rows) { row in
-                    HStack(alignment: .top, spacing: 10) {
-                        status(row.granted)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(row.title)
-                            Text(row.detail).font(.caption).foregroundStyle(.secondary)
-                            let users = model.users(of: row.permission)
-                            if !users.isEmpty {
-                                Text(L("쓰는 기능: ", "Used by: ") + users.joined(separator: ", "))
-                                    .font(.caption2).foregroundStyle(.tertiary)
-                            }
+            if !model.lost.isEmpty {
+                Section {
+                    Label {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(L("예전에 허용했던 권한이 지금은 꺼져 있습니다: ", "Permissions you allowed before are now off: ")
+                                 + model.lost.map(\.title).joined(separator: ", "))
+                            Text(L("PolyMac을 새로 받아 설치했다면 서명이 바뀌어, 시스템 설정에는 켜져 보여도 동작하지 않을 수 있습니다. 아래 \"권한 기록 지우기\"로 정리한 뒤 다시 허용하세요.",
+                                   "If you installed a new copy of PolyMac its signature may differ, so System Settings can show it as on while it does not work. Use \"Reset permission records\" below, then allow again."))
+                                .font(.caption).foregroundStyle(.secondary)
                         }
-                        Spacer()
-                        Button(row.granted == false ? L("허용하기…", "Allow…") : L("설정 열기", "Open Settings")) {
-                            model.request(row.permission)
-                        }
+                    } icon: {
+                        Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
                     }
-                    .padding(.vertical, 2)
+                }
+            }
+            Section {
+                ForEach(Permission.shown, id: \.self) { permission in
+                    row(permission)
                 }
             } footer: {
-                Text(L("PolyMac은 네트워크를 쓰지 않고 모든 처리를 이 Mac 안에서 합니다. 자동화·파일 권한은 처음 쓸 때 macOS가 직접 묻습니다.",
-                       "PolyMac never uses the network; everything runs on this Mac. macOS asks for Automation and Files & Folders the first time they are needed."))
+                Text(L("PolyMac은 네트워크를 쓰지 않고 모든 처리를 이 Mac 안에서 합니다. 필요한 권한만 허용하면 되고, 허용하지 않은 권한을 쓰는 기능만 동작하지 않습니다.",
+                       "PolyMac never uses the network; everything runs on this Mac. Allow only what you need — features whose permission is missing simply stay inactive."))
                     .font(.caption).foregroundStyle(.secondary)
+            }
+            Section(L("문제 해결", "Troubleshooting")) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(L("시스템 설정에는 켜져 있는데 동작하지 않나요?", "On in System Settings but not working?"))
+                    if !compact {
+                        Text(L("PolyMac의 손쉬운 사용·화면 녹음·자동화 기록만 지우고 PolyMac을 다시 실행합니다. 다른 앱의 권한은 그대로입니다. 다시 열리면 이 화면에서 다시 허용하세요.",
+                               "Clears only PolyMac's Accessibility, Screen Recording and Automation records, then restarts PolyMac. Other apps are not affected. Allow again on this screen when it reopens."))
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    Button(L("권한 기록 지우기…", "Reset permission records…")) { confirmingReset = true }
+                }
             }
         }
         .formStyle(.grouped)
+        .confirmationDialog(L("PolyMac 권한 기록을 지울까요?", "Reset PolyMac's permission records?"), isPresented: $confirmingReset) {
+            Button(L("지우고 다시 실행", "Reset and Restart"), role: .destructive) { model.resetPermissionRecords() }
+            Button(L("취소", "Cancel"), role: .cancel) {}
+        } message: {
+            Text(L("손쉬운 사용·화면 녹음·자동화를 다시 허용해야 합니다.", "You will need to allow Accessibility, Screen Recording and Automation again."))
+        }
     }
 
-    @ViewBuilder private func status(_ granted: Bool?) -> some View {
-        switch granted {
-        case true?:
-            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green).help(L("허용됨", "Allowed"))
-        case false?:
-            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange).help(L("허용 필요", "Needs permission"))
-        case nil:
-            Image(systemName: "questionmark.circle").foregroundStyle(.secondary).help(L("처음 쓸 때 macOS가 묻습니다", "macOS asks on first use"))
+    private func row(_ permission: Permission) -> some View {
+        let state = model.states[permission]
+        let users = model.users(of: permission)
+        return HStack(alignment: .top, spacing: 10) {
+            PermissionStatusIcon(state: state)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(permission.title)
+                Text(permission.detail).font(.caption).foregroundStyle(.secondary)
+                Text(users.isEmpty ? L("켜진 기능 중 쓰는 것이 없습니다", "No enabled feature uses this")
+                                   : L("쓰는 기능: ", "Used by: ") + users.joined(separator: ", "))
+                    .font(.caption2).foregroundStyle(.tertiary)
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 4) {
+                switch state {
+                case .missing?, .notAsked?:
+                    Button(L("허용하기…", "Allow…")) { model.request(permission) }
+                default:
+                    Button(L("설정 열기", "Open Settings")) { model.request(permission) }
+                }
+                // 화면 녹음은 허용해도 다시 실행하기 전까지 꺼진 것으로 보인다
+                if permission == .screenRecording, state == .missing {
+                    Button(L("허용했다면 다시 실행", "Restart if allowed")) { model.relaunch() }
+                        .controlSize(.small)
+                }
+            }
         }
+        .padding(.vertical, 2)
+        .opacity(users.isEmpty && state != .granted ? 0.6 : 1)
     }
 }

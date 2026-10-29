@@ -537,16 +537,25 @@ enum PkgForget {
     """
 
     static func run(_ ids: [String]) async {
-        await Task.detached {
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
-            process.arguments = ["-e", script] + ids
-            process.standardOutput = Pipe()
-            process.standardError = Pipe()
-            let done = DispatchSemaphore(value: 0)
-            process.terminationHandler = { _ in done.signal() }
-            if (try? process.run()) != nil, done.wait(timeout: .now() + 120) == .timedOut { process.terminate() }
-        }.value
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        process.arguments = ["-e", script] + ids
+        process.standardOutput = Pipe()
+        process.standardError = Pipe()
+        // 끝날 때까지 스레드를 붙잡지 않고 기다린다. 암호 창을 2분 넘게 두면 닫는다 (종료되면 아래 terminationHandler가 깨운다)
+        await withCheckedContinuation { (finished: CheckedContinuation<Void, Never>) in
+            process.terminationHandler = { _ in finished.resume() }
+            do {
+                try process.run()
+            } catch {
+                process.terminationHandler = nil
+                finished.resume()
+                return
+            }
+            DispatchQueue.global().asyncAfter(deadline: .now() + 120) {
+                if process.isRunning { process.terminate() }
+            }
+        }
     }
 }
 

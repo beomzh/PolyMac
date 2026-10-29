@@ -2,6 +2,33 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-29 13:28]
+- [Changed] - feat/app-onboarding-permissions: PR #12 Dock 표시 push
+
+[2026-10-29 13:28]
+- [Added] - Sources/PolyMacCore/SystemSupport.swift `DockPresence`: 환경 설정·시작 안내·앱 삭제 창이 열려 있는 동안만 Dock·⌘Tab에 나옴 — 창이 다른 앱 뒤로 가도 다시 찾을 수 있게, 마지막 창을 닫으면 메뉴바 전용으로 돌아감
+- [Added] - Sources/PolyMacApp/AppDelegate.swift `applicationShouldHandleReopen`: Dock 아이콘을 누르거나 실행 중에 Spotlight로 다시 열면 열린 창을 앞으로 (최소화한 창도)
+- [Changed] - README.md: Dock 표시 설명
+
+[2026-10-29 11:12]
+- [Changed] - feat/app-onboarding-permissions: PR #12 시작 안내 창 수정 push
+
+[2026-10-29 11:12]
+- [Fixed] - Sources/PolyMacApp/Onboarding.swift `OnboardingWindow.show`: 시작 안내 창이 크기 조절이 안 되고 내용이 아래로 넘쳐 보이지 않던 문제 — 크기 조절 가능, 화면 높이 안으로 제한, 단계마다 스크롤
+- [Added] - Sources/PolyMacApp/Onboarding.swift `OnboardingView.progress`: 위쪽 단계 이름(소개·기능 고르기·권한·마무리)을 눌러 바로 이동
+
+[2026-10-29 11:01]
+- [Changed] - feat/app-onboarding-permissions: PR #12 생성 push
+
+[2026-10-29 11:00]
+- [Added] - Sources/PolyMacApp/Onboarding.swift `OnboardingWindow`: 처음 실행 시 시작 안내(소개 → 기능 고르기 → 권한 → 마무리), 메뉴 › 시작 안내…로 다시 열기, 이미 쓰던 사람에게는 자동으로 띄우지 않음
+- [Added] - Sources/PolyMacApp/PermissionStatus.swift `PermissionState`, `PermissionMemory`: 권한 상태 4종, 한 번 허용됐던 권한을 기억해 나중에 꺼지면(서명 변경 등) 알림
+- [Added] - Sources/PolyMacCore/SystemSupport.swift `Permissions.automationFinder`, `requestAutomationFinder`, `relaunch`, `resetRecords`: Finder 자동화 상태를 묻지 않고 확인, 바로 묻기, 다시 실행, PolyMac 권한 기록만 지우기(tccutil)
+- [Changed] - Sources/PolyMacApp/Settings.swift `PermissionsPane`, `SettingsModel`: 권한 탭에 자동화 상태·켜진 기능 기준 표시·화면 녹음 다시 실행·풀린 권한 경고·권한 기록 지우기
+- [Changed] - Sources/PolyMacApp/AppDelegate.swift `showGuidanceAtLaunch`: 첫 실행 안내, 권한 기록을 지운 뒤 다시 열리면 권한 탭, 풀린 권한 알림, 메뉴에 시작 안내…
+- [Fixed] - Sources/UninstallerModule/UninstallerModel.swift `PkgForget.run`: 비동기 안에서 세마포어로 스레드를 붙잡던 대기(Swift 6 경고)를 continuation으로
+- [Changed] - README.md, docs/ROADMAP.md: 시작 안내·권한 화면 설명, 로드맵 완료 표시
+
 [2026-10-29 10:44]
 - [Changed] - fix/release-zip-xattr: PR #11 생성 push
 

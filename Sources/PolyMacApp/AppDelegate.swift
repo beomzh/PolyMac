@@ -45,7 +45,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Settin
         NSUpdateDynamicServices()
         watchAccessibilityChanges()
         watchSettingsRequests()
+        DockPresence.start()
         logger.info("launched \(self.version, privacy: .public) accessibility=\(Permissions.accessibility)")
+        showGuidanceAtLaunch()
+    }
+
+    /// 처음 실행이면 시작 안내, 권한 기록을 지우고 다시 실행했으면 권한 탭,
+    /// 예전에 허용했던 권한이 꺼졌으면(새로 설치해 서명이 바뀐 경우 등) 알림
+    private func showGuidanceAtLaunch() {
+        let defaults = UserDefaults.standard
+        if OnboardingWindow.shouldShowAtLaunch {
+            logger.info("first launch: showing welcome guide")
+            OnboardingWindow.shared.show(host: self)
+        } else if defaults.bool(forKey: PermissionMemory.openAfterLaunchKey) {
+            defaults.removeObject(forKey: PermissionMemory.openAfterLaunchKey)
+            SettingsWindow.shared.show(host: self, tab: .permissions)
+        } else {
+            let lost = PermissionMemory.lost(PermissionState.current(), needed: neededPermissions)
+            guard !lost.isEmpty else { return }
+            logger.notice("permissions granted before are now off: \(lost.map(\.rawValue).joined(separator: ","), privacy: .public)")
+            Toast.show(L("예전에 허용했던 권한이 꺼져 있습니다: ", "Permissions you allowed before are off: ") + lost.map(\.title).joined(separator: ", ")
+                       + L("\n메뉴 › 권한이 필요합니다…에서 다시 허용하세요", "\nAllow them again from the menu › Permissions needed…"), duration: 6)
+        }
+    }
+
+    /// 켜진 기능이 쓰는 권한
+    private var neededPermissions: Set<Permission> {
+        Set(registry.descriptors.filter { registry.isActive($0.id) }.flatMap(\.permissions))
+    }
+
+    /// Dock 아이콘을 누르거나, 실행 중에 Spotlight·Finder로 다시 열었을 때 — 열려 있는 창을 앞으로
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        DockPresence.bringWindowsForward()
+        return false
     }
 
     /// 앱 아이콘과 같은 다면체 큐브: 윤곽 + 면 경계, 윗면만 채움. 템플릿 이미지라 메뉴바 밝기에 맞춰 색이 바뀐다.
@@ -173,6 +205,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Settin
         SettingsWindow.shared.show(host: self)
     }
 
+    @objc private func openGuide() {
+        OnboardingWindow.shared.show(host: self)
+    }
+
     @objc private func openPermissions() {
         SettingsWindow.shared.show(host: self, tab: .permissions)
     }
@@ -204,7 +240,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Settin
         }
 
         // 켜진 기능에 필요한 권한이 빠졌으면 바로 알 수 있게
-        let needed = Set(registry.descriptors.filter { registry.isActive($0.id) }.flatMap(\.permissions))
+        let needed = neededPermissions
         let missing = (needed.contains(.accessibility) && !Permissions.accessibility)
             || (needed.contains(.screenRecording) && !Permissions.screenRecording)
         if missing {
@@ -216,6 +252,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Settin
         }
 
         menu.addItem(.separator())
+        let guide = NSMenuItem(title: L("시작 안내…", "Welcome Guide…"), action: #selector(openGuide), keyEquivalent: "")
+        guide.target = self
+        menu.addItem(guide)
         let settings = NSMenuItem(title: L("환경 설정…", "Settings…"), action: #selector(openSettings), keyEquivalent: ",")
         settings.target = self
         menu.addItem(settings)
