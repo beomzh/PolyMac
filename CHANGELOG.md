@@ -3,6 +3,9 @@
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
 [2026-10-29 14:14]
+- [Changed] - CHANGELOG.md: PR #15 push 기록 (feat/finder-open-in-editor)
+
+[2026-10-29 14:14]
 - [Added] - Sources/FinderModule/EditorApp.swift `EditorApp`: 에디터로 열기에 쓸 앱 — 알려진 에디터 8종 중 설치된 것, 직접 고른 앱, 폴더를 못 여는 앱에는 파일만
 - [Added] - Sources/FinderModule/FinderModule.swift `openEditor`/`editorMenuItem`: ⌃⌥E로 Finder 선택 항목(없으면 현재 폴더)을 에디터로, 메뉴에서 에디터 앱 고르기; 선택 항목 AppleScript를 경로 복사와 함께 씀
 - [Added] - Sources/FinderModule/FinderServices.swift `openInEditor`: 단축키·우클릭 공통 열기, 뺀 폴더 수 알림
