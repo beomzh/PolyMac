@@ -3,6 +3,9 @@
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
 [2026-10-29 14:03]
+- [Changed] - CHANGELOG.md: PR #14 push 기록 (feat/organize-rules-transfer)
+
+[2026-10-29 14:03]
 - [Added] - Sources/OrganizeModule/RuleTransfer.swift `RuleTransfer`: 규칙만 담은 JSON 내보내기·가져오기 — 형식·schemaVersion·1MB 검사, 겹치는 id 새로 만들기, 가져온 규칙은 꺼진 상태
 - [Added] - Sources/OrganizeModule/OrganizeEditor.swift `OrganizeEditorModel.move(from:to:)`: 규칙 목록을 끌어서 순서 바꾸기
 - [Added] - Sources/OrganizeModule/OrganizeEditor.swift `exportRules`/`importRules`: 더 보기 메뉴에서 내보내기·가져오기, 가져올 때 뒤에 붙이기/모두 바꾸기 선택, 저장해야 반영
