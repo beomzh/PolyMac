@@ -3,6 +3,9 @@
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
 [2026-10-29 14:06]
+- [Changed] - CHANGELOG.md: PR #14 push 기록 (설정 탭 전환 수정)
+
+[2026-10-29 14:06]
 - [Fixed] - Sources/PolyMacApp/Settings.swift `SettingsWindow.fit`: 자동 정리 탭을 처음 누르면 창만 커지고 탭이 안 바뀌던 문제 — 크기 조정을 SwiftUI 갱신 뒤로 미루고, 이벤트를 붙잡지 않는 animator()로 바꿈
 
 [2026-10-29 14:03]
