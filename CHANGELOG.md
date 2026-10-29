@@ -2,6 +2,10 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-29 10:44]
+- [Fixed] - scripts/package-release.sh: zip에 확장 속성이 ._ 파일로 들어가 unzip으로 풀면 서명이 깨지던 문제 — 확장 속성 없이 묶고, ._ 파일 여부와 풀어 낸 앱의 서명을 확인 (0.1.0 Release는 같은 방식으로 직접 묶어 올림)
+- [Changed] - docs/RELEASING.md: zip에 확장 속성을 넣지 않는 이유
+
 [2026-10-29 10:39]
 - [Changed] - chore/release-0.1.0: PR #10 Finder 잘라내기 수정 push
 
