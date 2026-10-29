@@ -83,8 +83,12 @@ scripts/build-app.sh --install
 
 **3. (권장) 고정 인증서 만들기** — 인증서가 없으면 ad-hoc 서명이라 **다시 빌드할 때마다 macOS가 권한을 초기화**합니다. 아래 둘 중 하나만 해두면 빌드 스크립트가 자동으로 찾아 쓰고, 그다음부터는 권한이 유지됩니다.
 
-- **Xcode가 있다면 (더 간단)**: Xcode › Settings › Accounts › `+`로 Apple ID 추가 (무료) → 계정 선택 › Manage Certificates… › `+` › **Apple Development**
-- **Xcode 없이**: "키체인 접근" 앱 › 메뉴 **키체인 접근 › 인증서 지원 › 인증서 생성…** → 이름 `PolyMac Local`, 신원 유형 **자체 서명 루트**, 인증서 유형 **코드 서명**
+- **권장 — 스크립트 한 줄**: 10년짜리 자체 서명 인증서 `PolyMac Local`을 만들어 로그인 키체인에 넣습니다. 백업 암호를 정하고, macOS가 신뢰 설정에 암호(Touch ID)를 한 번 묻습니다. 백업 파일(`~/Documents/PolyMac-signing.p12`)은 안전한 곳에 옮겨 두세요.
+  ```bash
+  scripts/make-signing-cert.sh
+  ```
+- **직접 만들기**: "키체인 접근" 앱 › 메뉴 **키체인 접근 › 인증서 지원 › 인증서 생성…** → 이름 `PolyMac Local`, 신원 유형 **자체 서명 루트**, 인증서 유형 **코드 서명**, "기본값 무시"를 켜고 유효 기간을 길게(예: 3650일)
+- **Xcode의 Apple Development 인증서**도 쓸 수 있지만, 서명에 이메일·실명이 드러나고 1년마다 만료됩니다. 남에게 배포할 앱에는 쓰지 마세요.
 
 그다음 `scripts/build-app.sh --install` → 아래 [권한 초기화](#문제-해결) 후 한 번만 다시 허용합니다. (처음 서명할 때 키체인 접근 허용 창이 뜨면 "항상 허용")
 

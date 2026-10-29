@@ -28,6 +28,10 @@ if [[ -z "$IDENTITY_LINE" ]]; then
     echo "✗ ad-hoc 서명입니다 — 받는 사람의 권한이 업데이트마다 풀립니다. 고정 인증서를 만든 뒤 다시 실행하세요 (README '고정 인증서 만들기')"
     [[ "${1:-}" == "--dry" ]] || exit 1
 fi
+if [[ "$IDENTITY_LINE" == *"Apple Development"* ]]; then
+    echo "✗ Apple Development 인증서로 서명됐습니다 — 서명에 이메일·실명이 드러나고 1년 뒤 만료됩니다. scripts/make-signing-cert.sh로 PolyMac Local을 만드세요"
+    [[ "${1:-}" == "--dry" ]] || exit 1
+fi
 
 echo "▶ 묶기 — $NAME"
 rm -rf "$OUT"

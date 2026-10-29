@@ -2,10 +2,15 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+## 0.1.0 (2026-10-29)
+[2026-10-29 10:22]
+- [Added] - scripts/make-signing-cert.sh: 배포용 자체 서명 인증서 PolyMac Local(10년, 코드 서명 전용) 생성 — 서명에 개인정보가 드러나지 않고 매년 바뀌지 않게, 백업 .p12 암호는 화면에 보이지 않게 입력받음
+- [Changed] - scripts/package-release.sh: Apple Development 인증서로 서명되면 묶지 않음 (이메일·실명 노출, 1년 만료)
+- [Changed] - README.md, docs/RELEASING.md: 고정 인증서는 스크립트 권장, Apple Development를 배포에 쓰지 않는 이유와 백업 필요성
+
 [2026-10-29 10:11]
 - [Changed] - chore/release-0.1.0: PR #10 생성 push
 
-## 0.1.0 (2026-10-29)
 [2026-10-29 10:09]
 - [Added] - Sources/PolyMacCore/SystemSupport.swift `AppPaths.appendLine`, `rotateIfNeeded`: 기록 파일(organize-log·uninstall-log)이 끝없이 커지지 않게 1 MB를 넘으면 `.1`로 넘기고 하나만 남김
 - [Added] - Tests/PolyMacCoreTests/AppPathsTests.swift `logRotatesAtLimitAndKeepsOnePrevious`: 한도에서 넘기기, 이전 파일 하나만, 권한 0600 유지
