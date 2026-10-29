@@ -3,6 +3,9 @@
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
 [2026-10-29 11:12]
+- [Changed] - feat/app-onboarding-permissions: PR #12 시작 안내 창 수정 push
+
+[2026-10-29 11:12]
 - [Fixed] - Sources/PolyMacApp/Onboarding.swift `OnboardingWindow.show`: 시작 안내 창이 크기 조절이 안 되고 내용이 아래로 넘쳐 보이지 않던 문제 — 크기 조절 가능, 화면 높이 안으로 제한, 단계마다 스크롤
 - [Added] - Sources/PolyMacApp/Onboarding.swift `OnboardingView.progress`: 위쪽 단계 이름(소개·기능 고르기·권한·마무리)을 눌러 바로 이동
 
