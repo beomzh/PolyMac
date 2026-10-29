@@ -3,6 +3,9 @@
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
 [2026-10-29 14:08]
+- [Changed] - CHANGELOG.md: PR #14 push 기록 (설정 창 기본 크기)
+
+[2026-10-29 14:08]
 - [Changed] - Sources/PolyMacApp/Settings.swift `SettingsWindow.defaultSize`: 환경 설정 창을 처음부터 모든 탭 같은 큰 크기(1000x680, 화면에 맞춰 줄임)로 — 자동 정리 탭에서만 창이 커지던 동작과 탭별 크기 조정(fit) 제거
 
 [2026-10-29 14:06]
