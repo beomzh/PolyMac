@@ -2,6 +2,29 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-29 13:51]
+- [Changed] - feat/clipboard-encryption: PR #13 이미지 표시 수정 push
+
+[2026-10-29 13:51]
+- [Fixed] - Sources/ClipboardModule/ClipboardPanel.swift `ClipboardRow`, `ClipboardPreview`: 기록 창 이미지가 한참 뒤에야 보이던 문제 — 줄·미리보기가 썸네일을 직접 꺼내 model 변화를 지켜보지 않아, 다 읽혀도 스크롤·선택 이동 전까지 다시 그려지지 않음, 썸네일을 부모에서 넘겨 도착하면 그 줄만 다시 그림 (복호화 비용은 50 MB 이미지도 7.5 ms로 원인 아님)
+
+[2026-10-29 13:47]
+- [Changed] - feat/clipboard-encryption: PR #13 썸네일 수정 push
+
+[2026-10-29 13:47]
+- [Fixed] - Sources/ClipboardModule/ClipboardModule.swift `keep`: 방금 복사한 이미지가 기록 창에서 안 보이던 문제 — 파일을 쓰기 전에 목록에 먼저 넣어 썸네일이 없는 파일을 읽고 실패한 채 다시 시도하지 않음, 파일을 다 쓴 뒤 목록에 넣고 그사이 같은 내용이 들어왔으면 방금 쓴 파일은 버림
+- [Fixed] - Sources/ClipboardModule/ClipboardPanel.swift `thumbnail`, `thumbnailFailed`: 썸네일을 못 읽으면 0.5·1·1.5초 뒤 다시 시도(3번), 그래도 안 되면 이유를 로그에 남김
+
+[2026-10-29 13:39]
+- [Changed] - feat/clipboard-encryption: PR #13 생성 push
+
+[2026-10-29 13:38]
+- [Added] - Sources/PolyMacCore/SealedFiles.swift `SealedFiles`, `KeychainKey`: 앱 데이터 파일 AES-GCM 봉인 읽기/쓰기(머리 PMS1, 평문 예전 파일은 읽고 다시 봉인), 키체인 256비트 키 — 키체인을 못 읽으면 새 키를 만들지 않음
+- [Changed] - Sources/ClipboardModule/ClipboardModule.swift `openStore`, `load`, `sealExisting`, `saveNow`: 클립보드 기록(목록·이미지·긴 텍스트)을 봉인해 저장 — 같은 사용자 권한의 다른 프로그램이 읽지 못하게, 기존 평문은 처음 한 번 봉인, 열 수 없는 목록은 옆으로 치움, 키가 없으면 디스크 없이 메모리만
+- [Changed] - Sources/ClipboardModule/ClipboardPanel.swift `previewText`, `thumbnail`: 봉인된 파일을 열어 미리보기·썸네일
+- [Added] - Tests/PolyMacCoreTests/SealedFilesTests.swift `sealedFilesRoundTripAndMigrate`: 왕복, 디스크 평문 없음, 평문 마이그레이션, 다른 키·변조 거부
+- [Changed] - README.md, docs/SECURITY.md, docs/ROADMAP.md: 저장 암호화 설명, 없는 기능(덮어쓰기 후 삭제) 문구 정정
+
 [2026-10-29 13:28]
 - [Changed] - feat/app-onboarding-permissions: PR #12 Dock 표시 push
 

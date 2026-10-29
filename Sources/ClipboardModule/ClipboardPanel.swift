@@ -2,6 +2,7 @@ import AppKit
 import ImageIO
 import PolyMacCore
 import SwiftUI
+import os
 
 /// 클립보드 히스토리 창. 평소에는 좁은 목록만, ⌘→ 또는 오른쪽 위 버튼으로 미리보기 패널을 옆으로 펼친다.
 /// 앞에 있던 앱의 포커스를 빼앗지 않는 패널이라 ⇧↩︎로 그 앱에 바로 붙여넣을 수 있다.
@@ -30,8 +31,8 @@ final class ClipboardPanelController {
     var isPrepared: Bool { model != nil }
 
     /// 모듈이 켜질 때: 화면은 아직 만들지 않고 목록·썸네일·앱 아이콘만 미리 준비
-    func prepare(items: [ClipboardItem], imageDirectory: URL, textDirectory: URL) {
-        let model = ClipboardPanelModel(items: items, imageDirectory: imageDirectory, textDirectory: textDirectory,
+    func prepare(items: [ClipboardItem], imageDirectory: URL, textDirectory: URL, store: SealedFiles?) {
+        let model = ClipboardPanelModel(items: items, imageDirectory: imageDirectory, textDirectory: textDirectory, store: store,
                                         previewOpen: UserDefaults.standard.bool(forKey: Self.previewKey))
         self.model = model
         model.prefetch()
@@ -196,13 +197,19 @@ final class ClipboardPanelModel: ObservableObject {
 
     let imageDirectory: URL
     let textDirectory: URL
+    /// 봉인된 기록 파일을 여는 열쇠 (없으면 디스크 기록 없이 메모리만)
+    let store: SealedFiles?
     private var loadingThumbnails = Set<String>()
+    private static let logger = Logger(subsystem: "dev.polymac", category: "clipboard")
+    /// 썸네일을 못 읽은 횟수 — 잠깐 뒤 다시 시도하되 끝없이 되풀이하지 않게
+    private var thumbnailFailures: [String: Int] = [:]
     private var previewCache: (id: UUID, text: String, truncated: Bool)?
 
-    init(items: [ClipboardItem], imageDirectory: URL, textDirectory: URL, previewOpen: Bool) {
+    init(items: [ClipboardItem], imageDirectory: URL, textDirectory: URL, store: SealedFiles?, previewOpen: Bool) {
         self.items = items
         self.imageDirectory = imageDirectory
         self.textDirectory = textDirectory
+        self.store = store
         self.previewOpen = previewOpen
         refilter()
         selectedID = filtered.first?.id
@@ -274,9 +281,9 @@ final class ClipboardPanelModel: ObservableObject {
     func previewText(_ item: ClipboardItem) -> (text: String, truncated: Bool) {
         if let cache = previewCache, cache.id == item.id { return (cache.text, cache.truncated) }
         var result = (text: item.text, truncated: false)
-        if let file = item.textFile, let handle = try? FileHandle(forReadingFrom: textDirectory.appendingPathComponent(file)) {
-            defer { try? handle.close() }
-            let data = (try? handle.read(upToCount: Self.previewLimit)) ?? Data()
+        // 봉인된 파일은 통째로 열어야 해서 전체를 읽고 앞부분만 보여 준다 (같은 항목은 아래에서 기억)
+        if let file = item.textFile, let full = try? store?.read(textDirectory.appendingPathComponent(file)) {
+            let data = full.prefix(Self.previewLimit)
             // 잘린 끝의 깨진 UTF-8 바이트는 버린다
             var text = String(decoding: data, as: UTF8.self)
             if text.hasSuffix("\u{FFFD}") { text.removeLast() }
@@ -284,6 +291,23 @@ final class ClipboardPanelModel: ObservableObject {
         }
         previewCache = (item.id, result.text, result.truncated)
         return result
+    }
+
+    /// 못 읽었으면 잠깐 뒤 다시 그리게 한다 (3번까지). 그다음은 이유를 남기고 빈 칸으로 둔다
+    private func thumbnailFailed(_ key: String, reason: String) {
+        let count = (thumbnailFailures[key] ?? 0) + 1
+        thumbnailFailures[key] = count
+        guard count <= 3 else {
+            if count == 4 { Self.logger.error("clipboard thumbnail failed \(key, privacy: .public): \(reason, privacy: .public)") }
+            return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5 * Double(count)) { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.loadingThumbnails.remove(key)
+                self.objectWillChange.send() // 다시 그리면 thumbnail()이 한 번 더 읽는다
+            }
+        }
     }
 
     private func pruneThumbnails() {
@@ -301,16 +325,33 @@ final class ClipboardPanelModel: ObservableObject {
         if let cached = thumbnails[key] { return cached }
         guard loadingThumbnails.insert(key).inserted else { return nil }
         let url = imageDirectory.appendingPathComponent(file)
+        let store = self.store
         Task.detached(priority: .userInitiated) {
-            guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
-                  let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, [
-                      kCGImageSourceCreateThumbnailFromImageAlways: true,
-                      kCGImageSourceThumbnailMaxPixelSize: maxPixel,
-                      kCGImageSourceCreateThumbnailWithTransform: true,
-                  ] as CFDictionary)
-            else { return }
+            var reason = "no storage key"
+            var image: CGImage?
+            if let store {
+                do {
+                    let png = try store.read(url)
+                    if let source = CGImageSourceCreateWithData(png as CFData, nil) {
+                        image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                            kCGImageSourceCreateThumbnailFromImageAlways: true,
+                            kCGImageSourceThumbnailMaxPixelSize: maxPixel,
+                            kCGImageSourceCreateThumbnailWithTransform: true,
+                        ] as CFDictionary)
+                    }
+                    reason = "not an image"
+                } catch {
+                    reason = String(describing: error)
+                }
+            }
+            let loaded = image, why = reason
             await MainActor.run {
-                self.thumbnails[key] = NSImage(cgImage: cg, size: NSSize(width: cg.width, height: cg.height))
+                if let loaded {
+                    self.thumbnails[key] = NSImage(cgImage: loaded, size: NSSize(width: loaded.width, height: loaded.height))
+                    self.thumbnailFailures[key] = nil
+                } else {
+                    self.thumbnailFailed(key, reason: why)
+                }
             }
         }
         return nil
@@ -366,7 +407,10 @@ struct ClipboardPanelView: View {
 
             if model.previewOpen {
                 Divider()
-                ClipboardPreview(item: model.selected, model: model)
+                // 썸네일은 여기서 꺼내 넘긴다 — 미리보기는 model을 지켜보지 않아서, 다 읽혀도 다시 그려지지 않는다
+                ClipboardPreview(item: model.selected,
+                                 image: model.selected.flatMap { $0.isImage ? model.thumbnail($0, maxPixel: 1400) : nil },
+                                 model: model)
                     .frame(width: ClipboardPanelController.previewWidth)
             }
         }
@@ -414,7 +458,8 @@ struct ClipboardPanelView: View {
                             .padding(.top, 40)
                     }
                     ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                        ClipboardRow(item: item, index: index, isSelected: item.id == highlighted, model: model)
+                        ClipboardRow(item: item, index: index, isSelected: item.id == highlighted,
+                                     thumbnail: item.isImage ? model.thumbnail(item) : nil, model: model)
                             .id(item.id)
                             .contentShape(Rectangle())
                             .onTapGesture(count: 2) { onPick(item) }
@@ -449,6 +494,8 @@ private struct ClipboardRow: View {
     let item: ClipboardItem
     let index: Int
     let isSelected: Bool
+    /// 백그라운드에서 다 읽히면 값이 바뀌어 이 줄만 다시 그려진다
+    let thumbnail: NSImage?
     let model: ClipboardPanelModel
 
     var body: some View {
@@ -459,7 +506,7 @@ private struct ClipboardRow: View {
                 .opacity(0.9)
             if item.isImage {
                 Group {
-                    if let thumb = model.thumbnail(item) {
+                    if let thumb = thumbnail {
                         Image(nsImage: thumb).resizable().aspectRatio(contentMode: .fit)
                     } else {
                         RoundedRectangle(cornerRadius: 3).fill(.quaternary).aspectRatio(1.6, contentMode: .fit)
@@ -511,6 +558,7 @@ private struct ClipboardRow: View {
 
 private struct ClipboardPreview: View {
     let item: ClipboardItem?
+    let image: NSImage?
     let model: ClipboardPanelModel
 
     var body: some View {
@@ -518,7 +566,7 @@ private struct ClipboardPreview: View {
             VStack(alignment: .leading, spacing: 0) {
                 if item.isImage {
                     ScrollView {
-                        if let image = model.thumbnail(item, maxPixel: 1400) {
+                        if let image {
                             Image(nsImage: image)
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)

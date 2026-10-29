@@ -33,6 +33,9 @@ public final class ClipboardModule: PolyMacModule {
     /// 이미지 한 장 최대 크기 (원본 데이터 기준)
     private let maxImageBytes = 30 * 1024 * 1024
     private var pendingSave: DispatchWorkItem?
+    /// 기록 파일 봉인 (키는 키체인). nil이면 키를 못 읽은 것 — 디스크에 쓰지도 읽지도 않고 메모리에만 둔다
+    private var store: SealedFiles?
+    private static let sealedMigrationKey = "clipboard.sealedFiles"
     private let ioQueue = DispatchQueue(label: "dev.polymac.clipboard.io", qos: .utility)
 
     private var storeURL: URL { context.dataDirectory.appendingPathComponent("clipboard.json") }
@@ -67,6 +70,7 @@ public final class ClipboardModule: PolyMacModule {
     }
 
     public func activate() throws {
+        openStore()
         load()
         lastChangeCount = NSPasteboard.general.changeCount
         // macOS엔 클립보드 변경 알림이 없어 changeCount를 주기적으로 비교한다 (정수 비교 1회, docs/ARCHITECTURE.md 3)
@@ -92,7 +96,7 @@ public final class ClipboardModule: PolyMacModule {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
             MainActor.assumeIsolated {
                 guard let self else { return }
-                self.panel.prepare(items: self.items, imageDirectory: self.imageDirectory, textDirectory: self.textDirectory)
+                self.panel.prepare(items: self.items, imageDirectory: self.imageDirectory, textDirectory: self.textDirectory, store: self.store)
             }
         }
     }
@@ -233,10 +237,8 @@ public final class ClipboardModule: PolyMacModule {
                         return
                     }
                     let file = UUID().uuidString + ".txt"
-                    let url = directory.appendingPathComponent(file)
-                    self.ioQueue.async { try? AppPaths.writePrivate(data, to: url) }
-                    self.items.insert(.largeText(preview: preview, file: file, bytes: bytes, hash: hash, sourceApp: app), at: 0)
-                    self.didChange()
+                    self.keep(data, at: directory.appendingPathComponent(file),
+                              as: .largeText(preview: preview, file: file, bytes: bytes, hash: hash, sourceApp: app))
                 }
             }
         }
@@ -262,11 +264,40 @@ public final class ClipboardModule: PolyMacModule {
                         return
                     }
                     let file = UUID().uuidString + ".png"
-                    let url = directory.appendingPathComponent(file)
-                    self.ioQueue.async {
-                        try? AppPaths.writePrivate(png, to: url)
+                    self.keep(png, at: directory.appendingPathComponent(file),
+                              as: .image(file: file, width: width, height: height, bytes: png.count, hash: hash, sourceApp: app))
+                }
+            }
+        }
+    }
+
+    /// 파일을 다 쓴 뒤에 목록에 넣는다 — 목록에 먼저 보이면 썸네일·미리보기가 아직 없는 파일을 읽으려다 실패한다
+    private func keep(_ data: Data, at url: URL, as item: ClipboardItem) {
+        guard let store else {
+            context.logger.info("clipboard \(item.isImage ? "image" : "long text", privacy: .public) not kept: no storage key")
+            return
+        }
+        let logger = context.logger
+        ioQueue.async { [weak self] in
+            do {
+                try store.write(data, to: url)
+            } catch {
+                logger.error("clipboard file write failed: \(error.localizedDescription, privacy: .public)")
+                return
+            }
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    // 쓰는 사이 같은 내용이 먼저 들어왔으면 방금 쓴 파일은 버리고 있던 항목을 맨 위로
+                    if let index = self.items.firstIndex(where: { $0.contentHash == item.contentHash }) {
+                        var existing = self.items.remove(at: index)
+                        existing.copiedAt = Date()
+                        existing.sourceApp = item.sourceApp
+                        self.items.insert(existing, at: 0)
+                        self.ioQueue.async { try? FileManager.default.removeItem(at: url) }
+                    } else {
+                        self.items.insert(item, at: 0)
                     }
-                    self.items.insert(.image(file: file, width: width, height: height, bytes: png.count, hash: hash, sourceApp: app), at: 0)
                     self.didChange()
                 }
             }
@@ -307,7 +338,7 @@ public final class ClipboardModule: PolyMacModule {
     private let panel = ClipboardPanelController()
 
     private func showPopup() {
-        if !panel.isPrepared { panel.prepare(items: items, imageDirectory: imageDirectory, textDirectory: textDirectory) }
+        if !panel.isPrepared { panel.prepare(items: items, imageDirectory: imageDirectory, textDirectory: textDirectory, store: store) }
         panel.show(callbacks: .init(
             choose: { [weak self] item, pasteNow in
                 guard let self else { return }
@@ -334,7 +365,7 @@ public final class ClipboardModule: PolyMacModule {
     /// 큰 텍스트는 파일에서 전체를 읽는다
     func fullText(_ item: ClipboardItem) -> String {
         guard let file = item.textFile,
-              let data = try? Data(contentsOf: textDirectory.appendingPathComponent(file)),
+              let data = try? store?.read(textDirectory.appendingPathComponent(file)),
               let text = String(data: data, encoding: .utf8)
         else { return item.text }
         return text
@@ -358,7 +389,7 @@ public final class ClipboardModule: PolyMacModule {
             return
         }
         let url = imageDirectory.appendingPathComponent(file)
-        guard let png = try? Data(contentsOf: url) else {
+        guard let png = try? store?.read(url) else {
             context.toast(L("이미지 파일을 찾지 못했습니다", "Image file not found"))
             return
         }
@@ -499,14 +530,57 @@ public final class ClipboardModule: PolyMacModule {
 
     // MARK: - 저장 (0600, 로컬만)
 
+    /// 키체인에서 기록 암호화 키를 꺼낸다. 처음이면 만든다. 키체인이 잠겼거나 거절되면 새 키를 만들지 않는다
+    /// (만들면 예전 기록을 영영 못 연다) — 이번 실행 동안은 디스크 없이 메모리에만 기록한다.
+    private func openStore() {
+        guard store == nil else { return }
+        do {
+            store = SealedFiles(key: try KeychainKey.loadOrCreate(account: "clipboard-history",
+                                                                   label: L("PolyMac 클립보드 기록 암호화 키", "PolyMac clipboard history key")))
+        } catch {
+            context.logger.error("clipboard storage key unavailable: \(String(describing: error), privacy: .public)")
+            context.toast(L("키체인에서 클립보드 기록 키를 읽지 못해, 이번에는 기록을 디스크에 저장하지 않습니다 (글자만, 종료하면 사라짐)",
+                            "Could not read the clipboard history key from the keychain; history is kept in memory only this time (text only, gone on quit)"), duration: 6)
+        }
+    }
+
     private func load() {
-        guard let data = try? Data(contentsOf: storeURL) else { return }
+        guard let store, let raw = try? Data(contentsOf: storeURL) else { return }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         do {
-            items = try decoder.decode([ClipboardItem].self, from: data)
+            items = try decoder.decode([ClipboardItem].self, from: try store.open(raw))
         } catch {
-            context.logger.error("clipboard store unreadable: \(error.localizedDescription, privacy: .public)")
+            // 열 수 없는 기록은 지우지 않고 옆으로 치운다 (키를 되찾으면 다시 열 수 있게)
+            context.logger.error("clipboard store unreadable: \(String(describing: error), privacy: .public)")
+            let aside = storeURL.deletingLastPathComponent().appendingPathComponent("clipboard.unreadable-\(Int(Date().timeIntervalSince1970)).json")
+            try? FileManager.default.moveItem(at: storeURL, to: aside)
+            context.toast(L("클립보드 기록을 열 수 없어 새로 시작합니다 (예전 파일은 데이터 폴더에 남겨 둠)",
+                            "Could not open the clipboard history; starting fresh (the old file is kept in the data folder)"), duration: 6)
+            return
+        }
+        if !SealedFiles.isSealed(raw) || !UserDefaults.standard.bool(forKey: Self.sealedMigrationKey) { sealExisting() }
+    }
+
+    /// 암호화 전에 평문으로 저장된 목록·이미지·긴 텍스트를 봉인해 다시 쓴다 (한 번만)
+    private func sealExisting() {
+        guard let store else { return }
+        let base = context.dataDirectory
+        let urls = [storeURL] + items.flatMap(\.storedFiles).map { base.appendingPathComponent($0) }
+        let logger = context.logger
+        ioQueue.async {
+            var sealed = 0, failed = 0
+            for url in urls where FileManager.default.fileExists(atPath: url.path) {
+                do {
+                    if try store.sealInPlace(url) { sealed += 1 }
+                } catch {
+                    failed += 1
+                }
+            }
+            logger.notice("clipboard files sealed=\(sealed) failed=\(failed)")
+            if failed == 0 {
+                DispatchQueue.main.async { UserDefaults.standard.set(true, forKey: Self.sealedMigrationKey) }
+            }
         }
     }
 
@@ -523,6 +597,7 @@ public final class ClipboardModule: PolyMacModule {
     private func saveNow() {
         pendingSave?.cancel()
         pendingSave = nil
+        guard let store else { return } // 키가 없으면 디스크에 쓰지 않는다 (평문으로도)
         let snapshot = items
         let url = storeURL
         let logger = context.logger
@@ -530,7 +605,7 @@ public final class ClipboardModule: PolyMacModule {
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
             do {
-                try AppPaths.writePrivate(try encoder.encode(snapshot), to: url)
+                try store.write(try encoder.encode(snapshot), to: url)
             } catch {
                 logger.error("clipboard save failed: \(error.localizedDescription, privacy: .public)")
             }
