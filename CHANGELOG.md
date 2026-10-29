@@ -2,6 +2,16 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+## 0.1.0 (2026-10-29)
+[2026-10-29 10:09]
+- [Added] - Sources/PolyMacCore/SystemSupport.swift `AppPaths.appendLine`, `rotateIfNeeded`: 기록 파일(organize-log·uninstall-log)이 끝없이 커지지 않게 1 MB를 넘으면 `.1`로 넘기고 하나만 남김
+- [Added] - Tests/PolyMacCoreTests/AppPathsTests.swift `logRotatesAtLimitAndKeepsOnePrevious`: 한도에서 넘기기, 이전 파일 하나만, 권한 0600 유지
+- [Added] - scripts/package-release.sh: 태그 찍힌 깨끗한 main에서 zip + sha256 만들기 (사전 배포 번호·ad-hoc 서명이면 멈춤)
+- [Changed] - docs/RELEASING.md: 공증 없이 배포(Apple 개발자 프로그램 미가입), 고정 인증서 서명·인증서 이름 노출 주의, 묶기·올리기 명령
+- [Changed] - docs/ARCHITECTURE.md, docs/CONCEPT.md, docs/ROADMAP.md: 공증·공식 Homebrew cask 전제를 GitHub Releases + 개인 tap으로
+- [Changed] - README.md: 0.1.0 표기, 받아서 설치·체크섬 확인, "처음 열 때 막히면"(그래도 열기) 안내, 기록 파일 로테이트·uninstall-log 데이터 표
+- [Changed] - VERSION: 0.1.0-alpha.1 → 0.1.0 (첫 공개 버전)
+
 [2026-10-28 16:10]
 - [Changed] - fix/capture-number-position: PR #9 생성 push
 

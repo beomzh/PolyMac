@@ -20,8 +20,12 @@ public enum AppPaths {
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
     }
 
+    /// 기록 파일이 이 크기를 넘으면 `이름.1.확장자`로 넘기고 새로 시작한다 (이전 것은 하나만 남긴다).
+    public static let logRotateBytes = 1_000_000
+
     /// 한 줄을 덧붙인다 (파일이 없으면 0600으로 만든다).
-    public static func appendLine(_ line: String, to url: URL) {
+    public static func appendLine(_ line: String, to url: URL, rotateAt limit: Int = logRotateBytes) {
+        rotateIfNeeded(url, limit: limit)
         let data = Data((line + "\n").utf8)
         if let handle = try? FileHandle(forWritingTo: url) {
             handle.seekToEndOfFile()
@@ -30,6 +34,16 @@ public enum AppPaths {
         } else {
             try? writePrivate(data, to: url)
         }
+    }
+
+    /// `organize-log.txt` → `organize-log.1.txt`. 그전의 `.1`은 지운다.
+    static func rotateIfNeeded(_ url: URL, limit: Int) {
+        guard let size = (try? FileManager.default.attributesOfItem(atPath: url.path))?[.size] as? Int, size >= limit else { return }
+        let ext = url.pathExtension
+        let base = url.deletingPathExtension().appendingPathExtension("1")
+        let previous = ext.isEmpty ? base : base.appendingPathExtension(ext)
+        try? FileManager.default.removeItem(at: previous)
+        try? FileManager.default.moveItem(at: url, to: previous)
     }
 }
 

@@ -62,7 +62,7 @@
 - [x] 설치 기록 정리(`pkgutil --forget`), 삭제 전 목록 내보내기
 
 ## 1.0.0 — 배포
-- [ ] 공증 + Sparkle 자동 업데이트 + Homebrew cask
+- [ ] Sparkle 자동 업데이트(EdDSA 서명, 공증 없이 동작) + 개인 Homebrew tap
 - [ ] 권한 대시보드, 온보딩
 - [ ] 자원 예산 회귀 테스트(CI)
 
