@@ -2,6 +2,13 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-29 14:03]
+- [Added] - Sources/OrganizeModule/RuleTransfer.swift `RuleTransfer`: 규칙만 담은 JSON 내보내기·가져오기 — 형식·schemaVersion·1MB 검사, 겹치는 id 새로 만들기, 가져온 규칙은 꺼진 상태
+- [Added] - Sources/OrganizeModule/OrganizeEditor.swift `OrganizeEditorModel.move(from:to:)`: 규칙 목록을 끌어서 순서 바꾸기
+- [Added] - Sources/OrganizeModule/OrganizeEditor.swift `exportRules`/`importRules`: 더 보기 메뉴에서 내보내기·가져오기, 가져올 때 뒤에 붙이기/모두 바꾸기 선택, 저장해야 반영
+- [Added] - Tests/OrganizeModuleTests/RuleTransferTests.swift: 왕복, organize.json 읽기, 새 버전·다른 파일·큰 파일 거부, id 겹침
+- [Changed] - README.md, docs/ROADMAP.md: 순서 드래그·내보내기/가져오기 완료로 갱신
+
 [2026-10-29 13:51]
 - [Changed] - feat/clipboard-encryption: PR #13 이미지 표시 수정 push
 
