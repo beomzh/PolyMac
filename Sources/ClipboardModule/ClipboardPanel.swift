@@ -15,6 +15,8 @@ final class ClipboardPanelController {
         let choose: (ClipboardItem, _ pasteNow: Bool, _ plain: Bool) -> Void
         let togglePin: (UUID) -> Void
         let delete: (UUID) -> Void
+        /// 이미지 항목을 화면에 고정 (⌘↩︎)
+        let pin: (ClipboardItem) -> Void
     }
 
     static let listWidth: CGFloat = 400
@@ -98,6 +100,12 @@ final class ClipboardPanelController {
             // 애니메이션을 쓰면 프레임마다 미리보기 전체를 다시 배치해 긴 텍스트에서 멈춘다
             panel.setFrame(frame, display: true, animate: false)
         }
+        model.onPinImage = { [weak self] item in
+            guard let self else { return }
+            let callbacks = self.callbacks
+            self.close()
+            callbacks?.pin(item)
+        }
         panel.contentView = NSHostingView(rootView: ClipboardPanelView(model: model, onPick: { [weak self] item in
             guard let self else { return }
             let callbacks = self.callbacks
@@ -142,6 +150,11 @@ final class ClipboardPanelController {
         case 126: model.move(-1); return true // ↑
         case 124 where cmd, 123 where cmd: // ⌘→ ⌘← 미리보기 펼치기/접기
             model.setPreview(event.keyCode == 124)
+            return true
+        case 36 where cmd, 76 where cmd: // ⌘↩︎ 이미지를 화면에 고정
+            guard let item = model.selected, item.isImage else { NSSound.beep(); return true }
+            close()
+            callbacks.pin(item)
             return true
         case 36, 76: // ↩︎ 복사 · ⇧↩︎ 바로 붙여넣기 · ⌥를 더하면 서식 없이
             guard let item = model.selected else { return true }
@@ -195,6 +208,7 @@ final class ClipboardPanelModel: ObservableObject {
     /// 백그라운드에서 읽어 온 썸네일 — 들어오면 해당 행만 다시 그려진다
     @Published private var thumbnails: [String: NSImage] = [:]
     var onTogglePreview: (() -> Void)?
+    var onPinImage: ((ClipboardItem) -> Void)?
 
     let imageDirectory: URL
     let textDirectory: URL
@@ -483,7 +497,7 @@ struct ClipboardPanelView: View {
         VStack(spacing: 0) {
             Divider()
             HStack {
-                Text(L("↩ 복사 · ⇧↩ 붙여넣기 · ⌥ 서식 없이 · ⌘P 고정 · ⌘⌫ 삭제", "↩ copy · ⇧↩ paste · ⌥ plain · ⌘P pin · ⌘⌫ delete"))
+                Text(L("↩ 복사 · ⇧↩ 붙여넣기 · ⌥ 서식 없이 · ⌘↩ 화면에 · ⌘P 고정 · ⌘⌫ 삭제", "↩ copy · ⇧↩ paste · ⌥ plain · ⌘↩ on screen · ⌘P keep · ⌘⌫ delete"))
                 Spacer()
                 Text(L("\(model.filtered.count)개", "\(model.filtered.count) items"))
             }
@@ -590,6 +604,17 @@ private struct ClipboardPreview: View {
                         }
                     }
                     .frame(maxHeight: .infinity)
+                    HStack {
+                        Spacer()
+                        Button {
+                            model.onPinImage?(item)
+                        } label: {
+                            Label(L("화면에 고정 (⌘↩)", "Pin on Screen (⌘↩)"), systemImage: "pin")
+                        }
+                        .controlSize(.small)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 8)
                 } else {
                     let preview = model.previewText(item)
                     // SwiftUI Text는 긴 글(특히 고정폭 글꼴의 한글)을 한 번에 배치해 수 초씩 멈춘다 →
