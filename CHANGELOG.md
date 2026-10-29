@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-29 15:41]
+- [Changed] - feat/capture-pins: PR #18 push (핀 클릭 통과·드래그 내보내기·최근 캡처, 클립보드 이미지 핀)
+
 [2026-10-29 15:39]
 - [Added] - Sources/PolyMacCore/RegionCapture.swift `PinService`: 다른 모듈(클립보드)이 캡처 모듈을 직접 참조하지 않고 이미지를 핀으로 띄우는 통로
 - [Added] - Sources/CaptureModule/RecentCaptures.swift `RecentCaptures`, `PinExport`: 최근 캡처 10개를 메모리에만(PNG + 표시) 보관, ⌘드래그용 임시 PNG를 사용자 임시 폴더(0700/0600)에 쓰고 1시간 뒤 정리
