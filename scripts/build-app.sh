@@ -6,7 +6,7 @@
 #
 # 서명 인증서 선택 순서 (앞에 있는 것이 있으면 그것을 쓴다):
 #   1. POLYMAC_SIGN_IDENTITY="이름"   직접 지정
-#   2. "PolyMac Local"                 키체인 접근에서 만든 자체 서명 인증서
+#   2. "PolyMac …"                     자체 서명 인증서 (scripts/make-signing-cert.sh, 또는 키체인 접근에서 만든 "PolyMac Local")
 #   3. "Apple Development: …"          Xcode › Settings › Accounts에 Apple ID를 넣으면 생기는 무료 개발 인증서
 #   4. ad-hoc                          빌드할 때마다 서명이 바뀌어 macOS 권한(손쉬운 사용 등)을 다시 줘야 한다
 set -euo pipefail
@@ -20,8 +20,8 @@ BUILD="$(git rev-list --count HEAD 2>/dev/null || echo 1)"
 IDENTITIES="$(security find-identity -v -p codesigning 2>/dev/null || true)"
 if [[ -n "${POLYMAC_SIGN_IDENTITY:-}" ]]; then
     IDENTITY="$POLYMAC_SIGN_IDENTITY"
-elif grep -q '"PolyMac Local"' <<< "$IDENTITIES"; then
-    IDENTITY="PolyMac Local"
+elif grep -q '"PolyMac [^"]*"' <<< "$IDENTITIES"; then
+    IDENTITY="$(grep -o '"PolyMac [^"]*"' <<< "$IDENTITIES" | head -1 | tr -d '"')"
 else
     IDENTITY="$(grep -o '"Apple Development: [^"]*"' <<< "$IDENTITIES" | head -1 | tr -d '"' || true)"
 fi

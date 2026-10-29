@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 배포용 자체 서명 코드 서명 인증서 "PolyMac Local" 만들기 (docs/RELEASING.md 4-6)
+# 배포용 자체 서명 코드 서명 인증서 "PolyMac Beomzh" 만들기 (docs/RELEASING.md 4-6)
 #
 #   scripts/make-signing-cert.sh [백업 파일 경로]
 #
@@ -10,7 +10,7 @@
 #   다른 Mac에서는: security import <백업> -k ~/Library/Keychains/login.keychain-db -T /usr/bin/codesign
 set -euo pipefail
 
-NAME="PolyMac Local"
+NAME="PolyMac Beomzh"
 DAYS=3650
 BACKUP="${1:-$HOME/Documents/PolyMac-signing.p12}"
 KEYCHAIN="$HOME/Library/Keychains/login.keychain-db"

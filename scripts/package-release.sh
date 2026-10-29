@@ -29,7 +29,7 @@ if [[ -z "$IDENTITY_LINE" ]]; then
     [[ "${1:-}" == "--dry" ]] || exit 1
 fi
 if [[ "$IDENTITY_LINE" == *"Apple Development"* ]]; then
-    echo "✗ Apple Development 인증서로 서명됐습니다 — 서명에 이메일·실명이 드러나고 1년 뒤 만료됩니다. scripts/make-signing-cert.sh로 PolyMac Local을 만드세요"
+    echo "✗ Apple Development 인증서로 서명됐습니다 — 서명에 이메일·실명이 드러나고 1년 뒤 만료됩니다. scripts/make-signing-cert.sh로 자체 서명 인증서를 만드세요"
     [[ "${1:-}" == "--dry" ]] || exit 1
 fi
 

@@ -6,6 +6,11 @@
 - [Changed] - chore/release-0.1.0: PR #10 인증서 스크립트 push
 
 ## 0.1.0 (2026-10-29)
+[2026-10-29 10:27]
+- [Changed] - scripts/make-signing-cert.sh: 인증서 이름을 PolyMac Beomzh로
+- [Changed] - scripts/build-app.sh: "PolyMac "으로 시작하는 자체 서명 인증서를 찾도록 — 이름을 바꿔도 Apple Development로 잘못 서명하지 않게
+- [Changed] - scripts/package-release.sh, README.md, docs/RELEASING.md: 인증서 이름 반영
+
 [2026-10-29 10:22]
 - [Added] - scripts/make-signing-cert.sh: 배포용 자체 서명 인증서 PolyMac Local(10년, 코드 서명 전용) 생성 — 서명에 개인정보가 드러나지 않고 매년 바뀌지 않게, 백업 .p12 암호는 화면에 보이지 않게 입력받음
 - [Changed] - scripts/package-release.sh: Apple Development 인증서로 서명되면 묶지 않음 (이메일·실명 노출, 1년 만료)
