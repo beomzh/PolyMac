@@ -3,6 +3,9 @@
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
 [2026-10-29 13:28]
+- [Changed] - feat/app-onboarding-permissions: PR #12 Dock 표시 push
+
+[2026-10-29 13:28]
 - [Added] - Sources/PolyMacCore/SystemSupport.swift `DockPresence`: 환경 설정·시작 안내·앱 삭제 창이 열려 있는 동안만 Dock·⌘Tab에 나옴 — 창이 다른 앱 뒤로 가도 다시 찾을 수 있게, 마지막 창을 닫으면 메뉴바 전용으로 돌아감
 - [Added] - Sources/PolyMacApp/AppDelegate.swift `applicationShouldHandleReopen`: Dock 아이콘을 누르거나 실행 중에 Spotlight로 다시 열면 열린 창을 앞으로 (최소화한 창도)
 - [Changed] - README.md: Dock 표시 설명
