@@ -2,6 +2,15 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-29 15:24]
+- [Added] - scripts/make-ocr-samples.swift, Tests/OCRSamples/: 한글 OCR 측정용 합성 샘플 14개(본문·작은 글씨·한영·숫자·URL·코드·다크 모드·흐린 글자·기호·큰 캡처)와 정답
+- [Added] - Sources/OCRBench/main.swift, scripts/ocr-bench.sh, Package.swift: 설정별 글자 오류율(CER)·정확 일치·시간 비교 도구 (개발용, 앱 번들에는 없음)
+- [Changed] - Sources/OCRModule/TextRecognizer.swift `OCROptions`: 인식 설정을 한곳에, 2 MP 이하 캡처는 2배로 키워 읽음 — 측정 오류율 1.58% → 0.93%
+- [Added] - Sources/OCRModule/OCRCleanup.swift `OCRCleanup`: 한글 사이 •→·, •·•→… 기호 오인식 고치기
+- [Added] - Tests/OCRModuleTests/OCRCleanupTests.swift: 기호 정리·확대·기본값 테스트
+- [Added] - docs/OCR-BENCH.md: 측정 방법·결과와 결정(영어 먼저·사용자 단어장·대소문자 복원은 효과 없거나 나빠 제외)
+- [Changed] - README.md, docs/ROADMAP.md: OCR 설정 안내, 측정 도구, 상태 갱신
+
 [2026-10-29 14:57]
 - [Changed] - CHANGELOG.md: PR #16 push 기록 (링크 복사 수정)
 

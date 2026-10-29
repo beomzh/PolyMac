@@ -24,6 +24,8 @@ let package = Package(
         .testTarget(name: "UninstallerCoreTests", dependencies: ["UninstallerCore", "PolyMacL10n"]),
         .target(name: "CaptureModule", dependencies: ["PolyMacCore", "OCRModule"]),
         .target(name: "UninstallerModule", dependencies: ["PolyMacCore", "UninstallerCore"]),
+        // 개발용 OCR 정확도 측정 (scripts/ocr-bench.sh) — 앱 번들에는 들어가지 않는다
+        .executableTarget(name: "OCRBench", dependencies: ["OCRModule"]),
         .executableTarget(name: "PolyMacApp", dependencies: ["PolyMacCore"] + modules.map { .target(name: $0) }),
     ] + modules.filter { !["CaptureModule", "UninstallerModule", "UninstallerCore"].contains($0) }.map { .target(name: $0, dependencies: ["PolyMacCore"]) }
 )
