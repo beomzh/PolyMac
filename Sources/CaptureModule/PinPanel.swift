@@ -399,4 +399,7 @@ private final class PinCanvasView: NSView, NSDraggingSource {
     override func menu(for event: NSEvent) -> NSMenu? { pin?.makeMenu() }
 
     override var mouseDownCanMoveWindow: Bool { false }
+
+    /// 다른 앱을 쓰다가 핀을 처음 누를 때도 바로 옮기기·그리기가 되게 (없으면 첫 클릭은 창을 앞으로 가져오는 데만 쓰인다)
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
