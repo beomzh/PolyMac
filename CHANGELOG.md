@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-29 14:45]
+- [Changed] - CHANGELOG.md: PR #16 push 기록 (feat/clipboard-rich-text)
+
 [2026-10-29 14:44]
 - [Added] - Sources/PolyMacCore/SystemSupport.swift `PasteboardOrigin`: PolyMac이 복사한 것에 기능별 출처 표식 타입을 붙임 (붙여넣기에는 영향 없음)
 - [Changed] - Sources/OCRModule/TextRecognizer.swift, Sources/CaptureModule/CaptureModule.swift, Sources/CaptureModule/PinPanel.swift, Sources/FinderModule/FinderModule.swift, Sources/FinderModule/FinderServices.swift, Sources/PolyMacCore/SelectionView.swift: 복사할 때 출처(ocr·capture·paths·color) 넘김
