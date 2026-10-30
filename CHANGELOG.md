@@ -2,6 +2,29 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-30 13:11]
+- [Changed] - feat/small-polish: PR #20 push (리뷰 반영, 실제 앱 검증)
+
+[2026-10-30 13:10]
+- [Changed] - Sources/NormalizeModule/ClipboardHangulFix.swift `fixedItems`: 복사할 때마다 이미지 같은 큰 데이터까지 읽던 것을, 글자에 고칠 낱자가 있을 때만 읽도록 (리뷰)
+- [Changed] - Sources/NormalizeModule/HangulNormalizer.swift `composeHangul`: 긴 글을 배열로 펼치기 전에 낱자가 있는지 먼저 훑음
+
+[2026-10-30 10:42]
+- [Changed] - feat/small-polish: PR #20 push (복사한 글자 한글 붙이기, 잘라내기 대기 표시, 치환어 자동완성)
+
+[2026-10-30 10:40]
+- [Added] - Sources/NormalizeModule/HangulNormalizer.swift `composeHangul`: 풀어진 한글 낱자만 완성형으로 붙임 (전체 NFC는 한자 호환 문자·옴 기호까지 바꿔서 쓰지 않음)
+- [Added] - Sources/NormalizeModule/ClipboardHangulFix.swift `ClipboardHangulFix`: 복사한 글자(일반·HTML·RTF)의 풀어진 한글을 붙여 클립보드에 다시 넣음. 감춘·잠깐 쓰는 항목과 Finder 파일 복사(⌘X 잘라내기 판정)는 건드리지 않고, 읽는 사이 새로 복사됐으면 덮어쓰지 않음
+- [Added] - Sources/NormalizeModule/NormalizeModule.swift `toggleClipboardFix`: 메뉴에 켜고 끄기 (기본 켜짐)
+- [Fixed] - Sources/ClipboardModule/ClipboardModule.swift `record(text:)`: Swift는 풀어진 한글과 붙은 한글을 같은 글자로 봐서 기록에 풀어진 쪽이 남던 것을 고친 쪽으로 바꿈
+- [Added] - Sources/FinderModule/CutHUD.swift `CutHUD`: ⌘X로 잘라 둔 동안 화면 아래에 개수와 취소 버튼 표시 (Finder가 앞일 때만, 클립보드는 번호와 파일 개수만 봄), 다른 앱이 덮어쓰거나 ⌘C가 닿지 않으면 스스로 풀림
+- [Changed] - Sources/FinderModule/FinderKeyTap.swift `onCut`, `onCutEnd`, `cancelCut`: 잘라내기 시작·끝(이동·취소)을 알리고 밖에서 취소할 수 있게
+- [Changed] - Sources/FinderModule/FinderModule.swift `startKeyTap`, `toggleCutHUD`: 대기 표시 연결, 메뉴에 켜고 끄기 (끄면 예전처럼 잠깐 알림)
+- [Added] - Sources/OrganizeModule/TemplateTokens.swift `TemplateTokens`: 치환어 목록·`{` 입력 중 후보·채우기·모르는 치환어·실제 이름 바꾸기와 같은 규칙의 예시 미리보기
+- [Changed] - Sources/OrganizeModule/OrganizeEditor.swift `ActionEditor`, `TokenBar`: 이동·복사·이름 바꾸기 칸 아래에 치환어 단추, 예시 결과, 오타 경고
+- [Added] - Tests/NormalizeModuleTests/ClipboardHangulTests.swift, Tests/FinderModuleTests/CutHUDTests.swift, Tests/OrganizeModuleTests/TemplateTokensTests.swift: 한글 붙이기·클립보드 제외 조건, 잘라내기 상태 판정, 치환어 자동완성 테스트
+- [Changed] - README.md, docs/ROADMAP.md, docs/SECURITY.md: 세 기능 사용법과 상태표, 클립보드를 다시 쓰는 곳·잘라내기 표시가 읽는 것 명시
+
 [2026-10-29 16:51]
 - [Changed] - feat/ocr-tables: PR #19 push (main 병합, 충돌 정리)
 

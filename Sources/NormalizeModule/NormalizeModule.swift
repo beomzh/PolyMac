@@ -13,6 +13,7 @@ public final class NormalizeModule: PolyMacModule {
     let context: ModuleContext
     private var watcher: FolderWatcher?
     private var observer: NSObjectProtocol?
+    private lazy var clipboardFix = ClipboardHangulFix { [context] message in context.logger.info("\(message, privacy: .public)") }
 
     /// 감시 폴더 (바로 아래 항목만) — 환경 설정 › 한글 파일명, 또는 NormalizeFolders 설명의 defaults 명령
     private var folders: [String] { NormalizeFolders.activePaths() }
@@ -22,6 +23,7 @@ public final class NormalizeModule: PolyMacModule {
     }
 
     public func activate() throws {
+        if ClipboardHangulFix.isEnabled { clipboardFix.start() }
         startWatching()
         observer = NotificationCenter.default.addObserver(forName: NormalizeFolders.didChange, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.startWatching() }
@@ -46,6 +48,7 @@ public final class NormalizeModule: PolyMacModule {
     }
 
     public func deactivate() {
+        clipboardFix.stop()
         if let observer { NotificationCenter.default.removeObserver(observer) }
         observer = nil
         watcher?.stop()
@@ -58,7 +61,20 @@ public final class NormalizeModule: PolyMacModule {
         info.isEnabled = false
         let run = NSMenuItem(title: L("지금 정리", "Fix Now"), action: #selector(runNow), keyEquivalent: "")
         run.target = self
-        return [info, run]
+        let clipboard = NSMenuItem(title: L("복사한 글자의 풀어진 한글도 붙이기", "Also Fix Decomposed Korean in Copied Text"), action: #selector(toggleClipboardFix), keyEquivalent: "")
+        clipboard.target = self
+        clipboard.state = ClipboardHangulFix.isEnabled ? .on : .off
+        clipboard.toolTip = L("Finder 파일명 등에서 복사한 \"ㅎㅏㄴㄱㅡㄹ\"을 \"한글\"로. 비밀번호·파일 복사는 건드리지 않습니다.",
+                              "Turns decomposed Korean copied from Finder names and similar into normal text. Passwords and copied files are left alone.")
+        return [info, run, clipboard]
+    }
+
+    @objc private func toggleClipboardFix() {
+        ClipboardHangulFix.isEnabled.toggle()
+        if ClipboardHangulFix.isEnabled { clipboardFix.start() } else { clipboardFix.stop() }
+        context.toast(ClipboardHangulFix.isEnabled
+            ? L("복사한 글자의 풀어진 한글을 붙입니다", "Copied text: decomposed Korean will be fixed")
+            : L("복사한 글자는 그대로 둡니다", "Copied text is left as is"))
     }
 
     @objc private func runNow() {
