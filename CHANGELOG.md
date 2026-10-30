@@ -2,6 +2,10 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-30 13:10]
+- [Changed] - Sources/NormalizeModule/ClipboardHangulFix.swift `fixedItems`: 복사할 때마다 이미지 같은 큰 데이터까지 읽던 것을, 글자에 고칠 낱자가 있을 때만 읽도록 (리뷰)
+- [Changed] - Sources/NormalizeModule/HangulNormalizer.swift `composeHangul`: 긴 글을 배열로 펼치기 전에 낱자가 있는지 먼저 훑음
+
 [2026-10-30 10:42]
 - [Changed] - feat/small-polish: PR #20 push (복사한 글자 한글 붙이기, 잘라내기 대기 표시, 치환어 자동완성)
 

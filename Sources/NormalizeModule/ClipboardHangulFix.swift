@@ -65,6 +65,13 @@ final class ClipboardHangulFix {
     static func fixedItems(_ pb: NSPasteboard) -> [NSPasteboardItem]? {
         let types = Set((pb.types ?? []).map(\.rawValue))
         guard types.isDisjoint(with: skippedTypes), let items = pb.pasteboardItems, !items.isEmpty else { return nil }
+        // 고칠 글자가 있을 때만 나머지(이미지 같은 큰 데이터)를 읽어 옮긴다 — 복사할 때마다 도는 곳이라
+        let needsFix = items.contains { item in
+            item.types.contains { type in
+                plainTypes.contains(type) && item.string(forType: type).map { HangulNormalizer.composeHangul($0) != nil } == true
+            }
+        }
+        guard needsFix else { return nil }
         var changed = false
         let copies = items.map { item in
             let copy = NSPasteboardItem()

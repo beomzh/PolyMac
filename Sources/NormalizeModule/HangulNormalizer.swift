@@ -15,8 +15,9 @@ public enum HangulNormalizer {
     /// 풀어진 한글(첫소리·가운뎃소리·끝소리 낱자)만 완성형 음절로 붙인다. 바꿀 게 없으면 nil.
     /// 전체 NFC는 한자 호환 문자(U+F900…)·옴(Ω) 기호 같은 다른 글자까지 바꿔서, 사용자가 쓴 글자에는 이것만 쓴다.
     public static func composeHangul(_ s: String) -> String? {
+        // 대부분은 낱자가 없다 — 긴 글을 배열로 펼치기 전에 먼저 훑는다
+        guard s.unicodeScalars.contains(where: { isLeading($0.value) || isTrailing($0.value) }) else { return nil }
         let scalars = Array(s.unicodeScalars)
-        guard scalars.contains(where: { isLeading($0.value) || isTrailing($0.value) }) else { return nil }
         var out = String.UnicodeScalarView()
         var changed = false
         var i = 0
