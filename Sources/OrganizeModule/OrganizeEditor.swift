@@ -333,8 +333,8 @@ private struct RuleDetail: View {
                     ActionEditor(row: $row) { rule.actions.removeAll { $0.id == row.id } }
                 }
                 Button(L("동작 추가", "Add Action")) { rule.actions.append(ActionRow()) }
-                Text(L("폴더·이름에 쓸 수 있는 값: {name} {ext} {kind} {domain} {yyyy} {MM} {dd}. 홈 폴더 밖으로는 옮기지 않습니다.",
-                       "Placeholders for folders and names: {name} {ext} {kind} {domain} {yyyy} {MM} {dd}. Files are never moved outside your home folder."))
+                Text(L("폴더·이름 칸 아래 단추로 {name} 같은 치환어를 넣을 수 있고, `{`를 치면 맞는 것만 보여 줍니다. 홈 폴더 밖으로는 옮기지 않습니다.",
+                       "Use the buttons under folder and name fields to insert placeholders like {name}; typing `{` narrows them. Files are never moved outside your home folder."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } header: {
@@ -418,22 +418,27 @@ private struct ActionEditor: View {
     @Binding var row: ActionRow
     let remove: () -> Void
 
+    private var usesTokens: Bool { [.move, .copy, .rename].contains(row.kind) }
+
     var body: some View {
-        HStack {
-            Picker("", selection: $row.kind) {
-                ForEach(ActionRow.Kind.allCases, id: \.self) { Text(ActionRow.title($0)).tag($0) }
-            }
-            .labelsHidden()
-            .fixedSize()
-            if row.needsText {
-                InputBox(placeholder, text: $row.text)
-                if row.kind == .move || row.kind == .copy {
-                    Button(L("고르기…", "Choose…")) { choose() }
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Picker("", selection: $row.kind) {
+                    ForEach(ActionRow.Kind.allCases, id: \.self) { Text(ActionRow.title($0)).tag($0) }
                 }
-            } else {
-                Spacer()
+                .labelsHidden()
+                .fixedSize()
+                if row.needsText {
+                    InputBox(placeholder, text: $row.text)
+                    if row.kind == .move || row.kind == .copy {
+                        Button(L("고르기…", "Choose…")) { choose() }
+                    }
+                } else {
+                    Spacer()
+                }
+                Button(action: remove) { Image(systemName: "minus.circle") }.buttonStyle(.borderless)
             }
-            Button(action: remove) { Image(systemName: "minus.circle") }.buttonStyle(.borderless)
+            if usesTokens { TokenBar(text: $row.text, rename: row.kind == .rename) }
         }
     }
 
@@ -453,6 +458,45 @@ private struct ActionEditor: View {
         panel.canCreateDirectories = true
         guard panel.runModal() == .OK, let url = panel.url else { return }
         row.text = (url.path as NSString).abbreviatingWithTildeInPath
+    }
+}
+
+/// 치환어 자동완성: 누르면 넣고, `{`를 치는 중이면 앞글자가 맞는 것만 보여 줘 눌러서 마저 채운다.
+/// 아래에 예시 파일(보고서.pdf)로 바꿔 본 결과와 목록에 없는 치환어(오타)를 보여 준다.
+private struct TokenBar: View {
+    @Binding var text: String
+    let rename: Bool
+
+    var body: some View {
+        let partial = TemplateTokens.openPartial(in: text)
+        let tokens = TemplateTokens.suggestions(for: text)
+        let unknown = TemplateTokens.unknown(in: text)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 4) {
+                Text(partial == nil ? L("넣기:", "Insert:") : L("이어서:", "Complete:"))
+                    .font(.caption).foregroundStyle(.secondary)
+                ForEach(tokens, id: \.text) { token in
+                    Button(token.text) { text = TemplateTokens.insert(token, into: text) }
+                        .buttonStyle(.bordered)
+                        .controlSize(.mini)
+                        .help(token.help)
+                }
+                if tokens.isEmpty {
+                    Text(L("맞는 치환어가 없습니다", "No matching placeholder")).font(.caption).foregroundStyle(.orange)
+                }
+            }
+            if !text.isEmpty {
+                Text(L("예: ", "e.g. ") + TemplateTokens.preview(text, rename: rename))
+                    .font(.caption).foregroundStyle(.secondary)
+                    .lineLimit(1).truncationMode(.middle)
+            }
+            if !unknown.isEmpty {
+                Label(L("모르는 치환어(그대로 들어감): ", "Unknown placeholder (kept as typed): ") + unknown.joined(separator: " "),
+                      systemImage: "exclamationmark.triangle")
+                    .font(.caption).foregroundStyle(.orange)
+            }
+        }
+        .padding(.leading, 4)
     }
 }
 

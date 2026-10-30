@@ -12,6 +12,47 @@ public enum HangulNormalizer {
         s.precomposedStringWithCanonicalMapping
     }
 
+    /// 풀어진 한글(첫소리·가운뎃소리·끝소리 낱자)만 완성형 음절로 붙인다. 바꿀 게 없으면 nil.
+    /// 전체 NFC는 한자 호환 문자(U+F900…)·옴(Ω) 기호 같은 다른 글자까지 바꿔서, 사용자가 쓴 글자에는 이것만 쓴다.
+    public static func composeHangul(_ s: String) -> String? {
+        let scalars = Array(s.unicodeScalars)
+        guard scalars.contains(where: { isLeading($0.value) || isTrailing($0.value) }) else { return nil }
+        var out = String.UnicodeScalarView()
+        var changed = false
+        var i = 0
+        while i < scalars.count {
+            let a = scalars[i].value
+            let b = i + 1 < scalars.count ? scalars[i + 1].value : 0
+            if isLeading(a), isVowel(b) {
+                var code = 0xAC00 + ((a - 0x1100) * 21 + (b - 0x1161)) * 28
+                var used = 2
+                if i + 2 < scalars.count, isTrailing(scalars[i + 2].value) {
+                    code += scalars[i + 2].value - 0x11A7
+                    used = 3
+                }
+                out.append(Unicode.Scalar(code)!)
+                changed = true
+                i += used
+                continue
+            }
+            // 받침 없는 완성형 + 끝소리 낱자 (일부만 풀린 경우)
+            if (0xAC00...0xD7A3).contains(a), (a - 0xAC00) % 28 == 0, isTrailing(b) {
+                out.append(Unicode.Scalar(a + b - 0x11A7)!)
+                changed = true
+                i += 2
+                continue
+            }
+            out.append(scalars[i])
+            i += 1
+        }
+        return changed ? String(out) : nil
+    }
+
+    // 현대 한글 낱자만 완성형으로 붙는다 (옛한글 낱자는 그대로 둔다)
+    private static func isLeading(_ v: UInt32) -> Bool { (0x1100...0x1112).contains(v) }
+    private static func isVowel(_ v: UInt32) -> Bool { (0x1161...0x1175).contains(v) }
+    private static func isTrailing(_ v: UInt32) -> Bool { (0x11A8...0x11C2).contains(v) }
+
     public struct RenameError: Error {
         public let path: String
         public let errno: Int32

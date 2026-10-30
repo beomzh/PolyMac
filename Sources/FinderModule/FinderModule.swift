@@ -18,6 +18,7 @@ public final class FinderModule: PolyMacModule {
     private var retryTimer: Timer?
     private var activationObserver: NSObjectProtocol?
     private var cutCombo: KeyCombo?
+    private let cutHUD = CutHUD()
     private var pasteCombo: KeyCombo?
 
     public init(context: ModuleContext) {
@@ -54,6 +55,7 @@ public final class FinderModule: PolyMacModule {
         activationObserver = nil
         keyTap?.stop()
         keyTap = nil
+        cutHUD.end()
         context.unregisterHotkeys()
     }
 
@@ -83,7 +85,10 @@ public final class FinderModule: PolyMacModule {
         hint.isEnabled = false
         sub.addItem(hint)
         terminalItem.submenu = sub
-        return [status, terminalItem, editorMenuItem()]
+        let hud = NSMenuItem(title: L("잘라낸 동안 화면 아래에 표시", "Show Pending Cut at Bottom of Screen"), action: #selector(toggleCutHUD), keyEquivalent: "")
+        hud.target = self
+        hud.state = CutHUD.isEnabled ? .on : .off
+        return [status, hud, terminalItem, editorMenuItem()]
     }
 
     private func editorMenuItem() -> NSMenuItem {
@@ -124,6 +129,14 @@ public final class FinderModule: PolyMacModule {
         context.toast(L("에디터로 열기: \(app.name)", "Open in editor with: \(app.name)"))
     }
 
+    @objc private func toggleCutHUD() {
+        CutHUD.isEnabled.toggle()
+        if !CutHUD.isEnabled { cutHUD.end() }
+        context.toast(CutHUD.isEnabled
+            ? L("잘라낸 동안 화면 아래에 표시합니다", "Pending cuts are shown at the bottom of the screen")
+            : L("잘라낼 때 알림만 잠깐 띄웁니다", "Cutting shows a short notice only"))
+    }
+
     @objc private func chooseTerminal(_ sender: NSMenuItem) {
         guard let id = sender.representedObject as? String else { return }
         UserDefaults.standard.set(id, forKey: TerminalApp.defaultsKey)
@@ -133,11 +146,23 @@ public final class FinderModule: PolyMacModule {
     // MARK: - ⌘X 잘라내기
 
     private func startKeyTap() {
-        let tap = FinderKeyTap { [context] in
+        let tap = FinderKeyTap(onCut: { [weak self] count in
             DispatchQueue.main.async {
-                MainActor.assumeIsolated { context.toast(L("✂️ 잘라내기 — 옮길 폴더에서 ⌘V", "✂️ Cut — press ⌘V in the destination folder")) }
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    if CutHUD.isEnabled {
+                        self.cutHUD.begin(changeCount: count)
+                    } else {
+                        self.context.toast(L("✂️ 잘라내기 — 옮길 폴더에서 ⌘V", "✂️ Cut — press ⌘V in the destination folder"))
+                    }
+                }
             }
-        }
+        }, onCutEnd: { [weak self] _ in
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated { self?.cutHUD.end() }
+            }
+        })
+        cutHUD.onCancel = { [weak tap] in tap?.cancelCut() }
         guard tap.start() else {
             context.logger.error("event tap unavailable (accessibility not granted) — will retry")
             waitForAccessibility()
@@ -149,9 +174,11 @@ public final class FinderModule: PolyMacModule {
         tap.setFinderFrontmost(NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.apple.finder")
         activationObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
-        ) { [weak tap] note in
+        ) { [weak tap, weak self] note in
             let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
-            tap?.setFinderFrontmost(app?.bundleIdentifier == "com.apple.finder")
+            let finder = app?.bundleIdentifier == "com.apple.finder"
+            tap?.setFinderFrontmost(finder)
+            MainActor.assumeIsolated { self?.cutHUD.setFinderFront(finder) }
         }
     }
 

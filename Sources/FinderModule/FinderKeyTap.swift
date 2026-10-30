@@ -23,11 +23,15 @@ final class FinderKeyTap: @unchecked Sendable {
 
     private let state = OSAllocatedUnfairLock(initialState: State())
     private let systemWide = AXUIElementCreateSystemWide()
-    private let onCut: @Sendable () -> Void
+    /// 잘라냈을 때 (잘라내기 직전 클립보드 번호). 탭 스레드에서 불린다.
+    private let onCut: @Sendable (Int) -> Void
+    /// 잘라내기가 끝났을 때 (true = 이동으로 붙여넣음, false = 취소·다른 복사·보통 붙여넣기). 탭 스레드에서 불린다.
+    private let onCutEnd: @Sendable (Bool) -> Void
     private let logger = Logger(subsystem: "dev.polymac", category: "finder")
 
-    init(onCut: @escaping @Sendable () -> Void) {
+    init(onCut: @escaping @Sendable (Int) -> Void, onCutEnd: @escaping @Sendable (Bool) -> Void = { _ in }) {
         self.onCut = onCut
+        self.onCutEnd = onCutEnd
         // Finder가 응답하지 않아도 키 입력을 0.25초 넘게 붙잡지 않는다 (기본값은 6초)
         AXUIElementSetMessagingTimeout(systemWide, 0.25)
     }
@@ -46,6 +50,11 @@ final class FinderKeyTap: @unchecked Sendable {
             $0.paste = paste
             $0.cutChangeCount = nil
         }
+    }
+
+    /// 대기 표시의 취소 버튼, 다른 앱이 클립보드를 쓴 경우 — 다음 붙여넣기는 보통 붙여넣기(복사)가 된다
+    func cancelCut() {
+        state.withLock { $0.cutChangeCount = nil }
     }
 
     /// 손쉬운 사용 권한이 없으면 false
@@ -120,7 +129,7 @@ final class FinderKeyTap: @unchecked Sendable {
             state.withLock { $0.cutChangeCount = count }
             send(kVK_ANSI_C, [.maskCommand])
             logger.notice("cut in Finder: sent as copy (clipboard=\(count))")
-            onCut()
+            onCut(count)
             return nil
         } else if pressed == paste {
             let cutAt = state.withLock { s -> Int? in
@@ -132,14 +141,21 @@ final class FinderKeyTap: @unchecked Sendable {
             if let cutAt, now == cutAt + 1 {
                 send(kVK_ANSI_V, [.maskCommand, .maskAlternate])
                 logger.notice("paste in Finder: sent as move")
+                onCutEnd(true)
                 return nil
             } else if let cutAt {
                 // 번호가 그대로면 ⌘C가 Finder에 닿지 않은 것, 2 이상 늘었으면 다른 앱이 클립보드를 썼다
                 let hasFiles = NSPasteboard.general.canReadObject(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true])
                 logger.notice("paste in Finder: clipboard changed after cut (cut=\(cutAt) now=\(now) files=\(hasFiles)) — normal paste")
+                onCutEnd(false)
             }
         } else {
-            state.withLock { $0.cutChangeCount = nil } // 그냥 복사하면 잘라내기 취소
+            // 그냥 복사하면 잘라내기 취소
+            let wasCut = state.withLock { s -> Bool in
+                defer { s.cutChangeCount = nil }
+                return s.cutChangeCount != nil
+            }
+            if wasCut { onCutEnd(false) }
         }
         return pass
     }

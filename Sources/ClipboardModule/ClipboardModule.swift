@@ -240,6 +240,8 @@ public final class ClipboardModule: PolyMacModule {
     /// rich: 함께 복사된 서식 (RichFormats.encode). 같은 글자의 항목이 있으면 그것을 올리되, 서식이 없던 항목에 서식이 생기면 새로 만든다.
     private func record(text: String, rich: Data?, from app: String?, origin: String?) {
         if let index = items.firstIndex(where: { !$0.isImage && !$0.isLargeText && !$0.isFiles && $0.text == text }) {
+            // Swift는 풀어진 한글과 붙은 한글을 같은 글자로 본다 — 한글 자소분리 정리가 고쳐 다시 넣었으면 고친 쪽을 남긴다
+            if !items[index].text.unicodeScalars.elementsEqual(text.unicodeScalars) { items[index].text = text }
             guard rich != nil, !items[index].isRich else {
                 bump(index, app: app, origin: origin)
                 didChange()
