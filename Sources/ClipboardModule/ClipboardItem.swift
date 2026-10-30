@@ -129,3 +129,17 @@ public enum ClipboardPrivacy {
         return false
     }
 }
+
+extension ClipboardItem {
+    /// 같은 복사로 볼 항목 (글자·파일 목록·이미지 내용이 같음)
+    func sameContent(as other: ClipboardItem) -> Bool {
+        if isImage || other.isImage { return contentHash != nil && contentHash == other.contentHash }
+        if isFiles || other.isFiles { return files == other.files }
+        return text == other.text && isLargeText == other.isLargeText
+    }
+
+    /// 키를 기다리는 사이 복사한 것(새것)을 저장된 기록 위에 얹는다. 같은 내용은 새 쪽만 남긴다.
+    static func merge(_ newer: [ClipboardItem], onto saved: [ClipboardItem]) -> [ClipboardItem] {
+        newer + saved.filter { old in !newer.contains { $0.id == old.id || $0.sameContent(as: old) } }
+    }
+}

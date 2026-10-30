@@ -2,6 +2,16 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-30 13:16]
+- [Changed] - fix/keychain-startup: PR #21 push (키체인 허용 창이 앱 시작을 멈추던 문제)
+
+[2026-10-30 13:15]
+- [Fixed] - Sources/ClipboardModule/ClipboardModule.swift `openStoreInBackground`, `storeOpened`: 키체인 허용 창이 뜨면 메인 스레드가 답(약 2분)을 기다려 앱 시작 전체가 멈추고 Finder·한글 정리·자동 정리·앱 삭제가 켜지지 않던 문제. 키를 백그라운드에서 읽고, 기다리는 동안은 메모리에만 기록(디스크 쓰기 없음), 키가 오면 저장된 기록을 열어 합침. 기다리는 사이 기능을 껐다 켜면 늦은 답은 버림
+- [Changed] - Sources/ClipboardModule/ClipboardModule.swift `preparePanel`: 기록 창 미리 준비를 키가 온 뒤로 (기다리는 사이 열었으면 새 키로 다시 준비)
+- [Added] - Sources/ClipboardModule/ClipboardItem.swift `merge`, `sameContent`: 기다리는 사이 복사한 것을 저장된 기록 위에 얹고 같은 내용은 새 쪽만
+- [Added] - Tests/ClipboardModuleTests/ClipboardMergeTests.swift: 합치기 순서·중복 테스트
+- [Changed] - docs/SECURITY.md: 키를 백그라운드에서 읽고 기다리는 동안 디스크에 쓰지 않음
+
 [2026-10-30 13:11]
 - [Changed] - feat/small-polish: PR #20 push (리뷰 반영, 실제 앱 검증)
 

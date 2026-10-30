@@ -35,6 +35,10 @@ public final class ClipboardModule: PolyMacModule {
     private var pendingSave: DispatchWorkItem?
     /// 기록 파일 봉인 (키는 키체인). nil이면 키를 못 읽은 것 — 디스크에 쓰지도 읽지도 않고 메모리에만 둔다
     private var store: SealedFiles?
+    /// 키체인 답을 기다리는 중 (허용 창이 떠 있으면 몇 분 걸리기도 한다). 그동안 복사한 것은 메모리에만 둔다.
+    private var isOpeningStore = false
+    /// 키를 기다리는 사이 기능을 껐다 켜면 늦게 온 답은 버린다
+    private var storeRequest = 0
     private static let sealedMigrationKey = "clipboard.sealedFiles"
     private let ioQueue = DispatchQueue(label: "dev.polymac.clipboard.io", qos: .utility)
 
@@ -78,8 +82,8 @@ public final class ClipboardModule: PolyMacModule {
     }
 
     public func activate() throws {
-        openStore()
-        load()
+        // 키체인은 허용 창을 띄우고 답을 기다릴 수 있다 — 메인 스레드에서 기다리면 앱 시작 전체(뒤에 켜질 기능까지)가 멈춘다
+        openStoreInBackground()
         lastChangeCount = NSPasteboard.general.changeCount
         // macOS엔 클립보드 변경 알림이 없어 changeCount를 주기적으로 비교한다 (정수 비교 1회, docs/ARCHITECTURE.md 3)
         let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
@@ -104,16 +108,17 @@ public final class ClipboardModule: PolyMacModule {
         context.hotkey("pastePlain", nil, L("지금 클립보드를 서식 없이 붙여넣기", "Paste the clipboard without formatting")) { [weak self] in
             self?.pastePlainNow()
         }
-        // 창은 아직 만들지 않고 썸네일·앱 아이콘만 미리 (실행 직후를 무겁게 하지 않게 조금 뒤에)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
-            MainActor.assumeIsolated {
-                guard let self else { return }
-                self.panel.prepare(items: self.items, imageDirectory: self.imageDirectory, textDirectory: self.textDirectory, store: self.store)
-            }
-        }
+    }
+
+    /// 창은 아직 만들지 않고 썸네일·앱 아이콘만 미리. 키를 기다리는 사이 이미 열었으면 새 키로 다시 준비한다.
+    private func preparePanel() {
+        if panel.isPrepared { panel.tearDown() }
+        panel.prepare(items: items, imageDirectory: imageDirectory, textDirectory: textDirectory, store: store)
     }
 
     public func deactivate() {
+        isOpeningStore = false
+        storeRequest += 1
         timer?.invalidate()
         timer = nil
         expiryTimer?.invalidate()
@@ -626,17 +631,43 @@ public final class ClipboardModule: PolyMacModule {
 
     // MARK: - 저장 (0600, 로컬만)
 
-    /// 키체인에서 기록 암호화 키를 꺼낸다. 처음이면 만든다. 키체인이 잠겼거나 거절되면 새 키를 만들지 않는다
+    /// 키체인에서 기록 암호화 키를 꺼낸다 (백그라운드). 처음이면 만든다. 키체인이 잠겼거나 거절되면 새 키를 만들지 않는다
     /// (만들면 예전 기록을 영영 못 연다) — 이번 실행 동안은 디스크 없이 메모리에만 기록한다.
-    private func openStore() {
-        guard store == nil else { return }
-        do {
-            store = SealedFiles(key: try KeychainKey.loadOrCreate(account: "clipboard-history",
-                                                                   label: L("PolyMac 클립보드 기록 암호화 키", "PolyMac clipboard history key")))
-        } catch {
-            context.logger.error("clipboard storage key unavailable: \(String(describing: error), privacy: .public)")
+    /// 키가 오기 전에는 store가 nil이라 디스크에 쓰지 않는다 — 저장된 기록을 기다리는 동안의 짧은 목록으로 덮어쓰지 않게.
+    private func openStoreInBackground() {
+        guard store == nil, !isOpeningStore else { return }
+        isOpeningStore = true
+        storeRequest += 1
+        let request = storeRequest
+        let label = L("PolyMac 클립보드 기록 암호화 키", "PolyMac clipboard history key")
+        let started = Date()
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let result = Result { try KeychainKey.loadOrCreate(account: "clipboard-history", label: label) }
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated { self?.storeOpened(result, request: request, waited: Date().timeIntervalSince(started)) }
+            }
+        }
+    }
+
+    private func storeOpened(_ result: Result<SymmetricKey, Error>, request: Int, waited: TimeInterval) {
+        guard isOpeningStore, request == storeRequest else { return }
+        isOpeningStore = false
+        switch result {
+        case .success(let key):
+            store = SealedFiles(key: key)
+            let copiedMeanwhile = items
+            load()
+            items = ClipboardItem.merge(copiedMeanwhile, onto: items)
+            context.logger.info("clipboard store opened after \(String(format: "%.1f", waited), privacy: .public)s, kept \(copiedMeanwhile.count) copied meanwhile")
+            didChange()
+        case .failure(let error):
+            context.logger.error("clipboard storage key unavailable after \(String(format: "%.1f", waited), privacy: .public)s: \(String(describing: error), privacy: .public)")
             context.toast(L("키체인에서 클립보드 기록 키를 읽지 못해, 이번에는 기록을 디스크에 저장하지 않습니다 (글자만, 종료하면 사라짐)",
                             "Could not read the clipboard history key from the keychain; history is kept in memory only this time (text only, gone on quit)"), duration: 6)
+        }
+        // 실행 직후를 무겁게 하지 않게 조금 뒤에
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+            MainActor.assumeIsolated { self?.preparePanel() }
         }
     }
 
