@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-10-30 10:42]
+- [Changed] - feat/small-polish: PR #20 push (복사한 글자 한글 붙이기, 잘라내기 대기 표시, 치환어 자동완성)
+
 [2026-10-30 10:40]
 - [Added] - Sources/NormalizeModule/HangulNormalizer.swift `composeHangul`: 풀어진 한글 낱자만 완성형으로 붙임 (전체 NFC는 한자 호환 문자·옴 기호까지 바꿔서 쓰지 않음)
 - [Added] - Sources/NormalizeModule/ClipboardHangulFix.swift `ClipboardHangulFix`: 복사한 글자(일반·HTML·RTF)의 풀어진 한글을 붙여 클립보드에 다시 넣음. 감춘·잠깐 쓰는 항목과 Finder 파일 복사(⌘X 잘라내기 판정)는 건드리지 않고, 읽는 사이 새로 복사됐으면 덮어쓰지 않음
