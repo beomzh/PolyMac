@@ -76,6 +76,11 @@
   - 영향: 앱 번들 안(관리자만 쓸 수 있는 `/Applications`)의 라이브러리를 팀 ID 확인 없이 불러온다.
   - 그대로인 것: `DYLD_INSERT_LIBRARIES` 등 환경 변수 주입 차단(`allow-dyld-environment-variables` 없음), 실행 중 코드 수정 차단, 앱·프레임워크 서명 검사.
   - Apple 개발자 프로그램에 가입해 팀 ID로 서명하게 되면 이 항목을 뺀다.
+- 다른 Mac에서의 첫 실행: 자체 서명 인증서는 받는 Mac이 믿지 않아 Gatekeeper가 "손상됨"으로 막는다 (서명 자체는 유효 — `codesign --verify`).
+  - 받은 zip: 사용자가 sha256을 확인한 뒤 `xattr -dr com.apple.quarantine`으로 직접 연다.
+  - Homebrew cask: postflight에서 다운로드 표시를 지운다 (2026-11-02 결정). `brew trust`로 이 cask를 믿은 사람에게만 해당되고, Homebrew가 cask의 sha256을 확인한 zip에서 설치된 앱만 대상이다. 그만큼 macOS의 첫 실행 검사를 건너뛴다.
+  - Sparkle 업데이트: EdDSA 서명을 확인한 뒤 Sparkle이 표시를 지운다.
+- 배포 빌드에는 앱 밖을 가리키는 rpath(빌드한 Mac의 Xcode 툴체인 경로)를 남기지 않는다 — `build-app.sh`가 지운다.
 - 내 PC 전용 빌드는 **고정된 자체 서명 인증서**로 서명 — ad-hoc 서명은 빌드마다 서명이 바뀌어 TCC 권한(접근성 등)이 매번 초기화되고, 권한 재부여를 습관화시키는 것 자체가 위험.
 - 외부 의존성 최소화 (현재 1개: Sparkle). 버전·체크섬 고정(`scripts/fetch-sparkle.sh`) + `dependency-audit`.
 - 커밋 전 `secret-scan`.

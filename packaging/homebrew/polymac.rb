@@ -21,6 +21,12 @@ cask "polymac" do
 
   app "PolyMac.app"
 
+  # 공증받지 않고 자체 서명 인증서로 서명해, 다른 Mac은 서명을 믿지 못하고 "손상됨"으로 막는다 (그래도 열기 없음).
+  # brew trust로 이 cask를 믿은 사람이 설치한 앱에서만 다운로드 표시(quarantine)를 지운다 — docs/SECURITY.md 8
+  postflight do
+    system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{appdir}/PolyMac.app"]
+  end
+
   uninstall quit: "dev.polymac.app"
 
   zap trash: [
@@ -31,7 +37,9 @@ cask "polymac" do
   ]
 
   caveats <<~EOS
-    PolyMac is not notarized by Apple. On first launch macOS may block it:
-    open System Settings > Privacy & Security and click "Open Anyway".
+    PolyMac is not notarized by Apple and is signed with its own certificate.
+    This cask removes the download quarantine flag so macOS does not report
+    the app as damaged. Source and signing details:
+      https://github.com/beomzh/PolyMac/blob/main/docs/SECURITY.md
   EOS
 end

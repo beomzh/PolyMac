@@ -92,9 +92,12 @@ public enum OCRRunner {
 
     /// 글 속 웹 주소마다 "열기" 단추 (누를 때만 기본 브라우저로 연다)
     static func linkActions(_ text: String) -> [Toast.Action] {
-        LinkDetector.links(in: text).map { url in
+        let logger = Logger(subsystem: "dev.polymac", category: "ocr")
+        let links = LinkDetector.links(in: text)
+        logger.info("ocr result chars=\(text.count) links=\(links.count)")
+        return links.map { url in
             Toast.Action(LinkDetector.title(url)) {
-                Logger(subsystem: "dev.polymac", category: "ocr").notice("open link from OCR result host=\(url.host ?? "", privacy: .public)")
+                logger.notice("open link from OCR result host=\(url.host ?? "", privacy: .public)")
                 NSWorkspace.shared.open(url)
             }
         }

@@ -80,7 +80,8 @@ public enum Toast {
 
         actionTargets = actions.map { ActionTarget($0.handler) }
         let buttons = zip(actions, actionTargets).map { action, target -> NSButton in
-            let b = NSButton(title: action.title, target: target, action: #selector(ActionTarget.run))
+            // 알림 창은 앞으로 나오지 않아 일반 단추는 첫 클릭을 창 선택에 써 버린다
+            let b = FirstClickButton(title: action.title, target: target, action: #selector(ActionTarget.run))
             b.bezelStyle = .rounded
             b.controlSize = .small
             b.font = .systemFont(ofSize: fontSize - 1)
