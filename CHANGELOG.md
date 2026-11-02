@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-11-02 12:55]
+- [Changed] - PR #23 push: chore/0.2.1-homebrew-tap (09fbc23)
+
 [2026-11-02 12:53]
 - [Changed] - packaging/homebrew/polymac.rb: 0.2.0 zip의 sha256, 설치 명령에 brew trust 단계 (beomzh/homebrew-tap에 올린 것과 같은 내용)
 - [Changed] - README.md: Homebrew 설치를 tap → trust → install 세 단계로 (Homebrew 7은 믿지 않은 tap의 cask를 거절)
