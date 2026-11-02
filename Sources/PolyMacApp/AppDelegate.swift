@@ -46,6 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Settin
         watchAccessibilityChanges()
         watchSettingsRequests()
         DockPresence.start()
+        Updater.shared.start()
         logger.info("launched \(self.version, privacy: .public) accessibility=\(Permissions.accessibility)")
         showGuidanceAtLaunch()
     }
@@ -210,6 +211,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Settin
         SettingsWindow.shared.show(host: self)
     }
 
+    @objc private func checkForUpdates() {
+        Updater.shared.checkForUpdates()
+    }
+
     @objc private func openGuide() {
         OnboardingWindow.shared.show(host: self)
     }
@@ -260,6 +265,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, Settin
         let guide = NSMenuItem(title: L("시작 안내…", "Welcome Guide…"), action: #selector(openGuide), keyEquivalent: "")
         guide.target = self
         menu.addItem(guide)
+        if Updater.shared.isConfigured {
+            let update = NSMenuItem(title: L("업데이트 확인…", "Check for Updates…"), action: #selector(checkForUpdates), keyEquivalent: "")
+            update.target = self
+            menu.addItem(update)
+        }
         let settings = NSMenuItem(title: L("환경 설정…", "Settings…"), action: #selector(openSettings), keyEquivalent: ",")
         settings.target = self
         menu.addItem(settings)

@@ -2,6 +2,29 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+## 0.2.0 (2026-11-02)
+[2026-11-02 12:42]
+- [Added] - Sources/PolyMacApp/Intents.swift `ExtractTextIntent`, `ExtractTableIntent`, `CaptureTextIntent`, `FixHangulIntent`: 단축어 앱 동작 목록에 뜨는 PolyMac 동작 4개 (결과는 단축어로만, 기능이 꺼져 있으면 거절)
+- [Added] - App/en.lproj/Localizable.strings: 단축어 동작 이름·설명 영어
+- [Added] - Sources/PolyMacApp/Updater.swift `Updater`: Sparkle 자동 업데이트, 기본 꺼짐 — 공개 키 없는 빌드에서는 시작하지 않음
+- [Changed] - Sources/PolyMacApp/AppDelegate.swift `menuNeedsUpdate`, `applicationDidFinishLaunching`: 업데이트 확인 메뉴, 시작할 때 Updater 시작(자동 확인 꺼져 있으면 네트워크 없음)
+- [Changed] - Sources/PolyMacApp/Settings.swift `FeaturesPane`: 업데이트 자동 확인 토글과 지금 확인 버튼
+- [Added] - scripts/fetch-sparkle.sh: Sparkle 2.10.0을 curl로 받아 체크섬이 맞을 때만 Vendor/에 푼다 (SwiftPM 원격 바이너리 받기가 멈춰서)
+- [Changed] - Package.swift: 로컬 binaryTarget Sparkle을 PolyMacApp에 연결
+- [Changed] - scripts/build-app.sh: Xcode가 있으면 Xcode로 빌드해 App Intents 메타데이터 생성, Sparkle.framework 넣기(XPC 서비스 뺌)·rpath, 안쪽부터 서명, 공개 키를 Info.plist에
+- [Changed] - scripts/test.sh: 테스트 전에 Sparkle 받기 (패키지 매니페스트가 Vendor 경로를 요구)
+- [Changed] - scripts/package-release.sh: zip EdDSA 서명 + appcast.xml 생성, 키체인 키와 공개 키 일치 확인, cask용 sha256 출력
+- [Changed] - App/Info.plist: SUFeedURL(GitHub latest appcast)·SUPublicEDKey 자리·자동 확인/자동 설치/기기 정보 보내기 끔·압축 풀기 전 서명 확인
+- [Security] - App/PolyMac.entitlements: disable-library-validation 추가 — 팀 ID 없는 자체 서명 인증서로는 앱 안의 Sparkle.framework를 불러오지 못함 (사용자 결정, SECURITY.md에 영향 기록)
+- [Added] - packaging/homebrew/polymac.rb: 개인 tap(beomzh/homebrew-tap)용 cask 원본
+- [Changed] - .gitignore: Vendor/ 제외
+- [Changed] - VERSION: 0.2.0 (이후 작업마다 PATCH, 태그는 0.2.0만)
+- [Changed] - docs/SECURITY.md: 업데이트 확인 예외, library validation 결정과 영향, 의존성 1개, App Intents 경로
+- [Changed] - docs/RELEASING.md: appcast 올리기, Homebrew 절차, 서명 키 만들기·보관, 0.2.0 이후 버전 규칙
+- [Changed] - docs/ROADMAP.md: App Intents, Sparkle + Homebrew 완료
+- [Changed] - README.md: 0.2.0, Homebrew 설치, 업데이트, 단축어 앱 동작, 네트워크 예외, Sparkle 고지
+- [Changed] - THIRD_PARTY_NOTICES.md: Sparkle 출처·체크섬·라이선스 원문
+
 [2026-10-30 13:16]
 - [Changed] - fix/keychain-startup: PR #21 push (키체인 허용 창이 앱 시작을 멈추던 문제)
 

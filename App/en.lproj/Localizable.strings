@@ -1,0 +1,15 @@
+/* 단축어(Shortcuts) 앱에 보이는 PolyMac 동작 이름·설명 — 영어 (Sources/PolyMacApp/Intents.swift) */
+"이미지에서 텍스트 추출" = "Extract Text from Image";
+"이미지의 글자와 QR 코드를 읽습니다. 이미지를 넘기지 않으면 클립보드 이미지를 읽습니다. 기기 안에서만 처리합니다." = "Reads text and QR codes in an image. Without an image it reads the clipboard image. Runs on this Mac only.";
+"이미지" = "Image";
+"이미지에서 표 추출" = "Extract Table from Image";
+"이미지의 표를 칸마다 나눈 글로 돌려줍니다 (macOS 26 이상). 표가 없거나 이전 macOS면 일반 텍스트로 돌려줍니다." = "Returns the table in an image as cell-separated text (macOS 26 or later). Falls back to plain text if there is no table or on older macOS.";
+"형식" = "Format";
+"표 형식" = "Table Format";
+"엑셀·Numbers (탭으로 나눔)" = "Excel / Numbers (tab-separated)";
+"Markdown 표" = "Markdown table";
+"화면 영역에서 텍스트 추출" = "Extract Text from Screen Area";
+"화면에서 영역을 골라 글자를 읽습니다. 화면 녹음 권한이 필요합니다." = "Select an area of the screen and read its text. Needs Screen Recording permission.";
+"풀어진 한글 붙이기" = "Compose Decomposed Korean";
+"Mac에서 받은 파일명·글처럼 자음·모음이 풀어진 한글(NFD)을 붙인 글(NFC)로 바꿉니다." = "Turns decomposed Korean (NFD), as in filenames from a Mac, into composed text (NFC).";
+"글" = "Text";

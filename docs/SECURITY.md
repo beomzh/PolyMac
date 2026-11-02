@@ -5,7 +5,11 @@
 ## 1. 네트워크: 기본적으로 없음
 - OCR(Vision), 번역(Translation), 파일 정리, 클립보드 — **모두 온디바이스**, 외부 서버 호출 없음.
 - 텔레메트리·분석·크래시 업로드 **없음**.
-- 자동 업데이트(Sparkle)는 공개 배포용 빌드에서만, 기본 꺼짐. 개인 빌드에서는 코드에서 제외.
+- 예외: 자동 업데이트(Sparkle 2.10.0) — **기본 꺼짐.** 메뉴의 "업데이트 확인…"을 누르거나 환경 설정에서 자동 확인(하루 한 번)을 켰을 때만
+  `https://github.com/beomzh/PolyMac/releases/latest/download/appcast.xml`을 읽는다.
+  - 기기 정보 보내기(`SUEnableSystemProfiling`) 꺼짐, 자동 설치(`SUAutomaticallyUpdate`) 꺼짐 — 설치 전에 항상 묻는다.
+  - 받은 zip은 EdDSA 서명이 Info.plist의 `SUPublicEDKey`와 맞아야만 푼다(`SUVerifyUpdateBeforeExtraction`). 비밀 키는 배포자 키체인에만 있다.
+  - 공개 키(`App/sparkle-public-key.txt`)가 없는 빌드(직접 빌드)는 업데이트 기능을 시작하지 않는다.
 - 검증: 릴리스 전 `nettop`/Little Snitch로 유휴·기능 사용 중 외부 연결 0건 확인.
 
 ## 2. 입력 감시 (이벤트 탭)
@@ -60,13 +64,19 @@
 
 ## 7. 외부에서 앱을 부르는 경로
 - URL 스킴(`<앱>://`)과 단축어(Shortcuts) 액션은 **읽기/생성 계열만** 노출 (예: OCR 실행, 캡처 시작).
+  - 단축어 앱 동작(App Intents)은 사용자가 만든 단축어·Spotlight에서만 불리고 웹 페이지가 부를 수 없어 따로 허용하지 않는다. 결과는 단축어로만 돌려주고 클립보드를 건드리지 않으며, 해당 기능을 꺼 두면 거절한다.
   파일 이동·삭제·설정 변경은 외부 호출로 실행할 수 없음 — 웹페이지가 링크로 앱을 조작하는 것을 막기 위함.
 - 설정·규칙 JSON 가져오기는 검증 후 **미리보기 모드로만** 적용.
 
 ## 8. 빌드 · 서명
-- Hardened Runtime 켬, 불필요한 entitlement 없음 (`com.apple.security.cs.disable-library-validation` 금지).
+- Hardened Runtime 켬, 불필요한 entitlement 없음.
+- `com.apple.security.cs.disable-library-validation` — 0.2.0부터 켬 (2026-11-02 결정). 앱 안의 Sparkle.framework를 불러오려면 필요하다:
+  라이브러리 검증은 "같은 팀 ID로 서명된 것만" 불러오는데 자체 서명 인증서에는 팀 ID가 없어, 같은 인증서로 서명해도 막힌다.
+  - 영향: 앱 번들 안(관리자만 쓸 수 있는 `/Applications`)의 라이브러리를 팀 ID 확인 없이 불러온다.
+  - 그대로인 것: `DYLD_INSERT_LIBRARIES` 등 환경 변수 주입 차단(`allow-dyld-environment-variables` 없음), 실행 중 코드 수정 차단, 앱·프레임워크 서명 검사.
+  - Apple 개발자 프로그램에 가입해 팀 ID로 서명하게 되면 이 항목을 뺀다.
 - 내 PC 전용 빌드는 **고정된 자체 서명 인증서**로 서명 — ad-hoc 서명은 빌드마다 서명이 바뀌어 TCC 권한(접근성 등)이 매번 초기화되고, 권한 재부여를 습관화시키는 것 자체가 위험.
-- 외부 의존성 최소화 (현재 0개). 추가 시 버전 고정 + `dependency-audit`.
+- 외부 의존성 최소화 (현재 1개: Sparkle). 버전·체크섬 고정(`scripts/fetch-sparkle.sh`) + `dependency-audit`.
 - 커밋 전 `secret-scan`.
 
 ## 9. 권한은 필요한 만큼만

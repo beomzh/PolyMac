@@ -126,7 +126,26 @@ CHANGELOG 항목 형식:
    ```bash
    gh release create vX.Y.Z build/release/PolyMac-X.Y.Z.zip build/release/PolyMac-X.Y.Z.zip.sha256 --title "PolyMac X.Y.Z" --notes-file <노트 파일>
    ```
-8. **(1.0.0 이후)** 개인 Homebrew tap(`beomzh/homebrew-tap`) cask 버전·해시 갱신. 공식 cask 저장소는 공증 안 된 앱을 받지 않는다.
+   - `appcast.xml`도 같이 올린다 — 앱은 `releases/latest/download/appcast.xml`을 읽으므로 **가장 최근 릴리즈**에 붙어 있어야 한다.
+8. **Homebrew** — `packaging/homebrew/polymac.rb`의 `version`·`sha256`(스크립트가 출력)을 바꿔 커밋하고, 같은 파일을 개인 tap 저장소 `beomzh/homebrew-tap`의 `Casks/polymac.rb`로 올린다. 공식 cask 저장소는 공증 안 된 앱을 받지 않는다.
+
+### 업데이트 서명 키 (Sparkle EdDSA)
+
+처음 한 번, 배포하는 Mac에서 직접 만든다 (비밀 키는 로그인 키체인에 들어간다):
+
+```bash
+scripts/fetch-sparkle.sh && Vendor/Sparkle/bin/generate_keys
+```
+
+출력된 공개 키를 `App/sparkle-public-key.txt`에 넣어 커밋한다. 이 파일이 있어야 빌드에 업데이트 기능이 켜진다.
+
+- 비밀 키를 잃으면 이미 배포된 앱에 업데이트를 보낼 수 없다 — `generate_keys -x <파일>`로 내보내 저장소 밖 안전한 곳에 보관한다.
+- `package-release.sh`는 키체인의 키가 `App/sparkle-public-key.txt`와 같은지 확인한 뒤 zip에 서명한다.
+
+### 버전 올리기 (0.2.0부터)
+
+- 0.2.0만 태그·릴리즈한다. 그 뒤로는 작업(PR)마다 `VERSION`을 PATCH 한 칸씩 올린다(0.2.1, 0.2.2, …) — 태그는 만들지 않는다.
+- 태그·릴리즈가 없는 버전에는 Sparkle·Homebrew 업데이트가 가지 않는다. 사용자에게 보내려면 그 버전을 태그·릴리즈한다.
 
 ## 5. 지원 정책
 

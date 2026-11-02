@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 배포 파일 만들기: build/release/PolyMac-X.Y.Z.zip + .zip.sha256 (docs/RELEASING.md 4-6, 4-7)
+# 배포 파일 만들기: build/release/PolyMac-X.Y.Z.zip + .zip.sha256 + appcast.xml (docs/RELEASING.md 4-6, 4-7)
 #
 #   scripts/package-release.sh          → 태그 vX.Y.Z가 찍힌 깨끗한 main에서만 묶는다
 #   scripts/package-release.sh --dry    → 확인 없이 묶어 본다 (올리지 말 것)
@@ -45,6 +45,41 @@ unzip -q "$OUT/$NAME.zip" -d "$CHECK" && codesign --verify --strict "$CHECK/Poly
     || { echo "✗ 압축을 푼 앱의 서명이 유효하지 않습니다"; exit 1; }
 (cd "$OUT" && shasum -a 256 "$NAME.zip" > "$NAME.zip.sha256" && shasum -a 256 -c "$NAME.zip.sha256")
 
+# Sparkle appcast — 앱은 releases/latest/download/appcast.xml을 읽는다. 비밀 키는 키체인에만 있다 (generate_keys)
+APPCAST=""
+if [[ -s App/sparkle-public-key.txt ]]; then
+    SPARKLE_BIN="$ROOT/Vendor/Sparkle/bin"
+    [[ -x "$SPARKLE_BIN/sign_update" ]] || { echo "✗ Sparkle 도구(sign_update)가 없습니다 — scripts/fetch-sparkle.sh"; exit 1; }
+    [[ "$("$SPARKLE_BIN/generate_keys" -p 2>/dev/null)" == "$(tr -d '[:space:]' < App/sparkle-public-key.txt)" ]] \
+        || { echo "✗ 키체인의 Sparkle 키가 App/sparkle-public-key.txt와 다릅니다"; exit 1; }
+    SIGNATURE="$("$SPARKLE_BIN/sign_update" "$OUT/$NAME.zip")"   # sparkle:edSignature="…" length="…"
+    BUILD="$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' build/PolyMac.app/Contents/Info.plist)"
+    DOWNLOAD="https://github.com/beomzh/PolyMac/releases/download/v$VERSION"
+    cat > "$OUT/appcast.xml" <<XML
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>PolyMac</title>
+    <item>
+      <title>PolyMac $VERSION</title>
+      <pubDate>$(LC_ALL=C date -u '+%a, %d %b %Y %H:%M:%S +0000')</pubDate>
+      <sparkle:version>$BUILD</sparkle:version>
+      <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:releaseNotesLink>https://github.com/beomzh/PolyMac/releases/tag/v$VERSION</sparkle:releaseNotesLink>
+      <enclosure url="$DOWNLOAD/$NAME.zip" $SIGNATURE type="application/octet-stream"/>
+    </item>
+  </channel>
+</rss>
+XML
+    xmllint --noout "$OUT/appcast.xml"
+    APPCAST="\"$OUT/appcast.xml\""
+    echo "  appcast: $OUT/appcast.xml"
+else
+    echo "  ⚠️  App/sparkle-public-key.txt가 없어 appcast를 만들지 않습니다 (이 빌드는 업데이트 확인을 쓰지 않음)"
+fi
+
 echo "✅ $OUT/$NAME.zip"
 echo "   서명: ${IDENTITY_LINE#Authority=}"
-echo "   올리기: gh release create v$VERSION \"$OUT/$NAME.zip\" \"$OUT/$NAME.zip.sha256\" --title \"PolyMac $VERSION\" --notes-file <노트 파일>"
+echo "   sha256: $(cut -d' ' -f1 "$OUT/$NAME.zip.sha256")  (packaging/homebrew/polymac.rb)"
+echo "   올리기: gh release create v$VERSION \"$OUT/$NAME.zip\" \"$OUT/$NAME.zip.sha256\" $APPCAST --title \"PolyMac $VERSION\" --notes-file <노트 파일>"

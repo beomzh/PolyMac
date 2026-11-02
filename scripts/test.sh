@@ -17,5 +17,6 @@ if [[ -z "${DEVELOPER_DIR:-}" ]]; then
         export DEVELOPER_DIR="$XCODE/Contents/Developer"
     fi
 fi
+scripts/fetch-sparkle.sh
 echo "▶ $(xcrun xcodebuild -version | head -1) — $DEVELOPER_DIR"
 swift test "$@"
