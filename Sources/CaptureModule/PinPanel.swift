@@ -2,9 +2,12 @@ import AppKit
 import OCRModule
 import PolyMacCore
 import UniformTypeIdentifiers
+import VisionKit
+import os
 
 /// 화면 위에 떠 있는 캡처(핀). 드래그로 이동, ⌘드래그로 다른 앱에 PNG로 넣기, 스크롤로 확대/축소, ⌥+스크롤로 투명도, 더블클릭으로 닫기.
 /// 표시(사각형·화살표·펜)는 이미지에 굽지 않고 따로 들고 있어 우클릭 › 표시 편집으로 다시 고칠 수 있다.
+/// 우클릭 › 텍스트 선택: 라이브 텍스트(VisionKit, 기기 안에서만)로 핀 위 글자를 드래그해 골라 복사한다.
 @MainActor
 final class PinPanel: NSPanel {
     private static var open: Set<PinPanel> = [] {
@@ -37,8 +40,12 @@ final class PinPanel: NSPanel {
     fileprivate var annotations: [Annotation]
     private var editBar: NSPanel?
     fileprivate var markupBar: AnnotationToolbar?
+    private var liveText: ImageAnalysisOverlayView?
+    private static let analyzer = ImageAnalyzer()
+    private static let logger = Logger(subsystem: "dev.polymac", category: "capture")
 
     var isEditingMarkup: Bool { markupBar != nil }
+    var isSelectingText: Bool { liveText != nil }
 
     static func show(_ capture: CaptureResult, at frame: NSRect?) {
         let size = NSSize(width: CGFloat(capture.image.width) / capture.scale, height: CGFloat(capture.image.height) / capture.scale)
@@ -95,6 +102,7 @@ final class PinPanel: NSPanel {
 
     func closePin() {
         endEditing()
+        endTextSelection()
         orderOut(nil)
         PinPanel.open.remove(self)
     }
@@ -133,6 +141,7 @@ final class PinPanel: NSPanel {
 
     @objc func beginEditing() {
         guard markupBar == nil else { return }
+        endTextSelection()
         let bar = AnnotationToolbar(output: false)
         bar.select(.rectangle)
         bar.onAction = { [weak self] action in
@@ -176,6 +185,63 @@ final class PinPanel: NSPanel {
         editBar.setFrameOrigin(origin)
     }
 
+    // MARK: - 텍스트 선택 (라이브 텍스트)
+
+    /// 표시를 뺀 원본에서 글자를 찾아 핀 위에 고를 수 있게 덮는다. 켜 있는 동안 핀은 끌어 옮기지 않는다 (드래그 = 글자 고르기).
+    @objc func beginTextSelection() {
+        guard liveText == nil else { return }
+        endEditing()
+        guard ImageAnalyzer.isSupported else {
+            Toast.show(L("이 Mac에서는 라이브 텍스트를 쓸 수 없습니다", "Live Text is not available on this Mac"))
+            return
+        }
+        let image = image
+        Task { @MainActor [weak self] in
+            var configuration = ImageAnalyzer.Configuration([.text, .machineReadableCode])
+            configuration.locales = ["ko-KR", "en-US"]
+            let analysis: ImageAnalysis
+            do {
+                analysis = try await PinPanel.analyzer.analyze(image, orientation: .up, configuration: configuration)
+            } catch {
+                PinPanel.logger.error("live text failed: \(error.localizedDescription, privacy: .public)")
+                Toast.show(L("글자를 읽지 못했습니다: \(error.localizedDescription)", "Could not read text: \(error.localizedDescription)"))
+                return
+            }
+            guard let self, self.isVisible, self.liveText == nil, let view = self.contentView else { return }
+            guard analysis.hasResults(for: .text) || analysis.hasResults(for: .machineReadableCode) else {
+                Toast.show(L("핀에서 글자를 찾지 못했습니다", "No text found on the pin"))
+                return
+            }
+            let overlay = ImageAnalysisOverlayView(frame: view.bounds)
+            overlay.autoresizingMask = [.width, .height]
+            overlay.preferredInteractionTypes = .textSelection
+            overlay.delegate = self
+            overlay.analysis = analysis
+            view.addSubview(overlay)
+            self.liveText = overlay
+            view.layer?.borderColor = NSColor.systemGreen.withAlphaComponent(0.8).cgColor
+            view.layer?.borderWidth = 2
+            self.makeKey()
+            overlay.selectableItemsHighlighted = true
+            PinPanel.logger.info("live text on pin")
+            Toast.show(L("글자를 드래그해 고른 뒤 ⌘C", "Drag over text, then ⌘C"),
+                       content: L("끝내기: Esc 또는 우클릭 › 텍스트 선택 끝내기", "Finish: Esc or right-click › Finish Text Selection"), duration: 3)
+        }
+    }
+
+    @objc func endTextSelection() {
+        guard let liveText else { return }
+        liveText.removeFromSuperview()
+        self.liveText = nil
+        setClickThrough(false) // 테두리를 원래대로
+    }
+
+    /// 고른 글자가 있으면 그것을, 없으면 nil (⌘C가 이미지 복사로 간다)
+    var selectedText: String? {
+        guard let text = liveText?.selectedText, !text.isEmpty else { return nil }
+        return text
+    }
+
     // MARK: - 우클릭 메뉴
 
     func makeMenu() -> NSMenu {
@@ -191,6 +257,8 @@ final class PinPanel: NSPanel {
         menu.addItem(add(L("복사", "Copy"), #selector(copyImage)))
         menu.addItem(add(L("저장…", "Save…"), #selector(saveImage)))
         menu.addItem(add(L("텍스트 추출", "Extract Text"), #selector(extractText)))
+        menu.addItem(add(isSelectingText ? L("텍스트 선택 끝내기", "Finish Text Selection") : L("텍스트 선택 (드래그로 고르기)", "Select Text (drag over it)"),
+                         isSelectingText ? #selector(endTextSelection) : #selector(beginTextSelection)))
         menu.addItem(.separator())
         let opacity = NSMenuItem(title: L("투명도", "Opacity"), action: nil, keyEquivalent: "")
         let sub = NSMenu()
@@ -210,7 +278,14 @@ final class PinPanel: NSPanel {
 
     @objc private func finishEditingFromMenu() { endEditing() }
 
-    func copyFromKeyboard() { copyImage() }
+    func copyFromKeyboard() {
+        if let text = selectedText {
+            PasteboardWriter.copy(text.precomposedStringWithCanonicalMapping, origin: .ocr)
+            Toast.show(L("고른 글자를 복사했습니다", "Selected text copied"))
+        } else {
+            copyImage()
+        }
+    }
 
     @objc private func copyImage() {
         PasteboardWriter.copy(composite, scale: scale, origin: .capture)
@@ -307,7 +382,9 @@ private final class PinCanvasView: NSView, NSDraggingSource {
     override func keyDown(with event: NSEvent) {
         switch Int(event.keyCode) {
         case 53, 51, 117:
-            if pin?.isEditingMarkup == true, event.keyCode == 53 { pin?.endEditing() } else { pin?.closePin() }
+            if pin?.isEditingMarkup == true, event.keyCode == 53 { pin?.endEditing() }
+            else if pin?.isSelectingText == true, event.keyCode == 53 { pin?.endTextSelection() }
+            else { pin?.closePin() }
         default:
             if event.modifierFlags.contains(.command), event.latinKey == "c" {
                 pin?.copyFromKeyboard()
@@ -402,4 +479,17 @@ private final class PinCanvasView: NSView, NSDraggingSource {
 
     /// 다른 앱을 쓰다가 핀을 처음 누를 때도 바로 옮기기·그리기가 되게 (없으면 첫 클릭은 창을 앞으로 가져오는 데만 쓰인다)
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+}
+
+/// 라이브 텍스트의 우클릭 메뉴(복사·찾아보기 등) 아래에 핀 메뉴를 붙인다
+extension PinPanel: ImageAnalysisOverlayViewDelegate {
+    func overlayView(_ overlayView: ImageAnalysisOverlayView, updatedMenuFor menu: NSMenu, for event: NSEvent, at point: CGPoint) -> NSMenu {
+        let pinMenu = makeMenu()
+        if !menu.items.isEmpty { menu.addItem(.separator()) }
+        for item in pinMenu.items {
+            pinMenu.removeItem(item)
+            menu.addItem(item)
+        }
+        return menu
+    }
 }

@@ -14,6 +14,13 @@ func normalize(_ s: String) -> [Character] {
     Array(s.precomposedStringWithCanonicalMapping.split(whereSeparator: \.isWhitespace).joined(separator: " "))
 }
 
+/// 공백까지 비교: 줄 끝 공백과 빈 줄만 빼고, 줄 앞 들여쓰기·줄바꿈은 그대로
+func layout(_ s: String) -> [Character] {
+    Array(s.precomposedStringWithCanonicalMapping.components(separatedBy: .newlines)
+        .map { $0.replacingOccurrences(of: "\\s+$", with: "", options: .regularExpression) }
+        .filter { !$0.isEmpty }.joined(separator: "\n"))
+}
+
 func distance(_ a: [Character], _ b: [Character]) -> Int {
     if a.isEmpty { return b.count }
     var previous = Array(0...b.count)
@@ -47,6 +54,7 @@ let configs: [Config] = [
     Config(name: "0.1.0", options: option { $0.upscale = 1; $0.cleanup = false }),
     Config(name: "no-upscale", options: option { $0.upscale = 1 }),
     Config(name: "no-cleanup", options: option { $0.cleanup = false }),
+    Config(name: "no-indent", options: option { $0.preserveIndent = false }),
 ]
 
 let names = (try FileManager.default.contentsOfDirectory(atPath: folder.path))
@@ -61,9 +69,14 @@ if let first = names.first,
 }
 
 var totals = [String: (errors: Int, chars: Int, exact: Int, seconds: Double)]()
+// 공백까지 비교한 결과 (layout) — 들여쓰기를 살렸는지 본다
+var layoutTotals = [String: (errors: Int, chars: Int, exact: Int)]()
+var layoutRows: [String] = []
 print("sample".padding(toLength: 16, withPad: " ", startingAt: 0) + configs.map { $0.name.padding(toLength: 15, withPad: " ", startingAt: 0) }.joined())
 for name in names {
-    let truth = normalize(try String(contentsOf: folder.appendingPathComponent(name + ".txt"), encoding: .utf8))
+    let raw = try String(contentsOf: folder.appendingPathComponent(name + ".txt"), encoding: .utf8)
+    let truth = normalize(raw), layoutTruth = layout(raw)
+    var layoutRow = name.padding(toLength: 16, withPad: " ", startingAt: 0)
     guard let image = NSImage(contentsOf: folder.appendingPathComponent(name + ".png"))?.cgImage(forProposedRect: nil, context: nil, hints: nil) else { continue }
     var row = name.padding(toLength: 16, withPad: " ", startingAt: 0)
     var misses: [String] = []
@@ -76,10 +89,17 @@ for name in names {
         var t = totals[config.name] ?? (0, 0, 0, 0)
         t.errors += errors; t.chars += truth.count; t.exact += errors == 0 ? 1 : 0; t.seconds += seconds
         totals[config.name] = t
+        let layoutErrors = distance(layoutTruth, layout(text))
+        var l = layoutTotals[config.name] ?? (0, 0, 0)
+        l.errors += layoutErrors; l.chars += layoutTruth.count; l.exact += layoutErrors == 0 ? 1 : 0
+        layoutTotals[config.name] = l
+        layoutRow += String(format: "%5.1f%%", Double(layoutErrors) / Double(max(layoutTruth.count, 1)) * 100).padding(toLength: 15, withPad: " ", startingAt: 0)
+        if verbose && layoutErrors > 0 && errors == 0 { misses.append("    [\(config.name) layout] \(text.replacingOccurrences(of: "\n", with: "⏎"))") }
         row += String(format: "%5.1f%%", Double(errors) / Double(max(truth.count, 1)) * 100).padding(toLength: 15, withPad: " ", startingAt: 0)
         if verbose && errors > 0 { misses.append("    [\(config.name)] \(String(got))") }
     }
     print(row)
+    layoutRows.append(layoutRow)
     if !misses.isEmpty { print("    정답        \(String(truth))\n" + misses.joined(separator: "\n")) }
 }
 print("")
@@ -92,4 +112,15 @@ print("exact".padding(toLength: 16, withPad: " ", startingAt: 0) + configs.map {
 }.joined())
 print("avg ms".padding(toLength: 16, withPad: " ", startingAt: 0) + configs.map { c in
     String(format: "%.0f", totals[c.name]!.seconds / Double(names.count) * 1000).padding(toLength: 15, withPad: " ", startingAt: 0)
+}.joined())
+
+print("")
+print("layout (공백·들여쓰기까지 비교)")
+layoutRows.forEach { print($0) }
+print("layout CER".padding(toLength: 16, withPad: " ", startingAt: 0) + configs.map { c in
+    let t = layoutTotals[c.name]!
+    return String(format: "%5.2f%%", Double(t.errors) / Double(t.chars) * 100).padding(toLength: 15, withPad: " ", startingAt: 0)
+}.joined())
+print("layout exact".padding(toLength: 16, withPad: " ", startingAt: 0) + configs.map { c in
+    "\(layoutTotals[c.name]!.exact)/\(names.count)".padding(toLength: 15, withPad: " ", startingAt: 0)
 }.joined())

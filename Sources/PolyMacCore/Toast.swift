@@ -1,22 +1,52 @@
 import AppKit
 import PolyMacL10n
 
-/// 화면 아래쪽에 잠깐 떴다 사라지는 안내. 클릭을 가로채지 않는다.
+/// 화면 아래쪽에 잠깐 떴다 사라지는 안내. 단추가 없으면 클릭을 가로채지 않는다.
 @MainActor
 public enum Toast {
     private static var panel: NSPanel?
     private static var hideWork: DispatchWorkItem?
+    private static var actionTargets: [ActionTarget] = []
+
+    /// 안내 아래 단추 (예: 인식한 글의 링크 열기). 누르면 안내를 닫는다.
+    public struct Action {
+        public let title: String
+        public let handler: @MainActor () -> Void
+        public init(_ title: String, handler: @escaping @MainActor () -> Void) {
+            self.title = title
+            self.handler = handler
+        }
+    }
+
+    private final class ActionTarget: NSObject {
+        let handler: @MainActor () -> Void
+        init(_ handler: @escaping @MainActor () -> Void) { self.handler = handler }
+        @objc func run() {
+            MainActor.assumeIsolated {
+                handler()
+                Toast.hide()
+            }
+        }
+    }
 
     /// message: 안내 문구. 첫 줄은 제목(가운데·굵게), 다음 줄부터는 보조 설명(가운데).
     /// content: 추출한 글처럼 안내와 섞이면 안 되는 내용 — 아래 별도 상자에 왼쪽 정렬로.
-    public static func show(_ message: String, content: String? = nil, duration: TimeInterval = 2) {
+    /// actions: 단추가 있으면 누를 시간을 주려고 6초 이상 띄운다 (알림을 꺼 두었어도 단추가 있으면 띄운다)
+    public static func show(_ message: String, content: String? = nil, duration: TimeInterval = 2, actions: [Action] = []) {
         let style = ToastStyle.current
-        guard style.isEnabled else { return }
-        show(message, content: content, duration: style.duration(for: duration), style: style)
+        guard style.isEnabled || !actions.isEmpty else { return }
+        let shown = style.duration(for: duration)
+        show(message, content: content, duration: actions.isEmpty ? shown : max(shown, 6), style: style, actions: actions)
+    }
+
+    public static func hide() {
+        hideWork?.cancel()
+        panel?.orderOut(nil)
+        actionTargets.removeAll()
     }
 
     /// style: 환경 설정 미리보기처럼 저장 전 모양으로 띄울 때. 알림을 꺼 두었어도 띄우고, duration은 그대로 쓴다.
-    public static func show(_ message: String, content: String? = nil, duration: TimeInterval, style: ToastStyle) {
+    public static func show(_ message: String, content: String? = nil, duration: TimeInterval, style: ToastStyle, actions: [Action] = []) {
         let style = style.clamped
         let pad = CGFloat(style.padding)
         let fontSize = CGFloat(style.fontSize)
@@ -48,16 +78,33 @@ public enum Toast {
             return l
         }
 
-        // 위에서부터 제목 → 보조 설명 → 내용 상자. 폭은 가장 넓은 줄에 맞춘다.
+        actionTargets = actions.map { ActionTarget($0.handler) }
+        let buttons = zip(actions, actionTargets).map { action, target -> NSButton in
+            let b = NSButton(title: action.title, target: target, action: #selector(ActionTarget.run))
+            b.bezelStyle = .rounded
+            b.controlSize = .small
+            b.font = .systemFont(ofSize: fontSize - 1)
+            b.lineBreakMode = .byTruncatingMiddle
+            b.sizeToFit()
+            b.frame.size.width = min(b.frame.width, maxWidth)
+            return b
+        }
+
+        // 위에서부터 제목 → 보조 설명 → 내용 상자 → 단추. 폭은 가장 넓은 줄에 맞춘다.
         let titleSize = title.fittingSize
         let subtitleSize = subtitle?.fittingSize ?? .zero
         let bodySize = body?.fittingSize ?? .zero
-        let width = min(max(titleSize.width, subtitleSize.width, body == nil ? 0 : bodySize.width + contentInset * 2, 120), maxWidth)
+        let buttonGap: CGFloat = 4
+        let buttonHeight = buttons.map(\.frame.height).max() ?? 0
+        let buttonsHeight = buttons.isEmpty ? 0 : buttonHeight * CGFloat(buttons.count) + buttonGap * CGFloat(buttons.count - 1)
+        let width = min(max(titleSize.width, subtitleSize.width, body == nil ? 0 : bodySize.width + contentInset * 2,
+                            buttons.map(\.frame.width).max() ?? 0, 120), maxWidth)
         let gap: CGFloat = 4, sectionGap: CGFloat = 8
         let boxHeight = body == nil ? 0 : bodySize.height + contentInset * 2
         var height = titleSize.height
         if subtitle != nil { height += gap + subtitleSize.height }
         if body != nil { height += sectionGap + boxHeight }
+        if !buttons.isEmpty { height += sectionGap + buttonsHeight }
         let size = NSSize(width: width + pad * 2, height: height + pad * 2)
 
         // AppKit은 아래가 원점 — 위에서부터 놓으려고 y를 줄여 간다
@@ -81,9 +128,18 @@ public enum Toast {
             box.addSubview(body)
             views.append(box)
         }
+        // 단추는 한 줄에 하나씩, 가운데
+        if !buttons.isEmpty { y -= sectionGap }
+        for button in buttons {
+            y -= button.frame.height
+            button.frame.origin = NSPoint(x: pad + (width - button.frame.width) / 2, y: y)
+            views.append(button)
+            y -= buttonGap
+        }
 
         let panel = panel ?? makePanel()
         self.panel = panel
+        panel.ignoresMouseEvents = buttons.isEmpty
 
         let background: NSView
         if let fill = style.backgroundColor.flatMap(ToastStyle.color(hex:)) {
@@ -122,7 +178,12 @@ public enum Toast {
                     ctx.duration = 0.25
                     panel.animator().alphaValue = 0
                 } completionHandler: {
-                    MainActor.assumeIsolated { panel.orderOut(nil) }
+                    MainActor.assumeIsolated {
+                        // 사라지는 동안 새 안내가 떴으면(투명도 1로 돌아옴) 그 안내는 두고
+                        guard panel.alphaValue == 0 else { return }
+                        panel.orderOut(nil)
+                        actionTargets.removeAll()
+                    }
                 }
             }
         }

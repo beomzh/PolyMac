@@ -1,0 +1,7 @@
+func total(_ items: [Item]) -> Int {
+    var sum = 0
+    for item in items where item.isPinned {
+        sum += item.count
+    }
+    return sum
+}
