@@ -318,13 +318,21 @@ PolyMac은 Apple 개발자 프로그램(유료) 공증을 받지 않았습니다
 
 #### Homebrew로 설치
 
-Homebrew 공식 저장소는 공증받지 않은 앱을 받지 않아 개인 저장소(tap)로 제공합니다:
+Homebrew 공식 저장소는 공증받지 않은 앱을 받지 않아 개인 저장소([beomzh/homebrew-tap](https://github.com/beomzh/homebrew-tap))로 제공합니다:
+
+```bash
+brew tap beomzh/tap
+```
+
+```bash
+brew trust --cask beomzh/tap/polymac
+```
 
 ```bash
 brew install --cask beomzh/tap/polymac
 ```
 
-처음 열 때는 위 "처음 열 때 막히면"과 같이 한 번 허용합니다.
+Homebrew 7부터는 공식 저장소가 아닌 cask를 쓰기 전에 `brew trust`로 한 번 믿는다고 등록해야 합니다 (이 cask 하나만 등록됩니다). 처음 열 때는 위 "처음 열 때 막히면"과 같이 한 번 허용합니다.
 
 #### 업데이트
 

@@ -127,7 +127,7 @@ CHANGELOG 항목 형식:
    gh release create vX.Y.Z build/release/PolyMac-X.Y.Z.zip build/release/PolyMac-X.Y.Z.zip.sha256 --title "PolyMac X.Y.Z" --notes-file <노트 파일>
    ```
    - `appcast.xml`도 같이 올린다 — 앱은 `releases/latest/download/appcast.xml`을 읽으므로 **가장 최근 릴리즈**에 붙어 있어야 한다.
-8. **Homebrew** — `packaging/homebrew/polymac.rb`의 `version`·`sha256`(스크립트가 출력)을 바꿔 커밋하고, 같은 파일을 개인 tap 저장소 `beomzh/homebrew-tap`의 `Casks/polymac.rb`로 올린다. 공식 cask 저장소는 공증 안 된 앱을 받지 않는다.
+8. **Homebrew** — `packaging/homebrew/polymac.rb`의 `version`·`sha256`(스크립트가 출력)을 바꿔 커밋하고, 같은 파일(맨 위 설명 주석은 빼고)을 개인 tap 저장소 [`beomzh/homebrew-tap`](https://github.com/beomzh/homebrew-tap)의 `Casks/polymac.rb`로 올린다. Homebrew 7부터 사용자는 설치 전에 `brew trust --cask beomzh/tap/polymac`이 필요하다(README에 안내). 공식 cask 저장소는 공증 안 된 앱을 받지 않는다.
 
 ### 업데이트 서명 키 (Sparkle EdDSA)
 
