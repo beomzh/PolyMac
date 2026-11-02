@@ -290,6 +290,7 @@ struct SettingsView: View {
 
 private struct FeaturesPane: View {
     @ObservedObject var model: SettingsModel
+    @State private var autoUpdate = Updater.shared.automaticallyChecks
 
     var body: some View {
         Form {
@@ -312,6 +313,21 @@ private struct FeaturesPane: View {
                 Toggle(L("로그인 시 자동 실행", "Open at login"), isOn: Binding(get: { model.loginItem }, set: { model.setLoginItem($0) }))
                 LabeledContent(L("데이터 폴더", "Data folder")) {
                     Button(L("Finder에서 열기", "Show in Finder")) { NSWorkspace.shared.open(AppPaths.dataDirectory) }
+                }
+            }
+            if Updater.shared.isConfigured {
+                Section {
+                    Toggle(L("업데이트 자동 확인 (하루 한 번)", "Check for updates automatically (daily)"), isOn: $autoUpdate)
+                        .onChange(of: autoUpdate) { _, on in Updater.shared.automaticallyChecks = on }
+                    LabeledContent(L("지금 확인", "Check now")) {
+                        Button(L("업데이트 확인…", "Check for Updates…")) { Updater.shared.checkForUpdates() }
+                    }
+                } header: {
+                    Text(L("업데이트", "Updates"))
+                } footer: {
+                    Text(L("켜면 GitHub에서 새 버전 정보(appcast.xml)만 받아 옵니다. 기기 정보는 보내지 않고, 서명이 맞는 파일만 설치합니다. 끄면 PolyMac은 네트워크를 쓰지 않습니다.",
+                           "When on, PolyMac only downloads the new-version list (appcast.xml) from GitHub. No device info is sent, and only correctly signed updates are installed. When off, PolyMac makes no network connections."))
+                        .font(.caption).foregroundStyle(.secondary)
                 }
             }
         }

@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# PolyMac.app 빌드 (Xcode 없이 Command Line Tools만으로 가능)
+# PolyMac.app 빌드 (Xcode 없이 Command Line Tools만으로도 가능)
+#
+# Xcode가 설치돼 있으면 Xcode 도구로 빌드해 단축어(Shortcuts) 앱 동작 목록(App Intents 메타데이터)까지 넣는다.
+# Command Line Tools만 있으면 단축어 동작만 빠지고 나머지는 같다.
 #
 #   scripts/build-app.sh            → build/PolyMac.app 생성
 #   scripts/build-app.sh --install  → /Applications에 설치하고 실행
@@ -14,6 +17,13 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+# 단축어 동작 메타데이터는 Xcode의 appintentsmetadataprocessor가 만든다 (xcode-select는 바꾸지 않는다)
+if [[ -z "${DEVELOPER_DIR:-}" && "$(xcode-select -p 2>/dev/null)" != *.app/* && -d /Applications/Xcode.app ]]; then
+    export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+fi
+DEV_DIR="${DEVELOPER_DIR:-$(xcode-select -p)}"
+INTENTS_TOOL="$DEV_DIR/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor"
+
 VERSION="$(tr -d '[:space:]' < VERSION)"
 SHORT_VERSION="${VERSION%%-*}"
 BUILD="$(git rev-list --count HEAD 2>/dev/null || echo 1)"
@@ -27,30 +37,67 @@ else
 fi
 APP="$ROOT/build/PolyMac.app"
 
+scripts/fetch-sparkle.sh
 echo "▶ swift build (release) — PolyMac $VERSION ($BUILD)"
 swift build -c release --product PolyMac
 BIN_DIR="$(swift build -c release --show-bin-path)"
 
 echo "▶ 앱 번들 조립"
 rm -rf "$APP"
-mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APP/Contents/Frameworks"
 cp "$BIN_DIR/PolyMac" "$APP/Contents/MacOS/PolyMac"
 cp App/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
-cp -R App/en.lproj "$APP/Contents/Resources/"   # 영어 시스템에서 권한 안내 문구   # 아이콘 다시 만들기: swift scripts/make-icon.swift
-sed -e "s/__VERSION__/$VERSION/" -e "s/__SHORT_VERSION__/$SHORT_VERSION/" -e "s/__BUILD__/$BUILD/" \
+cp -R App/en.lproj "$APP/Contents/Resources/"   # 영어 시스템에서 권한 안내·단축어 동작 문구   # 아이콘 다시 만들기: swift scripts/make-icon.swift
+# Sparkle 공개 키 (없으면 업데이트 확인을 쓰지 않는 빌드 — docs/RELEASING.md "업데이트 서명 키")
+SPARKLE_KEY="$([[ -f App/sparkle-public-key.txt ]] && tr -d "[:space:]" < App/sparkle-public-key.txt || true)"
+sed -e "s/__VERSION__/$VERSION/" -e "s/__SHORT_VERSION__/$SHORT_VERSION/" -e "s/__BUILD__/$BUILD/" -e "s|__SPARKLE_PUBLIC_KEY__|$SPARKLE_KEY|" \
     App/Info.plist > "$APP/Contents/Info.plist"
 plutil -lint "$APP/Contents/Info.plist" > /dev/null
 
+# Sparkle.framework — 샌드박스 앱이 아니라 XPC 서비스는 필요 없다 (Sparkle 문서)
+SPARKLE="$(find "$BIN_DIR" -maxdepth 2 -name Sparkle.framework -type d | head -1)"
+[[ -n "$SPARKLE" ]] || { echo "✗ $BIN_DIR 에 Sparkle.framework가 없습니다"; exit 1; }
+ditto "$SPARKLE" "$APP/Contents/Frameworks/Sparkle.framework"
+rm -rf "$APP/Contents/Frameworks/Sparkle.framework/XPCServices" "$APP/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices"
+otool -l "$APP/Contents/MacOS/PolyMac" | grep -q "@executable_path/../Frameworks" \
+    || install_name_tool -add_rpath @executable_path/../Frameworks "$APP/Contents/MacOS/PolyMac"
+
+echo "▶ 단축어 동작 (App Intents)"
+INTERMEDIATES="$(find "$ROOT/.build" -type d -path '*Release*' -name 'PolyMac-p.build' 2>/dev/null | head -1)"
+if [[ -x "$INTENTS_TOOL" && -n "$INTERMEDIATES" ]]; then
+    LISTS="$(mktemp -d)"
+    find "$INTERMEDIATES" -name '*.swiftconstvalues' > "$LISTS/constvalues"
+    "$INTENTS_TOOL" --output "$APP/Contents/Resources" \
+        --toolchain-dir "$DEV_DIR/Toolchains/XcodeDefault.xctoolchain" --module-name PolyMacApp \
+        --sdk-root "$(xcrun --sdk macosx --show-sdk-path)" \
+        --xcode-version "$(xcodebuild -version | awk '/Build version/ {print $3}')" \
+        --platform-family macOS --deployment-target 14.0 --target-triple "$(uname -m)-apple-macos14.0" \
+        --source-file-list "$(find "$INTERMEDIATES" -name 'PolyMac.SwiftFileList' | head -1)" \
+        --swift-const-vals-list "$LISTS/constvalues" --quiet-warnings 2>&1 | grep -v 'appintentsmetadataprocessor\[' || true
+    rm -rf "$LISTS"
+    [[ -f "$APP/Contents/Resources/Metadata.appintents/extract.actionsdata" ]] \
+        || { echo "✗ 단축어 동작 메타데이터를 만들지 못했습니다"; exit 1; }
+    echo "  동작 $(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1]))["actions"]))' "$APP/Contents/Resources/Metadata.appintents/extract.actionsdata")개"
+else
+    echo "  ⚠️  Xcode가 없어 건너뜁니다 — 단축어 앱 목록에 PolyMac 동작이 뜨지 않습니다 (polymac:// URL은 그대로 동작)"
+fi
+
 echo "▶ 서명"
 if [[ -n "$IDENTITY" ]] && grep -qF "\"$IDENTITY\"" <<< "$IDENTITIES"; then
-    codesign --force --options runtime --entitlements App/PolyMac.entitlements --sign "$IDENTITY" "$APP"
+    SIGN="$IDENTITY"
     echo "  서명: $IDENTITY"
 else
-    codesign --force --options runtime --entitlements App/PolyMac.entitlements --sign - "$APP"
+    SIGN="-"
     echo "  ⚠️  코드 서명 인증서가 없어 ad-hoc 서명했습니다."
     echo "     다시 빌드할 때마다 권한을 다시 줘야 합니다 — README의 '고정 인증서 만들기' 참고"
 fi
-codesign --verify --strict "$APP"
+# 안쪽부터: Sparkle의 실행 파일 → 프레임워크 → 앱 (앱과 같은 인증서여야 Hardened Runtime이 불러온다)
+FRAMEWORK="$APP/Contents/Frameworks/Sparkle.framework"
+codesign --force --options runtime --sign "$SIGN" "$FRAMEWORK/Versions/B/Autoupdate"
+codesign --force --options runtime --sign "$SIGN" "$FRAMEWORK/Versions/B/Updater.app"
+codesign --force --options runtime --sign "$SIGN" "$FRAMEWORK"
+codesign --force --options runtime --entitlements App/PolyMac.entitlements --sign "$SIGN" "$APP"
+codesign --verify --strict --deep "$APP"
 
 if [[ "${1:-}" == "--install" ]]; then
     echo "▶ /Applications 에 설치"

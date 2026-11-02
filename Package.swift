@@ -12,6 +12,8 @@ let package = Package(
     ] + modules.map { .library(name: $0, targets: [$0]) },
     targets: [
         .target(name: "PolyMacL10n"),
+        // 자동 업데이트 (MIT, 기본 꺼짐 — docs/SECURITY.md). scripts/fetch-sparkle.sh가 체크섬을 확인해 받아 둔다
+        .binaryTarget(name: "Sparkle", path: "Vendor/Sparkle/Sparkle.xcframework"),
         .target(name: "PolyMacCore", dependencies: ["PolyMacL10n"]),
         .target(name: "UninstallerCore", dependencies: ["PolyMacL10n"]),
         .testTarget(name: "PolyMacCoreTests", dependencies: ["PolyMacCore"]),
@@ -27,6 +29,6 @@ let package = Package(
         .target(name: "UninstallerModule", dependencies: ["PolyMacCore", "UninstallerCore"]),
         // 개발용 OCR 정확도 측정 (scripts/ocr-bench.sh) — 앱 번들에는 들어가지 않는다
         .executableTarget(name: "OCRBench", dependencies: ["OCRModule"]),
-        .executableTarget(name: "PolyMacApp", dependencies: ["PolyMacCore"] + modules.map { .target(name: $0) }),
+        .executableTarget(name: "PolyMacApp", dependencies: ["PolyMacCore", "Sparkle"] + modules.map { .target(name: $0) }),
     ] + modules.filter { !["CaptureModule", "UninstallerModule", "UninstallerCore"].contains($0) }.map { .target(name: $0, dependencies: ["PolyMacCore"]) }
 )

@@ -27,7 +27,7 @@
 - [ ] URL 감지, 핀 위 라이브 텍스트 선택
 - [x] macOS 26+: 표 인식 → TSV/Markdown
 - [x] `polymac://ocr`·`ocr-table` URL 스킴 (단축어 X-Callback, 허용해야 동작)
-- [ ] Shortcuts 앱 목록에 뜨는 동작 (App Intents — Xcode 빌드 필요)
+- [x] Shortcuts 앱 목록에 뜨는 동작 (App Intents — 이미지·화면 텍스트, 표, 한글 붙이기. Xcode 빌드에만)
 - [x] 한글 OCR 정확도 샘플셋 + 측정 스크립트 (`scripts/ocr-bench.sh`)
 
 ## 0.4.0 — 클립보드 히스토리 (Maccy 졸업)
@@ -68,7 +68,7 @@
 - [x] 설치 기록 정리(`pkgutil --forget`), 삭제 전 목록 내보내기
 
 ## 1.0.0 — 배포
-- [ ] Sparkle 자동 업데이트(EdDSA 서명, 공증 없이 동작) + 개인 Homebrew tap
+- [x] Sparkle 자동 업데이트(EdDSA 서명, 공증 없이 동작, 기본 꺼짐) + 개인 Homebrew tap (0.2.0에 앞당김)
 - [x] 권한 대시보드(상태 4종·다시 실행·권한 기록 지우기·풀린 권한 알림), 시작 안내
 - [ ] 자원 예산 회귀 테스트(CI)
 

@@ -5,5 +5,9 @@
     <!-- Hardened Runtime에서 Finder에 Apple Events(터미널 열기·경로 복사)를 보내기 위해 필요 -->
     <key>com.apple.security.automation.apple-events</key>
     <true/>
+    <!-- 앱 안의 Sparkle.framework를 불러오기 위해 필요. 라이브러리 검증은 "같은 팀 ID로 서명된 것만"인데
+         자체 서명 인증서에는 팀 ID가 없어 같은 인증서로 서명해도 막힌다. DYLD_* 환경 변수 주입은 계속 막힌다 — docs/SECURITY.md -->
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
 </dict>
 </plist>

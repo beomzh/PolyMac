@@ -38,6 +38,19 @@
             </array>
         </dict>
     </array>
+    <!-- Sparkle 자동 업데이트: 기본 꺼짐(사용자가 켜야 확인), 기기 정보 보내지 않음. 공개 키는 App/sparkle-public-key.txt에서 build-app.sh가 넣는다 -->
+    <key>SUFeedURL</key>
+    <string>https://github.com/beomzh/PolyMac/releases/latest/download/appcast.xml</string>
+    <key>SUPublicEDKey</key>
+    <string>__SPARKLE_PUBLIC_KEY__</string>
+    <key>SUEnableAutomaticChecks</key>
+    <false/>
+    <key>SUAutomaticallyUpdate</key>
+    <false/>
+    <key>SUEnableSystemProfiling</key>
+    <false/>
+    <key>SUVerifyUpdateBeforeExtraction</key>
+    <true/>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>LSUIElement</key>
