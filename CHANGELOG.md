@@ -3,6 +3,9 @@
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
 ## 0.2.0 (2026-11-02)
+[2026-11-02 12:48]
+- [Added] - App/sparkle-public-key.txt: Sparkle EdDSA 공개 키 (비밀 키는 배포자 키체인) — 이 파일이 있어 빌드에 업데이트 확인이 켜짐
+
 [2026-11-02 12:45]
 - [Changed] - PR #22 push: feat/0.2.0-shortcuts-updates (6f22810)
 
