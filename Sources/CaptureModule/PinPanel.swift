@@ -42,7 +42,7 @@ final class PinPanel: NSPanel {
     fileprivate var markupBar: AnnotationToolbar?
     private var liveText: ImageAnalysisOverlayView?
     private static let analyzer = ImageAnalyzer()
-    private static let logger = Logger(subsystem: "dev.polymac", category: "capture")
+    static let logger = Logger(subsystem: "dev.polymac", category: "capture")
 
     var isEditingMarkup: Bool { markupBar != nil }
     var isSelectingText: Bool { liveText != nil }
@@ -108,8 +108,23 @@ final class PinPanel: NSPanel {
     }
 
     func zoom(by delta: CGFloat) {
-        zoom = min(max(zoom * (delta > 0 ? 1.06 : 1 / 1.06), 0.2), 5)
+        zoom(times: delta > 0 ? 1.06 : 1 / 1.06)
+    }
+
+    /// 핀치: 손가락 벌린 만큼 (가운데 기준)
+    func zoom(times factor: CGFloat) {
+        zoom = min(max(zoom * factor, PinResize.minZoom), PinResize.maxZoom)
         resize(to: NSSize(width: baseSize.width * zoom, height: baseSize.height * zoom))
+    }
+
+    var zoomLevel: CGFloat { zoom }
+
+    /// 가장자리·모서리 끌기 (PinResize)
+    func resize(from start: NSRect, edges: PinResize.Edges, dx: CGFloat, dy: CGFloat) {
+        let (rect, factor) = PinResize.frame(from: start, base: baseSize, edges: edges, dx: dx, dy: dy)
+        zoom = factor
+        setFrame(rect, display: true)
+        placeEditBar()
     }
 
     private func resize(to size: NSSize) {
@@ -342,6 +357,8 @@ private final class PinCanvasView: NSView, NSDraggingSource {
     private let image: CGImage
     private var drawing: Annotation?
     private var textInput: AnnotationTextInput?
+    /// 가장자리 끌기로 크기 바꾸는 중: 잡은 가장자리, 시작 틀, 시작 마우스 위치(화면 좌표)
+    private var resizing: (edges: PinResize.Edges, frame: NSRect, mouse: NSPoint)?
 
     init(frame: NSRect, image: CGImage) {
         self.image = image
@@ -363,6 +380,29 @@ private final class PinCanvasView: NSView, NSDraggingSource {
 
     override func resetCursorRects() {
         if pin?.isEditingMarkup == true { addCursorRect(bounds, cursor: .crosshair) }
+    }
+
+    // 핀은 앞으로 오지 않은(키 창이 아닌) 상태가 대부분이라 커서 영역 대신 항상 받는 추적 영역으로 커서를 바꾼다
+    override func updateTrackingAreas() {
+        trackingAreas.forEach(removeTrackingArea)
+        addTrackingArea(NSTrackingArea(rect: .zero, options: [.mouseMoved, .mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+                                       owner: self))
+        super.updateTrackingAreas()
+    }
+
+    private func resizeEdges(_ event: NSEvent) -> PinResize.Edges {
+        guard pin?.isEditingMarkup != true else { return PinResize.Edges() }
+        return PinResize.edges(at: convert(event.locationInWindow, from: nil), in: bounds.size)
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        guard resizing == nil, pin?.isEditingMarkup != true else { return }
+        let edges = resizeEdges(event)
+        (edges.isEmpty ? NSCursor.arrow : PinResize.cursor(for: edges)).set()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        if resizing == nil, pin?.isEditingMarkup != true { NSCursor.arrow.set() }
     }
 
     private func basePoint(_ event: NSEvent) -> CGPoint {
@@ -421,6 +461,11 @@ private final class PinCanvasView: NSView, NSDraggingSource {
             if tool == .number { drawing?.number = Annotation.nextNumber(after: pin.annotations) }
             return
         }
+        let edges = resizeEdges(event)
+        if !edges.isEmpty, let window {
+            resizing = (edges, window.frame, NSEvent.mouseLocation)
+            return
+        }
         if event.clickCount == 2 {
             pin?.closePin()
         } else if event.modifierFlags.contains(.command) {
@@ -451,12 +496,23 @@ private final class PinCanvasView: NSView, NSDraggingSource {
     }
 
     override func mouseDragged(with event: NSEvent) {
+        if let resizing {
+            let mouse = NSEvent.mouseLocation
+            pin?.resize(from: resizing.frame, edges: resizing.edges, dx: mouse.x - resizing.mouse.x, dy: mouse.y - resizing.mouse.y)
+            return
+        }
         guard drawing != nil else { return }
         drawing?.extend(to: basePoint(event))
         needsDisplay = true
     }
 
     override func mouseUp(with event: NSEvent) {
+        if resizing != nil {
+            resizing = nil
+            if let pin { PinPanel.logger.info("pin resized zoom=\(pin.zoomLevel, privacy: .public)") }
+            mouseMoved(with: event)
+            return
+        }
         guard let finished = drawing else { return }
         if finished.isMeaningful { pin?.annotations.append(finished) }
         drawing = nil
@@ -471,6 +527,11 @@ private final class PinCanvasView: NSView, NSDraggingSource {
         } else {
             pin?.zoom(by: delta)
         }
+    }
+
+    /// 트랙패드 두 손가락 벌리기·오므리기
+    override func magnify(with event: NSEvent) {
+        pin?.zoom(times: 1 + event.magnification)
     }
 
     override func menu(for event: NSEvent) -> NSMenu? { pin?.makeMenu() }
