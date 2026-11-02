@@ -3,6 +3,9 @@
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
 ## 0.2.0 (2026-11-02)
+[2026-11-02 12:45]
+- [Changed] - PR #22 push: feat/0.2.0-shortcuts-updates (6f22810)
+
 [2026-11-02 12:42]
 - [Added] - Sources/PolyMacApp/Intents.swift `ExtractTextIntent`, `ExtractTableIntent`, `CaptureTextIntent`, `FixHangulIntent`: 단축어 앱 동작 목록에 뜨는 PolyMac 동작 4개 (결과는 단축어로만, 기능이 꺼져 있으면 거절)
 - [Added] - App/en.lproj/Localizable.strings: 단축어 동작 이름·설명 영어
