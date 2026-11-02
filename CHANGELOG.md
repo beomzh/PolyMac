@@ -2,6 +2,34 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-11-02 13:22]
+- [Changed] - PR #24 push: 단추·손상됨·rpath 수정 (01794f1)
+
+[2026-11-02 13:20]
+- [Fixed] - Sources/PolyMacCore/Toast.swift: 알림의 링크 단추가 눌리지 않던 문제 — 앞으로 나오지 않는 알림 창에서 일반 단추는 첫 클릭을 창 선택에 써 버려 FirstClickButton으로
+- [Changed] - Sources/PolyMacCore/Annotation.swift `FirstClickButton`: 알림에서도 쓰게 모듈 안 공개
+- [Added] - Sources/OCRModule/TextRecognizer.swift `linkActions`: 인식 결과의 글자 수·링크 수 로그 (단추 문제 진단용)
+- [Fixed] - scripts/build-app.sh: Xcode 빌드가 넣는 툴체인 경로 rpath(/Applications/Xcode.app/…)를 실행 파일에서 지움 — 받는 Mac에는 없는 앱 밖 경로
+- [Fixed] - packaging/homebrew/polymac.rb: 다른 Mac에서 "손상됨"으로 휴지통에 보내지던 문제 — postflight에서 quarantine 제거 (자체 서명 인증서를 받는 Mac이 믿지 않아서, 사용자 결정)
+- [Fixed] - README.md, docs/RELEASING.md, docs/ARCHITECTURE.md: 받은 zip의 첫 실행 안내를 "그래도 열기"에서 xattr로 (손상됨 창에는 그래도 열기가 없음)
+- [Changed] - docs/SECURITY.md: 다른 Mac 첫 실행 판정과 cask의 quarantine 제거 결정·영향, rpath 규칙
+
+[2026-11-02 13:14]
+- [Changed] - PR #24 push: feat/0.2.2-ocr-finish (2817229)
+
+[2026-11-02 13:12]
+- [Added] - Sources/OCRModule/LineJoiner.swift `indentation`, `isWide`: "보이는 줄 그대로"에서 줄 상자 왼쪽 위치로 줄 앞 들여쓰기를 되살림 (Vision이 버리는 공백)
+- [Added] - Sources/OCRModule/TextRecognizer.swift `OCROptions.preserveIndent`, `OCRRunner.linkActions`: 들여쓰기 보존(기본 켬, 측정으로 결정), 결과의 웹 주소마다 알림 열기 단추
+- [Added] - Sources/OCRModule/LinkDetector.swift `LinkDetector`: 글 속 http·https 주소 찾기 (저절로 열지 않음 — QR 피싱 방지)
+- [Changed] - Sources/PolyMacCore/Toast.swift `Toast.Action`, `hide`: 알림 아래 단추 (단추가 있을 때만 클릭을 받고 6초 이상 표시), 사라지는 도중 새 알림이 뜨면 지우지 않음
+- [Added] - Sources/CaptureModule/PinPanel.swift `beginTextSelection`, `endTextSelection`: 핀 우클릭 › 텍스트 선택 — 라이브 텍스트(VisionKit, 기기 안)로 글자 일부를 골라 ⌘C
+- [Added] - scripts/make-ocr-samples.swift, Tests/OCRSamples: code-indent, yaml-indent, ko-list 샘플
+- [Added] - Sources/OCRBench/main.swift `layout`: 공백·들여쓰기까지 비교하는 오류율(layout CER), no-indent 설정
+- [Added] - Tests/OCRModuleTests/LineJoinerTests.swift, LinkDetectorTests.swift: 들여쓰기·흔들림·나란한 줄, 링크 찾기·스킴·개수 제한
+- [Changed] - docs/OCR-BENCH.md: 새 샘플·layout 지표·2026-11-02 결과와 결정
+- [Changed] - docs/ROADMAP.md, README.md, docs/SECURITY.md: 공백 보존·URL 감지·라이브 텍스트 완료, 링크는 누를 때만 연다
+- [Changed] - VERSION: 0.2.2
+
 [2026-11-02 12:55]
 - [Changed] - PR #23 push: chore/0.2.1-homebrew-tap (09fbc23)
 

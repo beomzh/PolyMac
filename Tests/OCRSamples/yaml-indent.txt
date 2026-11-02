@@ -1,0 +1,7 @@
+services:
+  web:
+    image: polymac/web:0.2
+    ports:
+      - "8080:80"
+  db:
+    image: postgres:16

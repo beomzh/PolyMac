@@ -1,6 +1,7 @@
 import AppKit
 import PolyMacCore
 import Vision
+import os
 
 /// 인식 설정. 기본값이 앱에서 쓰는 값이고, 측정 도구(scripts/ocr-bench.sh)가 바꿔 가며 비교한다.
 /// 측정 결과(합성 샘플 14개, docs/OCR-BENCH.md): 예전 설정 글자 오류율 1.58% → 지금 0.93%, 정확히 맞힌 샘플 9 → 11개.
@@ -14,6 +15,8 @@ public struct OCROptions: Sendable {
     public var upscaleMaxPixels = 2_000_000
     /// 흔한 기호 오인식 고치기 (OCRCleanup)
     public var cleanup = true
+    /// "보이는 줄 그대로"에서 줄 앞 들여쓰기를 공백으로 살린다 (코드·YAML·목록)
+    public var preserveIndent = true
 
     public init() {}
 }
@@ -42,7 +45,7 @@ public enum TextRecognizer {
                         }
                     }
                     var parts = codes
-                    if !lines.isEmpty { parts.append(LineJoiner.join(lines, mode: lineMode)) }
+                    if !lines.isEmpty { parts.append(LineJoiner.join(lines, mode: lineMode, indent: options.preserveIndent)) }
                     continuation.resume(returning: parts.joined(separator: "\n"))
                 } catch {
                     continuation.resume(throwing: error)
@@ -78,11 +81,25 @@ public enum OCRRunner {
             }
             PasteboardWriter.copy(text, origin: .ocr)
             let preview = text.count > 120 ? String(text.prefix(120)) + "…" : text
-            Toast.show(L("텍스트를 클립보드에 복사했습니다", "Text copied to the clipboard"), content: preview, duration: 3)
+            Toast.show(L("텍스트를 클립보드에 복사했습니다", "Text copied to the clipboard"), content: preview, duration: 3,
+                       actions: linkActions(text))
             return true
         } catch {
             Toast.show(L("텍스트 추출 실패: \(error.localizedDescription)", "Text recognition failed: \(error.localizedDescription)"))
             return false
+        }
+    }
+
+    /// 글 속 웹 주소마다 "열기" 단추 (누를 때만 기본 브라우저로 연다)
+    static func linkActions(_ text: String) -> [Toast.Action] {
+        let logger = Logger(subsystem: "dev.polymac", category: "ocr")
+        let links = LinkDetector.links(in: text)
+        logger.info("ocr result chars=\(text.count) links=\(links.count)")
+        return links.map { url in
+            Toast.Action(LinkDetector.title(url)) {
+                logger.notice("open link from OCR result host=\(url.host ?? "", privacy: .public)")
+                NSWorkspace.shared.open(url)
+            }
         }
     }
 

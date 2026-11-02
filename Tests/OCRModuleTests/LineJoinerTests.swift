@@ -26,3 +26,35 @@ private func lines(_ texts: [String], gapAfter: Int? = nil) -> [LineJoiner.Line]
     #expect(LineJoiner.join(lines(["recog-", "nition works", "well"]), mode: .singleLine) == "recognition works well")
     #expect(LineJoiner.join(lines(["E-", "Mail"]), mode: .singleLine) == "E- Mail") // 대문자 앞 하이픈은 남김
 }
+
+/// 고정폭 글꼴처럼: 한 칸 폭 0.01, 줄 앞 공백 수만큼 오른쪽에서 시작
+private func monoLines(_ texts: [String]) -> [LineJoiner.Line] {
+    texts.enumerated().map { i, text in
+        let indent = text.prefix { $0 == " " }.count
+        let body = String(text.dropFirst(indent))
+        return LineJoiner.Line(text: body, box: CGRect(x: 0.05 + CGFloat(indent) * 0.01, y: 0.9 - CGFloat(i) * 0.05,
+                                                     width: CGFloat(body.count) * 0.01, height: 0.04))
+    }
+}
+
+@Test func keepsCodeIndentation() {
+    let code = ["func run() {", "    let x = 1", "    if x > 0 {", "        print(x)", "    }", "}"]
+    #expect(LineJoiner.join(monoLines(code), mode: .keep, indent: true) == code.joined(separator: "\n"))
+    #expect(LineJoiner.join(monoLines(code), mode: .keep, indent: false) == code.map { $0.trimmingCharacters(in: .whitespaces) }.joined(separator: "\n"))
+}
+
+@Test func ignoresSmallJitterAndSideBySideLines() {
+    // 한 칸 차이는 흔들림
+    #expect(LineJoiner.join(monoLines(["first line here", " next line"]), mode: .keep, indent: true) == "first line here\nnext line")
+    // 같은 높이에 나란히 있는 줄(두 단·표)은 위치를 들여쓰기로 보지 않는다
+    let side = [LineJoiner.Line(text: "왼쪽 단 글", box: CGRect(x: 0.05, y: 0.9, width: 0.1, height: 0.04)),
+                LineJoiner.Line(text: "오른쪽 단 글", box: CGRect(x: 0.55, y: 0.9, width: 0.12, height: 0.04))]
+    #expect(LineJoiner.join(side, mode: .keep, indent: true) == "왼쪽 단 글\n오른쪽 단 글")
+    // 다른 줄바꿈 방식에는 영향이 없다
+    #expect(LineJoiner.join(monoLines(["a = 1", "    b = 2"]), mode: .singleLine, indent: true) == "a = 1 b = 2")
+}
+
+@Test func countsKoreanAsTwoCells() {
+    #expect(LineJoiner.isWide("한".unicodeScalars.first!))
+    #expect(!LineJoiner.isWide("a".unicodeScalars.first!))
+}

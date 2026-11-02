@@ -29,11 +29,12 @@ public enum LineJoiner {
         }
     }
 
-    public static func join(_ lines: [Line], mode: OCRLineMode) -> String {
+    public static func join(_ lines: [Line], mode: OCRLineMode, indent: Bool = false) -> String {
         let texts = lines.map { $0.text.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         switch mode {
         case .keep:
-            return lines.map(\.text).joined(separator: "\n")
+            guard indent, let spaces = indentation(lines) else { return lines.map(\.text).joined(separator: "\n") }
+            return zip(lines, spaces).map { String(repeating: " ", count: $1) + $0.text }.joined(separator: "\n")
         case .singleLine:
             return texts.reduce("") { glue($0, $1) }
         case .paragraphs:
@@ -63,6 +64,37 @@ public enum LineJoiner {
         let shortLine = a.box.width < max(a.box.width, b.box.width) * 0.6   // 앞 줄이 일찍 끝남
         let ends = a.text.trimmingCharacters(in: .whitespaces).last.map { ".!?。:".contains($0) } ?? false
         return shortLine && ends
+    }
+
+    /// 줄마다 앞에 넣을 공백 수. Vision은 줄 앞 공백을 버리므로 줄 상자의 왼쪽 위치로 되살린다.
+    /// 글자 한 칸 폭 = 줄 상자 폭 / 글자 칸 수(한글·한자는 2칸)의 중앙값 — 고정폭 글꼴(코드)에서 정확하다.
+    /// 두 칸 미만 차이는 흔들림으로 보고 버린다. 줄이 옆으로 나란히 있으면(여러 단·표) 위치가 들여쓰기가 아니라 아무것도 하지 않는다.
+    static func indentation(_ lines: [Line]) -> [Int]? {
+        guard lines.count > 1, let left = lines.map(\.box.minX).min() else { return nil }
+        let sorted = lines.sorted { $0.box.maxY > $1.box.maxY }
+        for (a, b) in zip(sorted, sorted.dropFirst()) where b.box.maxY - a.box.minY > min(a.box.height, b.box.height) * 0.5 {
+            return nil
+        }
+        let units = lines.compactMap { line -> CGFloat? in
+            let cells = line.text.trimmingCharacters(in: .whitespaces).unicodeScalars.reduce(0) { $0 + (isWide($1) ? 2 : 1) }
+            return cells >= 4 ? line.box.width / CGFloat(cells) : nil
+        }.sorted()
+        guard !units.isEmpty else { return nil }
+        let unit = units[units.count / 2]
+        guard unit > 0 else { return nil }
+        let spaces = lines.map { line -> Int in
+            let n = Int(((line.box.minX - left) / unit).rounded())
+            return n >= 2 ? min(n, 40) : 0
+        }
+        return spaces.contains { $0 > 0 } ? spaces : nil
+    }
+
+    /// 고정폭 글꼴에서 두 칸을 차지하는 글자 (한글·한자·가나·전각)
+    static func isWide(_ s: Unicode.Scalar) -> Bool {
+        switch s.value {
+        case 0x1100...0x115F, 0x2E80...0xA4CF, 0xAC00...0xD7A3, 0xF900...0xFAFF, 0xFE30...0xFE4F, 0xFF00...0xFF60, 0xFFE0...0xFFE6: return true
+        default: return false
+        }
     }
 
     /// 두 조각 잇기: 영어 줄 끝 하이픈은 붙이고, 나머지는 띄어 쓴다

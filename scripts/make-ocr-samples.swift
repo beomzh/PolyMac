@@ -37,6 +37,31 @@ let samples: [Sample] = [
         "\(n)번째 문단입니다. 다운로드 폴더에 쌓인 파일은 규칙에 따라 자동으로 정리됩니다. 처음 켜면 미리보기 모드라 실제로 옮기지 않고 계획만 보여 줍니다. 확인한 뒤 미리보기를 끄면 그때부터 옮깁니다. 같은 이름이 있으면 덮어쓰지 않고 번호를 붙여 저장합니다."
     }.joined(separator: "\n\n"), size: 17, width: 1000),
     Sample(name: "system-ui", text: "알림 보이기 · 위치: 오른쪽 위 · 표시 시간 2.5초", font: ".AppleSystemUIFont", size: 13),
+    // 들여쓰기 (공백 보존 측정 — scripts/ocr-bench.sh의 layout 줄)
+    Sample(name: "code-indent", text: """
+    func total(_ items: [Item]) -> Int {
+        var sum = 0
+        for item in items where item.isPinned {
+            sum += item.count
+        }
+        return sum
+    }
+    """, font: "Menlo-Regular", size: 13),
+    Sample(name: "yaml-indent", text: """
+    services:
+      web:
+        image: polymac/web:0.2
+        ports:
+          - "8080:80"
+      db:
+        image: postgres:16
+    """, font: "Menlo-Regular", size: 13),
+    Sample(name: "ko-list", text: """
+    설치 순서
+      1. 압축을 풉니다
+      2. 응용 프로그램 폴더로 옮깁니다
+         처음 열 때는 그래도 열기를 누릅니다
+    """, size: 15),
 ]
 
 let out = URL(fileURLWithPath: CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : "Tests/OCRSamples", isDirectory: true)

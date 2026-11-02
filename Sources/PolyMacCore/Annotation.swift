@@ -369,7 +369,8 @@ public final class AnnotationToolbar: NSView {
 }
 
 /// 도구 막대는 앞으로 오지 않는 패널에 있어 첫 클릭이 "창 앞으로"에 쓰이지 않게
-private final class FirstClickButton: NSButton {
+/// 앞으로 나오지 않는 패널(도구 막대·알림)에서도 첫 클릭에 눌리는 단추
+final class FirstClickButton: NSButton {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
 

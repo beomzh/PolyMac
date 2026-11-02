@@ -95,7 +95,7 @@ public protocol PolyMacModule: AnyObject {
 | OCR | Vision (+ VisionKit 라이브 텍스트) | 온디바이스, 한국어, 무료 |
 | 단축키 | Carbon `RegisterEventHotKey` | 권한 불필요, 가장 가벼움 (KeyboardShortcuts 라이브러리 검토) |
 | 자동 업데이트 | Sparkle 2 | 오픈소스 앱 표준 |
-| 배포 | 고정 인증서 서명 + Hardened Runtime + GitHub Releases(zip·sha256), 공증 없음 | App Store 불가(샌드박스), 유료 개발자 프로그램 미가입 — 받는 사람이 처음 한 번 "그래도 열기" |
+| 배포 | 고정 인증서 서명 + Hardened Runtime + GitHub Releases(zip·sha256), 공증 없음 | App Store 불가(샌드박스), 유료 개발자 프로그램 미가입 — 받은 zip은 처음 한 번 `xattr`로 다운로드 표시를 지워야 함(자체 서명이라 "손상됨"으로 막힘), Homebrew cask는 자동 |
 | 최소 OS | macOS 14 | ScreenCaptureKit 스크린샷 API. 표 인식 등은 `if #available(macOS 26, *)` |
 
 ## 5-1. 모듈별 사용 기술

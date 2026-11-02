@@ -61,6 +61,9 @@ ditto "$SPARKLE" "$APP/Contents/Frameworks/Sparkle.framework"
 rm -rf "$APP/Contents/Frameworks/Sparkle.framework/XPCServices" "$APP/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices"
 otool -l "$APP/Contents/MacOS/PolyMac" | grep -q "@executable_path/../Frameworks" \
     || install_name_tool -add_rpath @executable_path/../Frameworks "$APP/Contents/MacOS/PolyMac"
+# Xcode 빌드가 넣는 툴체인 경로(/Applications/Xcode.app/…) rpath는 뺀다 — 받는 Mac에는 없는 경로이고, 앱 밖에서 라이브러리를 찾게 된다
+otool -l "$APP/Contents/MacOS/PolyMac" | awk '/LC_RPATH/ {r=1} r && /path / {print $2; r=0}' | grep -E '^/Applications/|Xcode|CommandLineTools' \
+    | while read -r path; do install_name_tool -delete_rpath "$path" "$APP/Contents/MacOS/PolyMac"; done
 
 echo "▶ 단축어 동작 (App Intents)"
 INTERMEDIATES="$(find "$ROOT/.build" -type d -path '*Release*' -name 'PolyMac-p.build' 2>/dev/null | head -1)"
