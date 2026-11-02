@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-11-02 13:28]
+- [Changed] - CHANGELOG.md: PR #25 (feat/0.2.3-pin-resize) push 기록
+
 [2026-11-02 13:26]
 - [Added] - Sources/CaptureModule/PinResize.swift `PinResize`: 핀 가장자리·모서리 끌기 크기 계산(비율 유지, 반대쪽 고정, 20%~500%)과 크기 조절 커서
 - [Added] - Sources/CaptureModule/PinPanel.swift `PinCanvasView`: 가장자리 띠에서 끌면 크기 조절, 추적 영역으로 커서 변경, 트랙패드 핀치 확대 — 스크롤 외에 크기를 바꿀 방법이 없었다
