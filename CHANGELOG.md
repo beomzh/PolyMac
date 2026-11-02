@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-11-02 13:22]
+- [Changed] - PR #24 push: 단추·손상됨·rpath 수정 (01794f1)
+
 [2026-11-02 13:20]
 - [Fixed] - Sources/PolyMacCore/Toast.swift: 알림의 링크 단추가 눌리지 않던 문제 — 앞으로 나오지 않는 알림 창에서 일반 단추는 첫 클릭을 창 선택에 써 버려 FirstClickButton으로
 - [Changed] - Sources/PolyMacCore/Annotation.swift `FirstClickButton`: 알림에서도 쓰게 모듈 안 공개
