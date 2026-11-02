@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-11-02 13:14]
+- [Changed] - PR #24 push: feat/0.2.2-ocr-finish (2817229)
+
 [2026-11-02 13:12]
 - [Added] - Sources/OCRModule/LineJoiner.swift `indentation`, `isWide`: "보이는 줄 그대로"에서 줄 상자 왼쪽 위치로 줄 앞 들여쓰기를 되살림 (Vision이 버리는 공백)
 - [Added] - Sources/OCRModule/TextRecognizer.swift `OCROptions.preserveIndent`, `OCRRunner.linkActions`: 들여쓰기 보존(기본 켬, 측정으로 결정), 결과의 웹 주소마다 알림 열기 단추
