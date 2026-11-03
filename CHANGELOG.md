@@ -3,6 +3,9 @@
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
 [2026-11-03 14:04]
+- [Changed] - CHANGELOG.md: PR #26 (feat/0.2.4-clipboard-search-highlight) push 기록
+
+[2026-11-03 14:04]
 - [Added] - Sources/ClipboardModule/SearchHighlight.swift `SearchHighlight`: 검색 단어 분해·일치 범위(대소문자, 풀어진 한글 무시)·일치 근처부터 보이는 한 줄 요약 — 검색해도 어디가 맞았는지 보이지 않았다
 - [Changed] - Sources/ClipboardModule/ClipboardPanel.swift `ClipboardRow.oneLine`: 일치 글자 굵게·노란 배경, 검색 중엔 일치 근처부터 보이고 뒤를 자름
 - [Changed] - Sources/ClipboardModule/ClipboardPanel.swift `PreviewTextView`: 검색어 배경 강조, 첫 일치로 스크롤, 검색어만 바뀌어도 다시 강조
