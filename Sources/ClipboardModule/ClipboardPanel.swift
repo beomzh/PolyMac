@@ -255,7 +255,7 @@ final class ClipboardPanelModel: ObservableObject {
     /// "이미지"로 이미지만 찾기.
     private func refilter() {
         let ordered = items.filter(\.isPinned) + items.filter { !$0.isPinned }
-        let words = query.precomposedStringWithCanonicalMapping.lowercased().split(separator: " ").map(String.init)
+        let words = SearchHighlight.words(query)
         guard !words.isEmpty else { filtered = ordered; return }
         filtered = ordered.filter { item in
             let text = (item.isImage ? "이미지 image" : item.text).precomposedStringWithCanonicalMapping.lowercased()
@@ -427,7 +427,7 @@ struct ClipboardPanelView: View {
             if model.previewOpen {
                 Divider()
                 // 썸네일은 여기서 꺼내 넘긴다 — 미리보기는 model을 지켜보지 않아서, 다 읽혀도 다시 그려지지 않는다
-                ClipboardPreview(item: model.selected,
+                ClipboardPreview(item: model.selected, words: SearchHighlight.words(model.query),
                                  image: model.selected.flatMap { $0.isImage ? model.thumbnail($0, maxPixel: 1400) : nil },
                                  model: model)
                     .frame(width: ClipboardPanelController.previewWidth)
@@ -471,13 +471,14 @@ struct ClipboardPanelView: View {
                 LazyVStack(spacing: 2) {
                     let items = model.filtered
                     let highlighted = model.highlightedID
+                    let words = SearchHighlight.words(model.query)
                     if items.isEmpty {
                         Text(model.query.isEmpty ? L("기록이 없습니다", "No history yet") : L("검색 결과가 없습니다", "No results"))
                             .foregroundStyle(.secondary)
                             .padding(.top, 40)
                     }
                     ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                        ClipboardRow(item: item, index: index, isSelected: item.id == highlighted,
+                        ClipboardRow(item: item, index: index, isSelected: item.id == highlighted, words: words,
                                      thumbnail: item.isImage ? model.thumbnail(item) : nil, model: model)
                             .id(item.id)
                             .contentShape(Rectangle())
@@ -513,6 +514,8 @@ private struct ClipboardRow: View {
     let item: ClipboardItem
     let index: Int
     let isSelected: Bool
+    /// 검색어 (없으면 강조하지 않는다)
+    let words: [String]
     /// 백그라운드에서 다 읽히면 값이 바뀌어 이 줄만 다시 그려진다
     let thumbnail: NSImage?
     let model: ClipboardPanelModel
@@ -543,7 +546,8 @@ private struct ClipboardRow: View {
             } else {
                 Text(oneLine)
                     .lineLimit(1)
-                    .truncationMode(.middle)
+                    // 검색 중에는 일치 근처부터 보여 주므로 뒤를 자른다
+                    .truncationMode(words.isEmpty ? .middle : .tail)
                 Spacer(minLength: 4)
             }
             if let origin = item.originKind {
@@ -574,17 +578,24 @@ private struct ClipboardRow: View {
         return files.count == 1 ? first : L("\(first) 외 \(files.count - 1)개", "\(first) and \(files.count - 1) more")
     }
 
-    /// 줄바꿈을 ⏎로 보여 한 줄에 요약 (Maccy처럼). 한 줄에 보이는 건 몇십 자라 앞 300자만 배치한다.
-    private var oneLine: String {
-        let collapsed = String(item.text.prefix(300)).trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: "\r\n", with: "\n")
-            .replacingOccurrences(of: "\n", with: " ⏎ ")
-        return collapsed.isEmpty ? L("(공백)", "(whitespace)") : collapsed
+    /// 줄바꿈을 ⏎로 보여 한 줄에 요약 (Maccy처럼). 검색 중이면 일치 근처부터, 일치한 글자는 굵게·노란 배경.
+    private var oneLine: AttributedString {
+        let line = SearchHighlight.oneLine(item.text, words: words)
+        guard !line.isEmpty else { return AttributedString(L("(공백)", "(whitespace)")) }
+        var attributed = AttributedString(line)
+        for range in SearchHighlight.ranges(of: words, in: line, limit: 20) {
+            guard let r = Range(range, in: attributed) else { continue }
+            attributed[r].backgroundColor = Color.yellow.opacity(isSelected ? 0.55 : 0.4)
+            attributed[r].foregroundColor = isSelected ? .white : .primary
+            attributed[r].inlinePresentationIntent = .stronglyEmphasized
+        }
+        return attributed
     }
 }
 
 private struct ClipboardPreview: View {
     let item: ClipboardItem?
+    let words: [String]
     let image: NSImage?
     let model: ClipboardPanelModel
 
@@ -619,7 +630,7 @@ private struct ClipboardPreview: View {
                     let preview = model.previewText(item)
                     // SwiftUI Text는 긴 글(특히 고정폭 글꼴의 한글)을 한 번에 배치해 수 초씩 멈춘다 →
                     // 보이는 부분만 배치하는 시스템 텍스트 뷰로
-                    PreviewTextView(id: item.id, text: preview.text)
+                    PreviewTextView(id: item.id, text: preview.text, words: words)
                     if preview.truncated {
                         Label(L("미리보기는 앞 200 KB까지만 보여 줍니다. 복사하면 전체가 들어갑니다.", "Preview shows the first 200 KB only. Copying includes everything."), systemImage: "info.circle")
                             .font(.caption)
@@ -681,9 +692,11 @@ private struct ClipboardPreview: View {
 private struct PreviewTextView: NSViewRepresentable {
     let id: UUID
     let text: String
+    let words: [String]
 
     final class Coordinator {
         var shownID: UUID?
+        var shownWords: [String] = []
     }
 
     func makeCoordinator() -> Coordinator { Coordinator() }
@@ -706,9 +719,32 @@ private struct PreviewTextView: NSViewRepresentable {
 
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         // 같은 항목이면 다시 넣지 않는다 (큰 문자열 비교·재배치 방지)
-        guard context.coordinator.shownID != id, let textView = scroll.documentView as? NSTextView else { return }
-        context.coordinator.shownID = id
-        textView.string = text
-        textView.scroll(.zero)
+        guard let textView = scroll.documentView as? NSTextView else { return }
+        let coordinator = context.coordinator
+        guard coordinator.shownID != id || coordinator.shownWords != words else { return }
+        if coordinator.shownID != id {
+            coordinator.shownID = id
+            textView.string = text
+        }
+        coordinator.shownWords = words
+        highlight(textView)
+    }
+
+    /// 검색어 배경 강조, 첫 일치로 스크롤 (없으면 맨 위)
+    private func highlight(_ textView: NSTextView) {
+        guard let storage = textView.textStorage else { return }
+        let all = NSRange(location: 0, length: storage.length)
+        storage.removeAttribute(.backgroundColor, range: all)
+        let ranges = SearchHighlight.ranges(of: words, in: textView.string).map { NSRange($0, in: textView.string) }
+        guard let first = ranges.first else {
+            textView.scroll(.zero)
+            return
+        }
+        storage.beginEditing()
+        for range in ranges {
+            storage.addAttribute(.backgroundColor, value: NSColor.systemYellow.withAlphaComponent(0.45), range: range)
+        }
+        storage.endEditing()
+        textView.scrollRangeToVisible(first)
     }
 }
