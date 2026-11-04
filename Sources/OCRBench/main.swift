@@ -43,6 +43,10 @@ func option(_ change: (inout OCROptions) -> Void) -> OCROptions {
 let args = CommandLine.arguments.dropFirst()
 let folder = URL(fileURLWithPath: args.first { !$0.hasPrefix("-") } ?? "Tests/OCRSamples", isDirectory: true)
 let verbose = args.contains("-v")
+if args.contains("--budget") {
+    try await runBudget(folder: folder)
+    exit(0)
+}
 if args.contains("--tables") {
     let tables = URL(fileURLWithPath: args.first { !$0.hasPrefix("-") } ?? "Tests/OCRSamples/tables", isDirectory: true)
     try await runTableBench(folder: tables, verbose: verbose)

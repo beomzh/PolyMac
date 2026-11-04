@@ -2,6 +2,16 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-11-04 12:56]
+- [Added] - Sources/OCRModule/TextTranslator.swift `TextTranslator`, `TranslationDirection`: Apple Translation 온디바이스 번역 (macOS 15+), 언어 방향 자동 선택, 모델이 없으면 macOS 내려받기 창
+- [Added] - Sources/OCRModule/OCRModule.swift `translateRegion`, `translateClipboard`: `⌃⇧7` 영역 선택 → 번역, 메뉴의 클립보드 글 번역
+- [Added] - Tests/OCRModuleTests/TranslationDirectionTests.swift: 언어 판별과 번역 방향 테스트
+- [Added] - Sources/OCRBench/Budget.swift `runBudget`: OCR 지연·메모리 측정 (`scripts/ocr-bench.sh --budget`) — 자원 예산에 실측값이 없었다
+- [Changed] - docs/ARCHITECTURE.md: 자원 예산 실측표, 사용 뒤 메모리는 목표 초과
+- [Changed] - docs/SECURITY.md: 번역과 언어 모델 내려받기 안내
+- [Changed] - README.md, docs/ROADMAP.md: 번역 안내, 후보에서 제외
+- [Changed] - VERSION: 0.2.6
+
 [2026-11-04 12:38]
 - [Changed] - CHANGELOG.md: PR #27 (chore/0.2.5-release-0.2.4-followup) push 기록
 

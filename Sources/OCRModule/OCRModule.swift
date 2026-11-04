@@ -33,6 +33,14 @@ public final class OCRModule: PolyMacModule {
                 await OCRRunner.recognizeTableAndCopy(capture.image)
             }
         }
+        if TextTranslator.isAvailable {
+            context.hotkey("translateRegion", KeyCombo(kVK_ANSI_7, [.control, .shift]), L("영역 선택 → 번역해서 복사", "Select area → translate and copy")) {
+                Task { @MainActor in
+                    guard let capture = await RegionCapture.selectRegion() else { return }
+                    await OCRRunner.recognizeTranslateAndCopy(capture.image)
+                }
+            }
+        }
         // 단축어: polymac://ocr, polymac://ocr-table?format=markdown — 클립보드 이미지를 읽어 결과를 클립보드에
         URLActions.register("ocr") { [weak self] _ in
             guard let image = self?.clipboardImage() else { return false }
@@ -80,7 +88,13 @@ public final class OCRModule: PolyMacModule {
             sub.addItem(option)
         }
         lines.submenu = sub
-        return [item, table, lines, tableFormat, allow]
+        var items = [item, table]
+        if TextTranslator.isAvailable {
+            let translate = NSMenuItem(title: L("클립보드 글 번역", "Translate Clipboard Text"), action: #selector(translateClipboard), keyEquivalent: "")
+            translate.target = self
+            items.append(translate)
+        }
+        return items + [lines, tableFormat, allow]
     }
 
     private static func title(_ format: TableFormat) -> String {
@@ -103,6 +117,15 @@ public final class OCRModule: PolyMacModule {
         } else {
             context.toast(L("단축어·URL로 부르기를 껐습니다", "Shortcuts & URLs turned off"))
         }
+    }
+
+    @objc private func translateClipboard() {
+        guard let text = NSPasteboard.general.string(forType: .string),
+              !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            context.toast(L("클립보드에 글이 없습니다", "No text on the clipboard"))
+            return
+        }
+        Task { @MainActor in await OCRRunner.translateAndCopy(text) }
     }
 
     @objc private func recognizeTableFromMenu() {
