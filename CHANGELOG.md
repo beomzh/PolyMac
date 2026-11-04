@@ -2,6 +2,14 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-11-04 13:23]
+- [Fixed] - Sources/OCRModule/TranslationText.swift `TranslationText`: 줄 단위로 나눠 번역하고 줄바꿈·빈 줄·들여쓰기·목록 기호를 되붙임 — Apple 번역이 줄바꿈을 빈 줄로 늘리고 들여쓰기를 지웠다
+- [Fixed] - Sources/OCRModule/TextTranslator.swift `TranslationDirection.source`: 한글 비율을 먼저 봄 — 웹 주소가 섞인 한글을 영어로, 한영 혼합을 프랑스어로 판단했다
+- [Fixed] - Sources/OCRModule/LineJoiner.swift `startsNewParagraph`: 목록 항목과 일찍 끝난 줄은 새 문단 — 문단으로 잇기에서 목록·제목이 한 줄로 합쳐졌다
+- [Added] - Sources/OCRBench/Translate.swift `runTranslate`: 인식 → 번역 결과 확인 (`scripts/ocr-bench.sh --translate`)
+- [Added] - Tests/OCRModuleTests/TranslationTextTests.swift, Tests/OCRModuleTests/TranslationDirectionTests.swift: 줄 구조·혼합 언어 테스트
+- [Changed] - README.md: 번역의 줄 처리 안내
+
 [2026-11-04 13:18]
 - [Changed] - CHANGELOG.md: PR #28 (feat/0.2.6-translation) 결과 창 push 기록
 

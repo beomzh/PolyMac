@@ -6,22 +6,26 @@ import Translation
 import os
 
 /// 어느 언어에서 어느 언어로 옮길지. 내 언어가 아닌 글은 내 언어로, 내 언어로 된 글은 영어로 (영어가 내 언어면 한국어로).
-enum TranslationDirection {
-    /// 글의 주 언어. 짧아서 판단이 안 되면 한글이 있으면 한국어, 아니면 영어로 본다.
-    static func source(of text: String) -> String {
+public enum TranslationDirection {
+    /// 글의 주 언어. 언어 판별기는 짧은 글이나 웹 주소·영어 낱말이 섞인 한글을 다른 언어로 보기 쉬워 한글 비율을 먼저 본다.
+    public static func source(of text: String) -> String {
+        let sample = String(text.prefix(2000))
+        let letters = sample.unicodeScalars.filter(CharacterSet.letters.contains)
+        let hangul = letters.filter { (0xAC00...0xD7A3).contains($0.value) }.count
+        if hangul * 5 >= letters.count, hangul > 0 { return "ko" }
         let recognizer = NLLanguageRecognizer()
-        recognizer.processString(String(text.prefix(2000)))
-        if let language = recognizer.dominantLanguage { return language.rawValue }
-        return text.unicodeScalars.contains { (0xAC00...0xD7A3).contains($0.value) } ? "ko" : "en"
+        recognizer.languageHints = [.english: 0.7, .korean: 0.1, .japanese: 0.1, .simplifiedChinese: 0.1]
+        recognizer.processString(sample)
+        return recognizer.dominantLanguage?.rawValue ?? "en"
     }
 
-    static func target(source: String, preferred: String) -> String {
+    public static func target(source: String, preferred: String) -> String {
         guard base(source) == base(preferred) else { return preferred }
         return base(preferred) == "en" ? "ko" : "en"
     }
 
     /// 시스템 첫 번째 언어 ("ko-KR" → "ko")
-    static var preferred: String {
+    public static var preferred: String {
         base(Locale.preferredLanguages.first ?? "en")
     }
 
@@ -138,8 +142,14 @@ private struct TranslationTaskView: View {
             .translationTask(configuration) { session in
                 do {
                     try await session.prepareTranslation()
-                    let response = try await session.translate(text)
-                    await done(.success(response.targetText))
+                    let blocks = TranslationText.blocks(text)
+                    let requests = blocks.enumerated().filter { !$0.element.body.isEmpty }
+                        .map { TranslationSession.Request(sourceText: $0.element.body, clientIdentifier: String($0.offset)) }
+                    var translated: [Int: String] = [:]
+                    for response in try await session.translations(from: requests) {
+                        if let index = response.clientIdentifier.flatMap(Int.init) { translated[index] = response.targetText }
+                    }
+                    await done(.success(TranslationText.rebuild(blocks, translated: translated)))
                 } catch {
                     await done(.failure(error))
                 }

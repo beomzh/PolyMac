@@ -55,15 +55,14 @@ public enum LineJoiner {
     }
 
     /// 다음 줄이 새 문단인지: 줄 사이가 한 줄 높이의 0.8배보다 넓거나, 들여쓰기·내어쓰기가 크거나,
-    /// 앞 줄이 짧게 끝났으면(문단 끝) 새 문단으로 본다.
+    /// 다음 줄이 목록 항목이거나, 앞 줄이 짧게 끝났으면(문단 끝) 새 문단으로 본다.
     static func startsNewParagraph(after a: Line, next b: Line) -> Bool {
         let height = max(a.box.height, b.box.height, 0.0001)
         let gap = a.box.minY - b.box.maxY
         if gap > height * 0.8 || gap < -height * 0.5 { return true }       // 문단 간격, 또는 다른 단(위로 올라감)
         if abs(a.box.minX - b.box.minX) > height * 1.5 { return true }      // 들여쓰기·다른 단
-        let shortLine = a.box.width < max(a.box.width, b.box.width) * 0.6   // 앞 줄이 일찍 끝남
-        let ends = a.text.trimmingCharacters(in: .whitespaces).last.map { ".!?。:".contains($0) } ?? false
-        return shortLine && ends
+        if !TranslationText.split(b.text).prefix.trimmingCharacters(in: .whitespaces).isEmpty { return true } // 목록 항목
+        return a.box.width < b.box.width * 0.6                              // 앞 줄이 일찍 끝남 (문단 끝·제목)
     }
 
     /// 줄마다 앞에 넣을 공백 수. Vision은 줄 앞 공백을 버리므로 줄 상자의 왼쪽 위치로 되살린다.
