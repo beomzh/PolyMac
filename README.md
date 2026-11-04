@@ -5,7 +5,7 @@
 > 여러 개의 Mac 도구를 하나의 가벼운 메뉴바 앱으로.
 > Spectacle · TRex · Snipaste · AppCleaner · Maccy · Hazel · "터미널에서 열기"를 **가볍게 하나로** 묶는 macOS 오픈소스 유틸리티.
 
-> **현재 버전 0.2.0** — 단축어(Shortcuts) 앱 동작, 자동 업데이트(기본 꺼짐), Homebrew 설치. [GitHub Releases](https://github.com/beomzh/PolyMac/releases)에서 받거나 직접 빌드해서 쓸 수 있습니다 → [설치](#설치) · [지금 바로 쓰기](#지금-바로-쓰기-소스-빌드)
+> **현재 버전 0.2.4** — 핀 크기 조절, 핀 위 텍스트 선택, 들여쓰기 보존, 링크 열기, 클립보드 검색어 강조. [GitHub Releases](https://github.com/beomzh/PolyMac/releases)에서 받거나 직접 빌드해서 쓸 수 있습니다 → [설치](#설치) · [지금 바로 쓰기](#지금-바로-쓰기-소스-빌드)
 > Apple 공증을 받지 않은 앱이라 받은 zip은 처음 열 때 macOS가 "손상됨"으로 막습니다 → [처음 열 때 막히면](#처음-열-때-막히면) (Homebrew로 설치하면 이 과정이 없습니다)
 > 아래 "사용 방법"에서 아직 만들지 않은 기능에는 **(예정)** 을 붙였습니다. 모듈별 상태는 [현재 개발 상태](#현재-개발-상태) 표를 보세요.
 
@@ -345,7 +345,7 @@ Homebrew 7부터는 공식 저장소가 아닌 cask를 쓰기 전에 `brew trust
 
 - 메뉴바 PolyMac 아이콘 › **업데이트 확인…** 을 누르면 GitHub에서 새 버전을 찾아 설치합니다. 받은 파일은 PolyMac 서명 키(EdDSA)가 맞아야만 설치됩니다.
 - 하루 한 번 자동으로 확인하려면 환경 설정 › 기능 › 업데이트 › **업데이트 자동 확인**을 켭니다. 기본은 꺼져 있고, 꺼져 있으면 PolyMac은 네트워크를 쓰지 않습니다.
-- Homebrew로 설치했다면 `brew upgrade --cask polymac`도 됩니다.
+- Homebrew로 설치했다면 `brew upgrade --cask polymac`도 됩니다. 이름을 붙여야 합니다 — 그냥 `brew upgrade`는 자체 업데이트가 있는 앱이라 건너뜁니다.
 - 직접 빌드한 앱에는 업데이트 확인이 없습니다 (`git pull` 후 다시 빌드).
 
 ### 소스에서 빌드 (지금 가능)
