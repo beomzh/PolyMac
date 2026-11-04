@@ -2,6 +2,16 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-11-04 14:48]
+- [Changed] - CHANGELOG.md: PR #29 (feat/0.2.7-capture-table) push 기록
+
+[2026-11-04 14:47]
+- [Added] - Sources/PolyMacCore/Annotation.swift `AnnotationToolbar`, Sources/PolyMacCore/RegionCapture.swift `CaptureAction.table`: 캡처 도구 막대의 표 추출 단추
+- [Added] - Sources/PolyMacCore/SelectionView.swift `keyDown`: G 키와 키 안내
+- [Added] - Sources/CaptureModule/CaptureModule.swift `finish`: 캡처 영역 표 추출, 그린 표시를 뺀 원본으로
+- [Changed] - README.md: 캡처 표 추출 안내
+- [Changed] - VERSION: 0.2.7
+
 [2026-11-04 13:24]
 - [Changed] - CHANGELOG.md: PR #28 (feat/0.2.6-translation) 줄바꿈 수정 push 기록
 

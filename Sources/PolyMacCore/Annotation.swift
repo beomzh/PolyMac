@@ -254,7 +254,7 @@ public final class AnnotationToolbar: NSView {
     public enum Action: Equatable {
         case tool(AnnotationTool?)
         case undo
-        case ocr, translate, pin, save, copy, cancel
+        case ocr, table, translate, pin, save, copy, cancel
         case done
     }
 
@@ -313,6 +313,7 @@ public final class AnnotationToolbar: NSView {
 
         if output {
             stack.addArrangedSubview(button("text.viewfinder", L("텍스트 추출 (T)", "Extract text (T)"), #selector(ocrTapped)))
+            stack.addArrangedSubview(button("tablecells", L("표 추출 (G)", "Extract table (G)"), #selector(tableTapped)))
             if #available(macOS 15.0, *) {
                 stack.addArrangedSubview(button("translate", L("번역 (L)", "Translate (L)"), #selector(translateTapped)))
             }
@@ -392,6 +393,7 @@ public final class AnnotationToolbar: NSView {
 
     @objc private func undoTapped() { onAction?(.undo) }
     @objc private func ocrTapped() { onAction?(.ocr) }
+    @objc private func tableTapped() { onAction?(.table) }
     @objc private func translateTapped() { onAction?(.translate) }
     @objc private func pinTapped() { onAction?(.pin) }
     @objc private func saveTapped() { onAction?(.save) }
