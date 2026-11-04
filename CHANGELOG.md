@@ -3,6 +3,9 @@
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
 [2026-11-04 12:56]
+- [Changed] - CHANGELOG.md: PR #28 (feat/0.2.6-translation) push 기록
+
+[2026-11-04 12:56]
 - [Added] - Sources/OCRModule/TextTranslator.swift `TextTranslator`, `TranslationDirection`: Apple Translation 온디바이스 번역 (macOS 15+), 언어 방향 자동 선택, 모델이 없으면 macOS 내려받기 창
 - [Added] - Sources/OCRModule/OCRModule.swift `translateRegion`, `translateClipboard`: `⌃⇧7` 영역 선택 → 번역, 메뉴의 클립보드 글 번역
 - [Added] - Tests/OCRModuleTests/TranslationDirectionTests.swift: 언어 판별과 번역 방향 테스트
