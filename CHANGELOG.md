@@ -2,6 +2,53 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-11-04 13:24]
+- [Changed] - CHANGELOG.md: PR #28 (feat/0.2.6-translation) 줄바꿈 수정 push 기록
+
+[2026-11-04 13:23]
+- [Fixed] - Sources/OCRModule/TranslationText.swift `TranslationText`: 줄 단위로 나눠 번역하고 줄바꿈·빈 줄·들여쓰기·목록 기호를 되붙임 — Apple 번역이 줄바꿈을 빈 줄로 늘리고 들여쓰기를 지웠다
+- [Fixed] - Sources/OCRModule/TextTranslator.swift `TranslationDirection.source`: 한글 비율을 먼저 봄 — 웹 주소가 섞인 한글을 영어로, 한영 혼합을 프랑스어로 판단했다
+- [Fixed] - Sources/OCRModule/LineJoiner.swift `startsNewParagraph`: 목록 항목과 일찍 끝난 줄은 새 문단 — 문단으로 잇기에서 목록·제목이 한 줄로 합쳐졌다
+- [Added] - Sources/OCRBench/Translate.swift `runTranslate`: 인식 → 번역 결과 확인 (`scripts/ocr-bench.sh --translate`)
+- [Added] - Tests/OCRModuleTests/TranslationTextTests.swift, Tests/OCRModuleTests/TranslationDirectionTests.swift: 줄 구조·혼합 언어 테스트
+- [Changed] - README.md: 번역의 줄 처리 안내
+
+[2026-11-04 13:18]
+- [Changed] - CHANGELOG.md: PR #28 (feat/0.2.6-translation) 결과 창 push 기록
+
+[2026-11-04 13:18]
+- [Added] - Sources/OCRModule/TranslationResultPanel.swift `TranslationResultPanel`: 번역과 원문을 보여 주는 결과 창, 복사는 누를 때만 — 번역을 보기 전에 클립보드를 덮어쓰고 있었다
+- [Changed] - Sources/OCRModule/TextTranslator.swift `OCRRunner.translate`: 자동 복사 제거, 결과 창에 표시, 걸린 시간 로그를 notice로
+- [Changed] - Sources/OCRModule/OCRModule.swift, Sources/CaptureModule/CaptureModule.swift, Sources/PolyMacCore/Annotation.swift, Sources/PolyMacCore/SelectionView.swift: 문구와 호출 변경
+- [Added] - Tests/OCRModuleTests/TranslationResultPanelTests.swift: 결과 창이 클립보드를 건드리지 않는지 테스트
+- [Changed] - README.md, docs/ARCHITECTURE.md: 결과 창 사용법, 번역 실측값
+
+[2026-11-04 13:13]
+- [Changed] - CHANGELOG.md: PR #28 (feat/0.2.6-translation) 추가 push 기록
+
+[2026-11-04 13:13]
+- [Added] - Sources/PolyMacCore/AnnotationTextEditor.swift `AnnotationTextEditor`: 글자 표시 고르기·옮기기·크기 조절·고쳐 쓰기·지우기·되돌리기, 놓일 자리 미리 보기 — 넣은 글자를 고칠 방법이 없었다
+- [Changed] - Sources/PolyMacCore/AnnotationTextEditor.swift `AnnotationTextInput`: NSTextView로 바꿔 확정 뒤 모양과 같은 자리에 표시, ⇧↩ 줄바꿈, 키 안내
+- [Changed] - Sources/PolyMacCore/Annotation.swift `Annotation.fontSize`, `AnnotationRenderer.textBounds`: 글자별 크기와 영역, 입력 칸과 같은 기준선
+- [Added] - Sources/PolyMacCore/Annotation.swift `AnnotationToolbar`, Sources/PolyMacCore/RegionCapture.swift `CaptureAction.translate`: 캡처 도구 막대의 번역 단추와 L 키
+- [Changed] - Sources/PolyMacCore/SelectionView.swift, Sources/CaptureModule/PinPanel.swift: 글자 편집 연결, I자 커서, ⌘Z가 옮기기·크기 조절도 되돌림
+- [Added] - Sources/CaptureModule/CaptureModule.swift `finish`: 캡처 영역 번역
+- [Added] - Tests/PolyMacCoreTests/AnnotationTextEditorTests.swift: 위치·크기·되돌리기와 입력 칸·결과 픽셀 위치 비교 테스트
+- [Changed] - README.md: 글자 사용법과 캡처 번역 키
+
+[2026-11-04 12:56]
+- [Changed] - CHANGELOG.md: PR #28 (feat/0.2.6-translation) push 기록
+
+[2026-11-04 12:56]
+- [Added] - Sources/OCRModule/TextTranslator.swift `TextTranslator`, `TranslationDirection`: Apple Translation 온디바이스 번역 (macOS 15+), 언어 방향 자동 선택, 모델이 없으면 macOS 내려받기 창
+- [Added] - Sources/OCRModule/OCRModule.swift `translateRegion`, `translateClipboard`: `⌃⇧7` 영역 선택 → 번역, 메뉴의 클립보드 글 번역
+- [Added] - Tests/OCRModuleTests/TranslationDirectionTests.swift: 언어 판별과 번역 방향 테스트
+- [Added] - Sources/OCRBench/Budget.swift `runBudget`: OCR 지연·메모리 측정 (`scripts/ocr-bench.sh --budget`) — 자원 예산에 실측값이 없었다
+- [Changed] - docs/ARCHITECTURE.md: 자원 예산 실측표, 사용 뒤 메모리는 목표 초과
+- [Changed] - docs/SECURITY.md: 번역과 언어 모델 내려받기 안내
+- [Changed] - README.md, docs/ROADMAP.md: 번역 안내, 후보에서 제외
+- [Changed] - VERSION: 0.2.6
+
 [2026-11-04 12:38]
 - [Changed] - CHANGELOG.md: PR #27 (chore/0.2.5-release-0.2.4-followup) push 기록
 

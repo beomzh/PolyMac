@@ -163,7 +163,7 @@ final class PinPanel: NSPanel {
             guard let self else { return }
             switch action {
             case .undo:
-                if !self.annotations.isEmpty { self.annotations.removeLast() }
+                (self.contentView as? PinCanvasView)?.undoMarkup()
                 self.contentView?.needsDisplay = true
             case .done:
                 self.endEditing()
@@ -185,6 +185,7 @@ final class PinPanel: NSPanel {
 
     func endEditing() {
         guard let editBar else { return }
+        (contentView as? PinCanvasView)?.finishTextEditing()
         removeChildWindow(editBar)
         editBar.orderOut(nil)
         self.editBar = nil
@@ -356,7 +357,11 @@ private final class PinCanvasView: NSView, NSDraggingSource {
     weak var pin: PinPanel?
     private let image: CGImage
     private var drawing: Annotation?
-    private var textInput: AnnotationTextInput?
+    private lazy var textEditor = AnnotationTextEditor(view: self, get: { [unowned self] in pin?.annotations ?? [] }, set: { [unowned self] in pin?.annotations = $0 },
+                                                       toView: { [unowned self] in
+                                                           let factor = pin?.displayFactor ?? 1
+                                                           return NSPoint(x: $0.x * factor, y: $0.y * factor)
+                                                       }, zoom: { [unowned self] in pin?.displayFactor ?? 1 })
     /// 가장자리 끌기로 크기 바꾸는 중: 잡은 가장자리, 시작 틀, 시작 마우스 위치(화면 좌표)
     private var resizing: (edges: PinResize.Edges, frame: NSRect, mouse: NSPoint)?
 
@@ -375,7 +380,18 @@ private final class PinCanvasView: NSView, NSDraggingSource {
         ctx.scaleBy(x: pin.displayFactor, y: pin.displayFactor)
         AnnotationRenderer.draw(pin.annotations + (drawing.map { [$0] } ?? []), in: ctx,
                                 source: .init(image: image, scale: pin.scale))
+        if pin.isEditingMarkup { textEditor.draw(in: ctx) }
         ctx.restoreGState()
+    }
+
+    func finishTextEditing() {
+        textEditor.commitInput()
+        textEditor.select(nil)
+    }
+
+    func undoMarkup() {
+        if textEditor.undo() { return }
+        if pin?.annotations.isEmpty == false { pin?.annotations.removeLast() }
     }
 
     override func resetCursorRects() {
@@ -396,7 +412,16 @@ private final class PinCanvasView: NSView, NSDraggingSource {
     }
 
     override func mouseMoved(with event: NSEvent) {
-        guard resizing == nil, pin?.isEditingMarkup != true else { return }
+        if let pin, pin.isEditingMarkup {
+            let tool = pin.markupBar?.selectedTool
+            let point = basePoint(event)
+            textEditor.updateHover(at: tool == .text ? point : nil, color: pin.markupBar?.color ?? .systemRed)
+            if tool == nil || tool == .text {
+                (textEditor.cursor(at: point) ?? (tool == .text ? .iBeam : .arrow)).set()
+            }
+            return
+        }
+        guard resizing == nil else { return }
         let edges = resizeEdges(event)
         (edges.isEmpty ? NSCursor.arrow : PinResize.cursor(for: edges)).set()
     }
@@ -421,6 +446,14 @@ private final class PinCanvasView: NSView, NSDraggingSource {
     /// 핀을 클릭해 앞으로 가져온 상태에서: Esc·⌫·⌦ 닫기, ⌘C 복사
     override func keyDown(with event: NSEvent) {
         switch Int(event.keyCode) {
+        case 123, 124, 125, 126 where textEditor.selected != nil:
+            let step: CGFloat = event.modifierFlags.contains(.shift) ? 10 : 1
+            let move = [123: (-step, 0), 124: (step, 0), 125: (0, -step), 126: (0, step)][Int(event.keyCode)] ?? (0, 0)
+            _ = textEditor.nudge(dx: move.0, dy: move.1)
+        case 53 where textEditor.selected != nil:
+            textEditor.select(nil)
+        case 51 where textEditor.deleteSelected(), 117 where textEditor.deleteSelected():
+            break
         case 53, 51, 117:
             if pin?.isEditingMarkup == true, event.keyCode == 53 { pin?.endEditing() }
             else if pin?.isSelectingText == true, event.keyCode == 53 { pin?.endTextSelection() }
@@ -437,26 +470,29 @@ private final class PinCanvasView: NSView, NSDraggingSource {
     override func mouseDown(with event: NSEvent) {
         window?.makeKey()
         window?.makeFirstResponder(self)
-        if let input = textInput, input.isActive {
-            input.commit()
-            return
+        if textEditor.commitInput() { return }
+        if let pin, pin.isEditingMarkup {
+            let tool = pin.markupBar?.selectedTool
+            let color = pin.markupBar?.color ?? .systemRed
+            if tool == nil || tool == .text {
+                switch textEditor.press(at: basePoint(event), clickCount: event.clickCount) {
+                case .edit:
+                    textEditor.editSelected()
+                    return
+                case .grabbed:
+                    return
+                case .none:
+                    break
+                }
+            }
+            if tool == .text || (tool == nil && event.clickCount == 2) {
+                textEditor.beginText(at: basePoint(event), color: color)
+                return
+            }
         }
         if let pin, let tool = pin.markupBar?.selectedTool {
             let color = pin.markupBar?.color ?? .systemRed
-            if tool == .text {
-                let anchor = basePoint(event)
-                textInput = AnnotationTextInput(in: self, at: convert(event.locationInWindow, from: nil), color: color,
-                                                zoom: pin.displayFactor) { [weak self] text in
-                    guard let self else { return }
-                    var a = Annotation(tool: .text, start: anchor, color: color)
-                    a.text = text
-                    if a.isMeaningful { self.pin?.annotations.append(a) }
-                    self.textInput = nil
-                    self.window?.makeFirstResponder(self)
-                    self.needsDisplay = true
-                }
-                return
-            }
+            textEditor.select(nil)
             drawing = Annotation(tool: tool, start: basePoint(event), color: color)
             if tool == .number { drawing?.number = Annotation.nextNumber(after: pin.annotations) }
             return
@@ -501,6 +537,10 @@ private final class PinCanvasView: NSView, NSDraggingSource {
             pin?.resize(from: resizing.frame, edges: resizing.edges, dx: mouse.x - resizing.mouse.x, dy: mouse.y - resizing.mouse.y)
             return
         }
+        if textEditor.selected != nil {
+            textEditor.dragged(to: basePoint(event))
+            return
+        }
         guard drawing != nil else { return }
         drawing?.extend(to: basePoint(event))
         needsDisplay = true
@@ -513,8 +553,12 @@ private final class PinCanvasView: NSView, NSDraggingSource {
             mouseMoved(with: event)
             return
         }
+        textEditor.released()
         guard let finished = drawing else { return }
-        if finished.isMeaningful { pin?.annotations.append(finished) }
+        if finished.isMeaningful {
+            textEditor.willChange()
+            pin?.annotations.append(finished)
+        }
         drawing = nil
         needsDisplay = true
     }

@@ -3,6 +3,8 @@
 #
 #   scripts/ocr-bench.sh [샘플 폴더] [-v]     (-v: 틀린 결과 글자까지)
 #   scripts/ocr-bench.sh --tables [-v]       표 인식 (Tests/OCRSamples/tables, macOS 26 이상)
+#   scripts/ocr-bench.sh --budget             자원 예산: OCR 지연·메모리
+#   scripts/ocr-bench.sh --translate          인식 → 번역 결과의 줄 구조 확인 (macOS 26 이상, 언어 모델 필요)
 #
 # 샘플 다시 만들기: swift scripts/make-ocr-samples.swift, swift scripts/make-table-samples.swift
 set -euo pipefail
