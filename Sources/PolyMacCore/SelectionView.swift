@@ -246,6 +246,7 @@ final class SelectionView: NSView {
                 ("1 ~ 8", L("색상 (1 빨강)", "color (1 red)")),
                 ("⌘Z", L("표시 되돌리기", "undo markup")),
                 ("T", L("텍스트 추출", "extract text")),
+                ("G", L("표 추출", "extract table")),
                 ("L", L("번역 (macOS 15+)", "translate (macOS 15+)")),
                 ("F", L("화면에 고정", "pin to screen")),
                 ("⌘S", L("파일로 저장", "save to file")),
@@ -664,6 +665,7 @@ final class SelectionView: NSView {
         case ("m", false): pick(.mosaic)
         case ("n", false): pick(.number)
         case ("t", false): complete(.ocr)
+        case ("g", false): complete(.table)
         case ("l", false):
             if #available(macOS 15.0, *) { complete(.translate) }
         case ("f", false): complete(.pin)
@@ -698,6 +700,7 @@ final class SelectionView: NSView {
             case .tool: if let mouse = self.mouse { self.updateCursor(at: mouse) }
             case .undo: self.undoAnnotation()
             case .ocr: self.complete(.ocr)
+            case .table: self.complete(.table)
             case .translate: self.complete(.translate)
             case .pin: self.complete(.pin)
             case .save: self.complete(.save)
