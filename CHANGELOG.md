@@ -3,6 +3,9 @@
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
 [2026-11-04 13:13]
+- [Changed] - CHANGELOG.md: PR #28 (feat/0.2.6-translation) 추가 push 기록
+
+[2026-11-04 13:13]
 - [Added] - Sources/PolyMacCore/AnnotationTextEditor.swift `AnnotationTextEditor`: 글자 표시 고르기·옮기기·크기 조절·고쳐 쓰기·지우기·되돌리기, 놓일 자리 미리 보기 — 넣은 글자를 고칠 방법이 없었다
 - [Changed] - Sources/PolyMacCore/AnnotationTextEditor.swift `AnnotationTextInput`: NSTextView로 바꿔 확정 뒤 모양과 같은 자리에 표시, ⇧↩ 줄바꿈, 키 안내
 - [Changed] - Sources/PolyMacCore/Annotation.swift `Annotation.fontSize`, `AnnotationRenderer.textBounds`: 글자별 크기와 영역, 입력 칸과 같은 기준선
