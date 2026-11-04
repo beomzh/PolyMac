@@ -34,10 +34,10 @@ public final class OCRModule: PolyMacModule {
             }
         }
         if TextTranslator.isAvailable {
-            context.hotkey("translateRegion", KeyCombo(kVK_ANSI_7, [.control, .shift]), L("영역 선택 → 번역해서 복사", "Select area → translate and copy")) {
+            context.hotkey("translateRegion", KeyCombo(kVK_ANSI_7, [.control, .shift]), L("영역 선택 → 번역", "Select area → translate")) {
                 Task { @MainActor in
                     guard let capture = await RegionCapture.selectRegion() else { return }
-                    await OCRRunner.recognizeTranslateAndCopy(capture.image)
+                    await OCRRunner.recognizeAndTranslate(capture.image)
                 }
             }
         }
@@ -125,7 +125,7 @@ public final class OCRModule: PolyMacModule {
             context.toast(L("클립보드에 글이 없습니다", "No text on the clipboard"))
             return
         }
-        Task { @MainActor in await OCRRunner.translateAndCopy(text) }
+        Task { @MainActor in await OCRRunner.translate(text) }
     }
 
     @objc private func recognizeTableFromMenu() {

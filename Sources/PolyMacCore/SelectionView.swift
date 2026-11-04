@@ -246,7 +246,7 @@ final class SelectionView: NSView {
                 ("1 ~ 8", L("색상 (1 빨강)", "color (1 red)")),
                 ("⌘Z", L("표시 되돌리기", "undo markup")),
                 ("T", L("텍스트 추출", "extract text")),
-                ("L", L("번역해서 복사 (macOS 15+)", "translate and copy (macOS 15+)")),
+                ("L", L("번역 (macOS 15+)", "translate (macOS 15+)")),
                 ("F", L("화면에 고정", "pin to screen")),
                 ("⌘S", L("파일로 저장", "save to file")),
                 ("↩  ⌘C", L("복사하고 닫기", "copy and close")),

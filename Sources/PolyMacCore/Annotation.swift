@@ -314,7 +314,7 @@ public final class AnnotationToolbar: NSView {
         if output {
             stack.addArrangedSubview(button("text.viewfinder", L("텍스트 추출 (T)", "Extract text (T)"), #selector(ocrTapped)))
             if #available(macOS 15.0, *) {
-                stack.addArrangedSubview(button("translate", L("번역해서 복사 (L)", "Translate and copy (L)"), #selector(translateTapped)))
+                stack.addArrangedSubview(button("translate", L("번역 (L)", "Translate (L)"), #selector(translateTapped)))
             }
             stack.addArrangedSubview(button("pin", L("화면에 고정 (F)", "Pin to screen (F)"), #selector(pinTapped)))
             stack.addArrangedSubview(button("square.and.arrow.down", L("저장… (⌘S)", "Save… (⌘S)"), #selector(saveTapped)))

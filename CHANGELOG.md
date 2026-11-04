@@ -2,6 +2,13 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-11-04 13:18]
+- [Added] - Sources/OCRModule/TranslationResultPanel.swift `TranslationResultPanel`: 번역과 원문을 보여 주는 결과 창, 복사는 누를 때만 — 번역을 보기 전에 클립보드를 덮어쓰고 있었다
+- [Changed] - Sources/OCRModule/TextTranslator.swift `OCRRunner.translate`: 자동 복사 제거, 결과 창에 표시, 걸린 시간 로그를 notice로
+- [Changed] - Sources/OCRModule/OCRModule.swift, Sources/CaptureModule/CaptureModule.swift, Sources/PolyMacCore/Annotation.swift, Sources/PolyMacCore/SelectionView.swift: 문구와 호출 변경
+- [Added] - Tests/OCRModuleTests/TranslationResultPanelTests.swift: 결과 창이 클립보드를 건드리지 않는지 테스트
+- [Changed] - README.md, docs/ARCHITECTURE.md: 결과 창 사용법, 번역 실측값
+
 [2026-11-04 13:13]
 - [Changed] - CHANGELOG.md: PR #28 (feat/0.2.6-translation) 추가 push 기록
 

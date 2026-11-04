@@ -96,6 +96,7 @@ private final class TranslationHost: NSObject, NSWindowDelegate {
             window = NSPanel(contentRect: NSRect(x: -10_000, y: -10_000, width: 1, height: 1), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         }
         window.isReleasedWhenClosed = false
+        window.level = .floating // 번역 결과 창에 가리지 않게
         window.delegate = self
         window.contentView = NSHostingView(rootView: view)
         self.window = window
@@ -148,46 +149,40 @@ private struct TranslationTaskView: View {
 
 extension OCRRunner {
     /// 영역 글을 문단으로 이어 읽은 뒤 번역 — 줄마다 끊긴 채로 옮기면 문장이 깨진다
-    @discardableResult
-    public static func recognizeTranslateAndCopy(_ image: CGImage) async -> Bool {
+    public static func recognizeAndTranslate(_ image: CGImage) async {
         do {
             let text = try await TextRecognizer.recognize(image, lineMode: .paragraphs).precomposedStringWithCanonicalMapping
             guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 Toast.show(L("글자를 찾지 못했습니다", "No text found"))
-                return false
+                return
             }
-            return await translateAndCopy(text)
+            await translate(text)
         } catch {
             Toast.show(L("텍스트 추출 실패: \(error.localizedDescription)", "Text recognition failed: \(error.localizedDescription)"))
-            return false
         }
     }
 
-    /// 번역 → 클립보드 → 미리보기. 원문은 단추로 다시 복사할 수 있다.
-    @discardableResult
-    public static func translateAndCopy(_ text: String) async -> Bool {
+    /// 번역해서 결과 창에 보여 준다. 클립보드는 창에서 복사를 누를 때만 바뀐다.
+    public static func translate(_ text: String) async {
         let logger = Logger(subsystem: "dev.polymac", category: "translate")
+        let panel = TranslationResultPanel.show(original: text)
         let start = Date()
         do {
             let result = try await TextTranslator.translate(text)
             let seconds = Date().timeIntervalSince(start)
             // 글 내용은 로그에 남기지 않는다
-            logger.info("translated \(result.source, privacy: .public)->\(result.target, privacy: .public) chars=\(text.count) seconds=\(seconds, format: .fixed(precision: 2), privacy: .public)")
-            PasteboardWriter.copy(result.text, origin: .ocr)
-            let preview = result.text.count > 200 ? String(result.text.prefix(200)) + "…" : result.text
-            Toast.show(L("번역을 클립보드에 복사했습니다", "Translation copied to the clipboard"), content: preview, duration: 4,
-                       actions: [Toast.Action(L("원문 복사", "Copy Original")) { PasteboardWriter.copy(text, origin: .ocr) }])
-            return true
+            logger.notice("translated \(result.source, privacy: .public)->\(result.target, privacy: .public) chars=\(text.count) seconds=\(seconds, format: .fixed(precision: 2), privacy: .public)")
+            panel.show(translation: result.text, source: result.source, target: result.target)
         } catch is CancellationError {
             logger.notice("translation cancelled")
-            return false
+            panel.dismiss()
         } catch TranslationFailure.cancelled {
             logger.notice("translation cancelled")
-            return false
+            panel.dismiss()
         } catch {
             logger.error("translation failed: \(error.localizedDescription, privacy: .public)")
+            panel.dismiss()
             Toast.show(L("번역 실패: \(error.localizedDescription)", "Translation failed: \(error.localizedDescription)"))
-            return false
         }
     }
 }

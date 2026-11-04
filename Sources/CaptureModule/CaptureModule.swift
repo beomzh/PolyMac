@@ -122,7 +122,7 @@ public final class CaptureModule: PolyMacModule {
             // 그린 표시가 글자 인식을 방해하지 않게 원본으로
             Task { @MainActor in await OCRRunner.recognizeAndCopy(capture.image) }
         case .translate:
-            Task { @MainActor in await OCRRunner.recognizeTranslateAndCopy(capture.image) }
+            Task { @MainActor in await OCRRunner.recognizeAndTranslate(capture.image) }
         case .save:
             PinPanel.save(capture.compositeImage)
         }
