@@ -2,6 +2,13 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-11-04 12:38]
+- [Changed] - packaging/homebrew/polymac.rb: 0.2.4 version·sha256 (tap 저장소와 같게)
+- [Changed] - docs/RELEASING.md: 태그 규칙을 사용자에게 내보낼 때만으로 변경, 릴리즈 노트는 마지막 릴리즈 이후 전체를 적음
+- [Changed] - README.md: 현재 버전 0.2.4, `brew upgrade`는 이름을 붙여야 한다는 안내 (auto_updates cask는 그냥 upgrade에서 건너뜀)
+- [Changed] - VERSION: 0.2.5
+
+## 0.2.4 (2026-11-04)
 [2026-11-03 14:04]
 - [Changed] - CHANGELOG.md: PR #26 (feat/0.2.4-clipboard-search-highlight) push 기록
 
