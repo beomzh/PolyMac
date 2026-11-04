@@ -21,7 +21,7 @@ public enum AnnotationTool: String, CaseIterable, Sendable {
         case .rectangle: return L("사각형 (R)", "Rectangle (R)")
         case .arrow: return L("화살표 (A)", "Arrow (A)")
         case .pen: return L("펜 (P)", "Pen (P)")
-        case .text: return L("글자 (E) — 클릭한 곳에 입력, ↩ 확정", "Text (E) — click to type, ↩ to finish")
+        case .text: return L("글자 (E) — 누른 곳에 입력. 글자를 끌어 옮기고, 모서리로 크기 조절, 두 번 눌러 고치기, ⌫ 지우기", "Text (E) — click to type. Drag to move, corners to resize, double-click to edit, ⌫ to delete")
         case .mosaic: return L("모자이크 (M) — 가릴 곳을 드래그", "Mosaic (M) — drag over what to hide")
         case .number: return L("번호 (N) — 클릭할 때마다 1, 2, 3…", "Number (N) — each click adds 1, 2, 3…")
         }
@@ -40,6 +40,8 @@ public struct Annotation {
     public var lineWidth: CGFloat
     /// 글자 도구의 내용 (points[0]이 첫 줄의 왼쪽 위)
     public var text: String?
+    /// 글자 도구의 크기 (포인트)
+    public var fontSize: CGFloat = AnnotationRenderer.fontSize
     /// 번호 도구의 숫자 (points[0]이 동그라미 가운데)
     public var number: Int?
 
@@ -133,7 +135,7 @@ public enum AnnotationRenderer {
             case .mosaic:
                 drawMosaic(a.rect, source: source, in: ctx)
             case .text:
-                drawText(a.text ?? "", at: start, color: a.color, in: ctx)
+                drawText(a.text ?? "", at: start, size: a.fontSize, color: a.color, in: ctx)
             case .number:
                 drawNumber(a.number ?? 0, at: start, color: a.color, in: ctx)
             }
@@ -170,20 +172,46 @@ public enum AnnotationRenderer {
     }
 
     /// 여러 줄 글자. 바탕과 상관없이 보이게 반대색 테두리를 두른다.
-    private static func drawText(_ text: String, at topLeft: CGPoint, color: NSColor, in ctx: CGContext) {
-        let font = NSFont.systemFont(ofSize: fontSize, weight: .semibold)
-        let outline = color.brightness > 0.6 ? NSColor.black : NSColor.white
-        var y = topLeft.y
-        for line in text.components(separatedBy: "\n") {
-            y -= font.ascender
-            let attributed = NSAttributedString(string: line, attributes: [
-                .font: font, .foregroundColor: color, .strokeColor: outline, .strokeWidth: -3,
-            ])
-            let ctLine = CTLineCreateWithAttributedString(attributed)
-            ctx.textPosition = CGPoint(x: topLeft.x, y: y)
+    private static func drawText(_ text: String, at topLeft: CGPoint, size: CGFloat, color: NSColor, in ctx: CGContext) {
+        let attributes = textAttributes(size: size, color: color)
+        let height = lineHeight(size)
+        // 입력 칸(TextKit)과 같은 기준선 — 줄 높이의 남는 부분은 글자 위로 간다
+        let baseline = height + textFont(size).descender
+        for (index, line) in text.components(separatedBy: "\n").enumerated() {
+            let ctLine = CTLineCreateWithAttributedString(NSAttributedString(string: line, attributes: attributes))
+            ctx.textPosition = CGPoint(x: topLeft.x, y: topLeft.y - baseline - height * CGFloat(index))
             CTLineDraw(ctLine, ctx)
-            y -= -font.descender + font.leading + 2
         }
+    }
+
+    static func textFont(_ size: CGFloat) -> NSFont {
+        .systemFont(ofSize: size, weight: .semibold)
+    }
+
+    /// 줄 하나의 높이. 입력 칸도 같은 값을 써서 확정해도 글자가 움직이지 않는다.
+    static func lineHeight(_ size: CGFloat) -> CGFloat {
+        let font = textFont(size)
+        return ceil(font.ascender - font.descender + font.leading + 2)
+    }
+
+    /// 바탕과 상관없이 보이게 반대색 테두리를 두른 글자 모양
+    static func textAttributes(size: CGFloat, color: NSColor) -> [NSAttributedString.Key: Any] {
+        let style = NSMutableParagraphStyle()
+        let height = lineHeight(size)
+        style.minimumLineHeight = height
+        style.maximumLineHeight = height
+        return [.font: textFont(size), .foregroundColor: color, .paragraphStyle: style,
+                .strokeColor: color.brightness > 0.6 ? NSColor.black : NSColor.white, .strokeWidth: -3]
+    }
+
+    /// 글자가 차지하는 영역 (표시 좌표)
+    public static func textBounds(_ annotation: Annotation) -> CGRect {
+        let lines = (annotation.text ?? "").components(separatedBy: "\n")
+        let attributes = textAttributes(size: annotation.fontSize, color: annotation.color)
+        let width = lines.map { NSAttributedString(string: $0, attributes: attributes).size().width }.max() ?? 0
+        let height = lineHeight(annotation.fontSize) * CGFloat(lines.count)
+        let top = annotation.points[0]
+        return CGRect(x: top.x, y: top.y - height, width: ceil(width), height: height)
     }
 
     /// 색 동그라미 안의 흰 숫자
@@ -226,7 +254,7 @@ public final class AnnotationToolbar: NSView {
     public enum Action: Equatable {
         case tool(AnnotationTool?)
         case undo
-        case ocr, pin, save, copy, cancel
+        case ocr, translate, pin, save, copy, cancel
         case done
     }
 
@@ -285,6 +313,9 @@ public final class AnnotationToolbar: NSView {
 
         if output {
             stack.addArrangedSubview(button("text.viewfinder", L("텍스트 추출 (T)", "Extract text (T)"), #selector(ocrTapped)))
+            if #available(macOS 15.0, *) {
+                stack.addArrangedSubview(button("translate", L("번역해서 복사 (L)", "Translate and copy (L)"), #selector(translateTapped)))
+            }
             stack.addArrangedSubview(button("pin", L("화면에 고정 (F)", "Pin to screen (F)"), #selector(pinTapped)))
             stack.addArrangedSubview(button("square.and.arrow.down", L("저장… (⌘S)", "Save… (⌘S)"), #selector(saveTapped)))
             stack.addArrangedSubview(separator())
@@ -361,6 +392,7 @@ public final class AnnotationToolbar: NSView {
 
     @objc private func undoTapped() { onAction?(.undo) }
     @objc private func ocrTapped() { onAction?(.ocr) }
+    @objc private func translateTapped() { onAction?(.translate) }
     @objc private func pinTapped() { onAction?(.pin) }
     @objc private func saveTapped() { onAction?(.save) }
     @objc private func copyTapped() { onAction?(.copy) }
@@ -405,66 +437,5 @@ private final class SwatchButton: NSButton {
         NSBezierPath(ovalIn: dot).fill()
         NSColor.black.withAlphaComponent(0.3).setStroke()
         NSBezierPath(ovalIn: dot).stroke()
-    }
-}
-
-
-/// 글자 도구의 입력 칸 — 클릭한 자리에 띄우고 ↩로 확정, Esc로 취소, 다른 곳을 누르면 확정
-@MainActor
-public final class AnnotationTextInput: NSObject, NSTextFieldDelegate {
-    private let field: NSTextField
-    private var onCommit: ((String) -> Void)?
-    private var finished = false
-
-    /// point: view 좌표의 첫 줄 왼쪽 위, zoom: 화면에 보이는 배율(핀 확대 등)
-    public init(in view: NSView, at point: NSPoint, color: NSColor, zoom: CGFloat = 1, onCommit: @escaping (String) -> Void) {
-        let font = NSFont.systemFont(ofSize: AnnotationRenderer.fontSize * zoom, weight: .semibold)
-        let height = ceil(font.ascender - font.descender + font.leading) + 4
-        field = NSTextField(frame: NSRect(x: point.x - 2, y: point.y - height + 2, width: 240, height: height))
-        self.onCommit = onCommit
-        super.init()
-        field.font = font
-        field.textColor = color
-        field.backgroundColor = NSColor.black.withAlphaComponent(0.35)
-        field.drawsBackground = true
-        field.isBordered = false
-        field.focusRingType = .none
-        field.placeholderString = L("글자 입력 후 ↩", "Type, then ↩")
-        field.delegate = self
-        view.addSubview(field)
-        view.window?.makeFirstResponder(field)
-    }
-
-    public var isActive: Bool { !finished }
-
-    /// 입력 중인 내용을 확정하고 칸을 닫는다
-    public func commit() {
-        guard !finished else { return }
-        finished = true
-        let text = field.stringValue
-        field.removeFromSuperview()
-        let callback = onCommit
-        onCommit = nil
-        callback?(text)
-    }
-
-    public func cancel() {
-        guard !finished else { return }
-        field.stringValue = ""
-        commit()
-    }
-
-    public func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
-        switch selector {
-        case #selector(NSResponder.insertNewline(_:)): commit(); return true
-        case #selector(NSResponder.cancelOperation(_:)): cancel(); return true
-        default: return false
-        }
-    }
-
-    // 글자 수에 맞춰 칸을 넓힌다
-    public func controlTextDidChange(_ obj: Notification) {
-        let width = max(240, field.attributedStringValue.size().width + 24)
-        field.setFrameSize(NSSize(width: width, height: field.frame.height))
     }
 }

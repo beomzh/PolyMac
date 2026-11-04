@@ -34,7 +34,7 @@ public struct CaptureResult {
 
 /// 캡처 편집 도구 막대에서 고른 마무리 동작
 public enum CaptureAction: Sendable {
-    case copy, pin, ocr, save
+    case copy, pin, ocr, translate, save
 }
 
 /// 모든 화면을 먼저 찍어 정지 화면 위에서 영역을 고르게 한다 (선택 UI가 캡처에 섞이지 않음).

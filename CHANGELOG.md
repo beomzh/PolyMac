@@ -2,6 +2,16 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-11-04 13:13]
+- [Added] - Sources/PolyMacCore/AnnotationTextEditor.swift `AnnotationTextEditor`: 글자 표시 고르기·옮기기·크기 조절·고쳐 쓰기·지우기·되돌리기, 놓일 자리 미리 보기 — 넣은 글자를 고칠 방법이 없었다
+- [Changed] - Sources/PolyMacCore/AnnotationTextEditor.swift `AnnotationTextInput`: NSTextView로 바꿔 확정 뒤 모양과 같은 자리에 표시, ⇧↩ 줄바꿈, 키 안내
+- [Changed] - Sources/PolyMacCore/Annotation.swift `Annotation.fontSize`, `AnnotationRenderer.textBounds`: 글자별 크기와 영역, 입력 칸과 같은 기준선
+- [Added] - Sources/PolyMacCore/Annotation.swift `AnnotationToolbar`, Sources/PolyMacCore/RegionCapture.swift `CaptureAction.translate`: 캡처 도구 막대의 번역 단추와 L 키
+- [Changed] - Sources/PolyMacCore/SelectionView.swift, Sources/CaptureModule/PinPanel.swift: 글자 편집 연결, I자 커서, ⌘Z가 옮기기·크기 조절도 되돌림
+- [Added] - Sources/CaptureModule/CaptureModule.swift `finish`: 캡처 영역 번역
+- [Added] - Tests/PolyMacCoreTests/AnnotationTextEditorTests.swift: 위치·크기·되돌리기와 입력 칸·결과 픽셀 위치 비교 테스트
+- [Changed] - README.md: 글자 사용법과 캡처 번역 키
+
 [2026-11-04 12:56]
 - [Changed] - CHANGELOG.md: PR #28 (feat/0.2.6-translation) push 기록
 
