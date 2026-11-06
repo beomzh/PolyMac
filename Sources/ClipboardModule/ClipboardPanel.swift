@@ -22,9 +22,10 @@ final class ClipboardPanelController {
     static let listWidth: CGFloat = 400
     static let previewWidth: CGFloat = 380
     static let height: CGFloat = 520
+    static let dividerWidth: CGFloat = 1
     private static let previewKey = "clipboard.previewOpen"
 
-    private var panel: NSPanel?
+    private(set) var panel: NSPanel?
     private var keyMonitor: Any?
     private var resignObserver: NSObjectProtocol?
     private var model: ClipboardPanelModel?
@@ -54,8 +55,7 @@ final class ClipboardPanelController {
         let mouse = NSEvent.mouseLocation
         let screen = NSScreen.screens.first { $0.frame.contains(mouse) } ?? NSScreen.main
         if let visible = screen?.visibleFrame {
-            frame.origin.x = min(max(mouse.x - Self.listWidth / 2, visible.minX + 8), visible.maxX - frame.width - 8)
-            frame.origin.y = min(max(mouse.y - Self.height + 40, visible.minY + 8), visible.maxY - Self.height - 8)
+            frame = PanelPlacement.frame(size: frame.size, cursor: mouse, listWidth: Self.listWidth, visible: visible)
         }
         panel.setFrame(frame, display: false)
         panel.makeKeyAndOrderFront(nil)
@@ -97,6 +97,8 @@ final class ClipboardPanelController {
             UserDefaults.standard.set(model.previewOpen, forKey: Self.previewKey)
             var frame = panel.frame
             frame.size.width = self.width(model.previewOpen)
+            // 화면 오른쪽 끝에서 펼치면 미리보기가 밖으로 나가지 않게 왼쪽으로 민다
+            if let visible = panel.screen?.visibleFrame { frame = PanelPlacement.inside(frame, visible: visible) }
             // 애니메이션을 쓰면 프레임마다 미리보기 전체를 다시 배치해 긴 텍스트에서 멈춘다
             panel.setFrame(frame, display: true, animate: false)
         }
@@ -106,17 +108,20 @@ final class ClipboardPanelController {
             self.close()
             callbacks?.pin(item)
         }
-        panel.contentView = NSHostingView(rootView: ClipboardPanelView(model: model, onPick: { [weak self] item in
+        let content = NSHostingView(rootView: ClipboardPanelView(model: model, onPick: { [weak self] item in
             guard let self else { return }
             let callbacks = self.callbacks
             self.close()
             callbacks?.choose(item, false, false)
         }))
+        // 창 크기는 여기서 정한다. 맡겨 두면 내용에 맞춰 창이 늘어나 화면 안으로 넣은 위치가 어긋난다
+        content.sizingOptions = []
+        panel.contentView = content
         return panel
     }
 
     private func width(_ previewOpen: Bool) -> CGFloat {
-        Self.listWidth + (previewOpen ? Self.previewWidth : 0)
+        Self.listWidth + (previewOpen ? Self.previewWidth + Self.dividerWidth : 0)
     }
 
     /// 숨기기만 한다 (다음에 바로 뜨게)
@@ -436,6 +441,8 @@ struct ClipboardPanelView: View {
         .frame(height: ClipboardPanelController.height)
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        // 제목 표시줄을 숨겼으니 그 자리까지 내용으로 채운다
+        .ignoresSafeArea()
         .onAppear { searchFocused = true }
     }
 

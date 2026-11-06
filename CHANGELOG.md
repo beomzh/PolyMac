@@ -2,6 +2,13 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-11-06 09:40]
+- [Fixed] - Sources/ClipboardModule/ClipboardPanel.swift `makePanel`: 패널이 내용에 맞춰 코드 값보다 커져(781x548) 화면 아래쪽에서 열면 하단이 Dock에 가리거나 화면 밖으로 나가던 문제를 고침. 창 크기를 코드가 정하고 내용이 제목 표시줄 자리까지 채운다
+- [Fixed] - Sources/ClipboardModule/ClipboardPanel.swift `onTogglePreview`: 화면 오른쪽 끝에서 미리보기를 펼치면 밖으로 나가지 않게 왼쪽으로 민다
+- [Added] - Sources/ClipboardModule/PanelPlacement.swift: 패널 위치 계산을 창과 분리해 테스트할 수 있게 함
+- [Added] - Tests/ClipboardModuleTests/PanelPlacementTests.swift: 화면 네 모서리, Dock 유무, 실제 패널 크기, 검색창 클릭 회귀 테스트
+- [Changed] - VERSION: 0.2.8
+
 [2026-11-04 14:48]
 - [Changed] - CHANGELOG.md: PR #29 (feat/0.2.7-capture-table) push 기록
 
