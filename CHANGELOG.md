@@ -3,6 +3,9 @@
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
 [2026-11-06 11:24]
+- [Changed] - CHANGELOG.md: PR #31 (chore/0.2.8-release) push 기록
+
+[2026-11-06 11:24]
 - [Changed] - packaging/homebrew/polymac.rb: 0.2.8 version·sha256
 - [Changed] - README.md: 현재 버전 0.2.8
 - [Changed] - VERSION: 0.2.9
