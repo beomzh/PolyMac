@@ -2,6 +2,16 @@
 
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
+[2026-11-09 21:17]
+- [Fixed] - Sources/OCRModule/OCRWorker.swift: OCR text and table recognition run in a short-lived `--ocr-worker` child process that exits 60 s after its last request, because Vision keeps its model in the calling process (+154 MB after three OCRs) with no way to unload it
+- [Changed] - Sources/OCRModule/TextRecognizer.swift `OCRRunner`, Sources/OCRModule/TextTranslator.swift, Sources/PolyMacApp/Intents.swift: recognize through `OCRWorker.shared` (falls back to in-process outside an app bundle)
+- [Changed] - Sources/PolyMacApp/main.swift: start as the OCR worker when launched with `--ocr-worker`
+- [Added] - Tests/OCRModuleTests/OCRWorkerTests.swift: frame and pixel round trips, a real worker process matching in-process text and tables, relaunch after the worker is killed
+- [Fixed] - Sources/CaptureModule/PinPanel.swift `keyDown`: the `where` only applied to the up arrow, so left/right/down were swallowed on pins even with no text selected
+- [Changed] - Sources/OCRModule/TextTranslator.swift: removed unneeded `await` (compiler warning)
+- [Changed] - docs/ARCHITECTURE.md, docs/ARCHITECTURE.ko.md, docs/SECURITY.md, docs/SECURITY.ko.md: describe the OCR worker and its measurements
+- [Changed] - VERSION: 0.2.16
+
 [2026-11-09 20:56]
 - [Changed] - docs/*.md: reworded literal translations (SECURITY intro and headings, CONCEPT tagline and goals, ROADMAP, REFERENCES, UNINSTALLER, OCR-BENCH, RELEASING tables)
 - [Changed] - docs/SECURITY.md, docs/CONCEPT.md, docs/ROADMAP.md: menu names match the app's English strings (Fix Korean Filenames, Pause Recording, Clear History (keeps pinned))

@@ -43,6 +43,7 @@ So PolyMac **mixes two approaches**:
 | Approach | Used for | When off |
 |---|---|---|
 | **Compiled in + lazy activation** | Frequently used, lightweight modules (Window, Capture, Finder, OCR) | No objects created; code pages stay on disk and barely load into memory |
+| **Short-lived worker process** | Work that loads large models: OCR text and table recognition (`OCRWorker`) | The worker exits 60 s after its last request, and the model memory goes back to the system |
 | **Separate process (on demand)** | Heavy, rarely used modules (Uninstaller, later recording, etc.) | No process at all = truly zero |
 
 ### 2.2 Module contract
@@ -85,6 +86,8 @@ The table above lists targets. Memory is phys_footprint (the "Memory" column in 
 | OCR time (17 samples × 3, five 2560×1600 × 3) | < 500 ms | median 110–117 ms, max 406 ms, first run (model loading) 256–355 ms | Pass |
 | Idle memory after real use | < 40 MB | 66 MB 5 minutes after launch, 191 MB after 22 hours (peak 386 MB) | **Over** |
 | Memory after using OCR (separate process) | - | 6 MB → 174 MB, 80–119 MB after 30 seconds | The OCR model stays loaded |
+
+**OCR worker (0.2.16).** Vision keeps its recognition model in the process that used it until that process ends — about +65 MB after one OCR and +154 MB after three, and freeing the heap (`malloc_zone_pressure_relief`) gives nothing back. So OCR text and table recognition now run in a worker: the app starts its own executable with `--ocr-worker`, passes the image as raw pixels over a pipe (never written to disk), and gets the text back. The worker stays for 60 seconds after its last request so repeated OCR doesn't reload the model, then exits. Measured with `ko-long` three times (2026-11-09, same Mac): the calling process grows 10 → 15 MB with the worker versus → 164 MB in-process; the worker itself is 152 MB until it exits. Live Text on pins (VisionKit `ImageAnalyzer`) already runs outside the app (+7 MB) and stays as is. Translation models live in the system service `translationd`.
 
 Translation (en → ko, after the model is installed, separate process): 100 characters 165 ms, 500 characters 225 ms, 2,000 characters 702 ms. The calling process grows by +3 MB; the model is held by the system service `translationd` (199 MB, not counted in PolyMac's memory). The first run before the model is downloaded was not measured.
 

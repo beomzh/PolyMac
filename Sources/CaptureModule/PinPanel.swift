@@ -446,7 +446,7 @@ private final class PinCanvasView: NSView, NSDraggingSource {
     /// 핀을 클릭해 앞으로 가져온 상태에서: Esc·⌫·⌦ 닫기, ⌘C 복사
     override func keyDown(with event: NSEvent) {
         switch Int(event.keyCode) {
-        case 123, 124, 125, 126 where textEditor.selected != nil:
+        case 123...126 where textEditor.selected != nil:
             let step: CGFloat = event.modifierFlags.contains(.shift) ? 10 : 1
             let move = [123: (-step, 0), 124: (step, 0), 125: (0, -step), 126: (0, step)][Int(event.keyCode)] ?? (0, 0)
             _ = textEditor.nudge(dx: move.0, dy: move.1)
