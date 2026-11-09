@@ -2,6 +2,10 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-11-09 14:47]
+- [Changed] - CONTRIBUTING.md: 커밋 메시지와 PR 제목·설명을 영어로 쓰는 규칙 (CHANGELOG는 한국어 유지)
+- [Changed] - .github/pull_request_template.md: PR 템플릿을 영어로, 두 README 함께 고치기 항목 추가
+
 [2026-11-09 14:42]
 - [Changed] - CHANGELOG.md: PR #32 (docs/readme-english) push 기록
 

@@ -58,13 +58,15 @@ scripts/build-app.sh --install
 
 ## 커밋 메시지
 
+커밋 메시지와 PR 제목·설명은 **영어**로 쓴다 (2026-11-09부터, 그 전 커밋은 한국어). `CHANGELOG.md` 항목은 한국어 그대로다.
+
 ```
-<type>(<scope>): <한글 제목>
+<type>(<scope>): <English title>
 
-- <파일명>: <변경 내용 한 줄>
-- <파일명>: <변경 내용 한 줄>
+- <file>: <one-line change>
+- <file>: <one-line change>
 
-작업일시: yyyy년 mm월 dd일 hh시 mm분
+Date: YYYY-MM-DD HH:MM
 ```
 
 | type | 언제 |
@@ -79,7 +81,7 @@ scripts/build-app.sh --install
 
 `scope`는 모듈 id 또는 영역: `window` `capture` `ocr` `clipboard` `finder` `normalize` `organize` `uninstaller` `core` `docs` `release`
 
-예: `feat(organize): 받은 사이트 조건 추가`
+예: `feat(organize): add source website condition`
 
 - `git add -A` / `git add .` 대신 파일을 명시해서 추가 (시크릿·인증서 섞임 방지)
 - 커밋할 때마다 [CHANGELOG.md](CHANGELOG.md) 맨 위에 항목 추가 (형식은 [docs/RELEASING.md](docs/RELEASING.md))
