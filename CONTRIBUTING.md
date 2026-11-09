@@ -84,6 +84,14 @@ scripts/build-app.sh --install
 - `git add -A` / `git add .` 대신 파일을 명시해서 추가 (시크릿·인증서 섞임 방지)
 - 커밋할 때마다 [CHANGELOG.md](CHANGELOG.md) 맨 위에 항목 추가 (형식은 [docs/RELEASING.md](docs/RELEASING.md))
 
+## README는 두 언어로
+
+- 기본 [README.md](README.md)는 영어, [README.ko.md](README.ko.md)는 한국어다. 내용은 같고 언어만 다르다.
+- 한쪽을 고치면 **같은 PR에서 다른 쪽도** 고친다. 기능·단축키·메뉴 이름·버전 표기·링크 모두 해당한다.
+- 영어판의 메뉴·버튼 이름은 앱의 영어 표시(`L("한국어", "English")`의 두 번째 값, `App/en.lproj`)와 맞춘다.
+- `scripts/check-readme.sh`가 두 파일의 제목 구조, bash 명령, 저장소 안 링크, 현재 버전이 같은지 확인한다. `scripts/test.sh`가 먼저 실행하므로 한쪽만 고치면 테스트가 실패한다. 문장 내용까지는 보지 못하니 고친 문단은 직접 맞춘다.
+- `docs/` 아래 설계 문서는 한국어로만 둔다.
+
 ## 꼭 지킬 것
 
 - [docs/SECURITY.md](docs/SECURITY.md) — 네트워크 호출 추가, 키 입력 저장, 영구 삭제, 덮어쓰기 금지

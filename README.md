@@ -1,70 +1,73 @@
-<p align="center"><img src="docs/assets/logo.png" width="128" alt="PolyMac 로고"></p>
+<p align="center"><img src="docs/assets/logo.png" width="128" alt="PolyMac logo"></p>
+
+<p align="center"><b>English</b> · <a href="README.ko.md">한국어</a></p>
 
 # PolyMac
 
-> 여러 개의 Mac 도구를 하나의 가벼운 메뉴바 앱으로.
-> Spectacle · TRex · Snipaste · AppCleaner · Maccy · Hazel · "터미널에서 열기"를 **가볍게 하나로** 묶는 macOS 오픈소스 유틸리티.
+> Many Mac tools in one lightweight menu bar app.
+> An open-source macOS utility that combines Spectacle · TRex · Snipaste · AppCleaner · Maccy · Hazel · "Open in Terminal" **into one light app**.
 
-> **현재 버전 0.2.8** — 온디바이스 번역, 캡처에서 표 추출, 캡처 글자 편집, 클립보드 패널 위치 수정. [GitHub Releases](https://github.com/beomzh/PolyMac/releases)에서 받거나 직접 빌드해서 쓸 수 있습니다 → [설치](#설치) · [지금 바로 쓰기](#지금-바로-쓰기-소스-빌드)
-> Apple 공증을 받지 않은 앱이라 받은 zip은 처음 열 때 macOS가 "손상됨"으로 막습니다 → [처음 열 때 막히면](#처음-열-때-막히면) (Homebrew로 설치하면 이 과정이 없습니다)
-> 아래 "사용 방법"에서 아직 만들지 않은 기능에는 **(예정)** 을 붙였습니다. 모듈별 상태는 [현재 개발 상태](#현재-개발-상태) 표를 보세요.
-
----
-
-## 목차
-
-1. [왜 만드나](#왜-만드나)
-2. [기능 한눈에 보기](#기능-한눈에-보기)
-3. [지금 바로 쓰기 (소스 빌드)](#지금-바로-쓰기-소스-빌드)
-4. [현재 개발 상태](#현재-개발-상태)
-5. [설치](#설치)
-6. [처음 설정하기 (권한)](#처음-설정하기-권한)
-7. [사용 방법](#사용-방법)
-8. [문제 해결](#문제-해결)
-9. [개인정보 · 보안](#개인정보--보안)
-10. [버전 · 릴리즈](#버전--릴리즈)
-11. [라이선스](#라이선스)
-12. [문서](#문서)
+> **Current version 0.2.8** — on-device translation, table extraction from captures, editable capture text, clipboard panel position fix. Download it from [GitHub Releases](https://github.com/beomzh/PolyMac/releases) or build it yourself → [Install](#install) · [Try it now](#try-it-now-build-from-source)
+> The app is not notarized by Apple, so macOS blocks a downloaded zip as "damaged" the first time you open it → [If macOS blocks the first launch](#if-macos-blocks-the-first-launch) (installing with Homebrew skips this step)
+> Features in "Usage" that are not built yet are marked **(planned)**. See the [Development status](#development-status) table for each module.
+> Some features exist for Korean text (Korean filename fix, Korean OCR tuning). They stay out of the way if you don't need them.
 
 ---
 
-## 왜 만드나
+## Contents
 
-| 지금 쓰는 것 | 불편함 |
+1. [Why](#why)
+2. [Features at a glance](#features-at-a-glance)
+3. [Try it now (build from source)](#try-it-now-build-from-source)
+4. [Development status](#development-status)
+5. [Install](#install)
+6. [First-time setup (permissions)](#first-time-setup-permissions)
+7. [Usage](#usage)
+8. [Troubleshooting](#troubleshooting)
+9. [Privacy & security](#privacy--security)
+10. [Versions & releases](#versions--releases)
+11. [License](#license)
+12. [Documentation](#documentation)
+
+---
+
+## Why
+
+| What I used | The problem |
 |---|---|
-| Spectacle (창 분할) | 2022년에 저장소가 아카이브됨, 최신 macOS 대응 불확실 |
-| TRex (OCR) | 캡처 도구와 따로 놀아서 "캡처 → 핀 → 텍스트 추출"이 끊김 |
-| Snipaste (캡처·핀) | 클로즈드 소스, macOS 버전은 기능이 늦게 들어옴, OCR 없음 |
-| AppCleaner (삭제) | 무엇이 어디에 왜 남았는지 안 보임. 그런데도 상주 비용은 듦 |
-| Finder 확장들 | 잘라내기·터미널 열기·경로 복사가 각각 다른 앱 |
-| Maccy (클립보드) | 캡처·OCR·경로 복사 결과와 따로 놀아 출처를 알 수 없음 |
-| Hazel (폴더 정리) | 유료, 다른 도구와 감시를 따로 함 |
-| (없음) 자소분리 | Mac에서 보낸 한글 파일명이 Windows·웹에서 `ㅎㅏㄴㄱㅡㄹ`로 깨짐 |
+| Spectacle (window layout) | Repository archived in 2022; support for new macOS versions is uncertain |
+| TRex (OCR) | Separate from the capture tool, so "capture → pin → extract text" is broken up |
+| Snipaste (capture & pin) | Closed source, features arrive late on macOS, no OCR |
+| AppCleaner (uninstall) | Doesn't show what was left where and why, yet still costs resources |
+| Finder extensions | Cut, open in Terminal, and copy path are each a different app |
+| Maccy (clipboard) | Disconnected from capture, OCR and copy-path results, so the source is unknown |
+| Hazel (folder rules) | Paid, and watches folders separately from other tools |
+| (none) Korean filenames | Korean filenames sent from a Mac show up as `ㅎㅏㄴㄱㅡㄹ` on Windows and the web |
 
-앱 여러 개 = 메뉴바 아이콘 여러 개, 권한 요청 여러 번, 단축키 충돌 관리 여러 군데, 상주 메모리 몇 배.
+Several apps = several menu bar icons, several permission prompts, shortcut conflicts managed in several places, and several times the memory.
 
-## 기능 한눈에 보기
+## Features at a glance
 
-| 모듈 | 기능 | 상주 방식 |
+| Module | Features | How it runs |
 |---|---|---|
-| **Window** | 단축키 창 분할(½, ⅓, ¼, 최대화, 다음 디스플레이), 엣지 드래그 스냅 | 상주 (경량) |
-| **Capture** | 영역/창/전체 캡처, **화면에 고정(Pin)**, 비파괴 마크업(다시 편집 가능) | 상주 (단축키 대기만) |
-| **OCR** | 캡처 즉시 텍스트 → 클립보드, 한/영 혼합, QR·URL·표 인식 | 필요 시 로드 |
-| **Clipboard** | 클립보드 히스토리: 검색, 고정, 텍스트·이미지·파일, 비밀번호 앱 자동 제외 | 상주 (경량) |
-| **Finder** | 진짜 `⌘X` 잘라내기, 여기서 터미널 열기, 에디터로 열기, 경로 복사, 지정 폴더로 보내기 | 상주 (이벤트 감지만) |
-| **Normalize** | 한글 **자소분리(NFD) 파일명 자동 복구**, 복사한 텍스트 NFC 변환, Windows 호환 압축 | 상주 (FSEvents 감시만) |
-| **Organize** | 다운로드 폴더 자동 정리: 조건 + 동작 규칙을 직접 조합, 규칙별 on/off | 상주 (기본 꺼짐) |
-| **Uninstaller** | 앱 잔여물을 **위치·종류·확신도별로** 보여주고 휴지통으로 제거, **이미 지운 앱의 흔적** 찾기 | **창을 열 때만** 동작, 닫으면 해제 |
+| **Window** | Shortcut window layout (½, ⅓, ¼, maximize, next display), snap by dragging to edges | Resident (light) |
+| **Capture** | Area/window/full capture, **pin on screen**, non-destructive markup (editable later) | Resident (waits for shortcuts only) |
+| **OCR** | Capture straight to text on the clipboard, mixed Korean/English, QR, URL and table recognition | Loaded when needed |
+| **Clipboard** | Clipboard history: search, pin, text, images and files, password apps excluded automatically | Resident (light) |
+| **Finder** | Real `⌘X` cut, open Terminal here, open in editor, copy path, send to a chosen folder | Resident (listens for events only) |
+| **Normalize** | **Automatically fixes decomposed (NFD) Korean filenames**, converts copied text to NFC, Windows-friendly zip | Resident (FSEvents watch only) |
+| **Organize** | Downloads auto-organize: build your own condition + action rules, turn each rule on or off | Resident (off by default) |
+| **Uninstaller** | Shows app leftovers **by location, kind and confidence** and moves them to the Trash, finds **leftovers of apps already removed** | **Runs only while its window is open**, released when closed |
 
-모든 모듈은 설정에서 개별로 켜고 끌 수 있고, 꺼진 모듈은 메모리에 올라가지 않습니다.
+Each module can be turned on or off in Settings, and modules that are off are not loaded into memory.
 
-**목표 수치**: 유휴 메모리 < 40 MB · 유휴 CPU 0% · 캡처 → OCR → 클립보드 < 500 ms
+**Targets**: idle memory < 40 MB · idle CPU 0% · capture → OCR → clipboard < 500 ms
 
-## 지금 바로 쓰기 (소스 빌드)
+## Try it now (build from source)
 
-Xcode 없이 **Command Line Tools만으로** 빌드됩니다.
+Builds with **Command Line Tools only**, no Xcode needed.
 
-**1. 빌드 · 설치**
+**1. Build and install**
 
 ```bash
 git clone https://github.com/beomzh/PolyMac.git && cd PolyMac
@@ -74,151 +77,151 @@ git clone https://github.com/beomzh/PolyMac.git && cd PolyMac
 scripts/build-app.sh --install
 ```
 
-`/Applications/PolyMac.app`에 설치되고 실행됩니다. 메뉴바에 PolyMac 아이콘(큐브)이 생깁니다. 평소에는 Dock에 나오지 않고, 환경 설정·시작 안내·앱 삭제 창이 열려 있는 동안만 Dock과 `⌘Tab`에 나옵니다 — 창이 다른 앱 뒤로 가면 Dock 아이콘을 누르면 다시 앞으로 옵니다.
+It installs to `/Applications/PolyMac.app` and launches. A PolyMac icon (a cube) appears in the menu bar. It normally stays out of the Dock; it shows in the Dock and `⌘Tab` only while Settings, the Welcome Guide or the Uninstaller window is open. If that window goes behind another app, click the Dock icon to bring it back.
 
-**2. 권한 주기** — 메뉴바 PolyMac 아이콘 › **환경 설정…**(`⌘,`) › 권한에서 경고 표시가 붙은 항목의 "허용하기…"를 누르면 해당 설정 화면이 열립니다. 켜 둔 기능에 필요한 권한이 빠지면 메뉴 맨 아래에 "권한이 필요합니다…"가 나타납니다.
-- 손쉬운 사용: 창 분할, Finder `⌘X`, 클립보드 자동 붙여넣기
-- 화면 녹음: 캡처, OCR (허용 후 PolyMac을 한 번 종료했다 다시 실행)
-- 권한을 준 뒤 메뉴에서 해당 기능을 껐다 켜면 바로 적용됩니다 (특히 Finder 도구).
+**2. Grant permissions** — Menu bar PolyMac icon › **Settings…** (`⌘,`) › Permissions. Click "Allow…" next to an item with a warning to open the matching System Settings page. If a feature you turned on is missing a permission, "Permissions needed…" appears at the bottom of the menu.
+- Accessibility: window layout, Finder `⌘X`, clipboard auto-paste
+- Screen Recording: capture, OCR (after allowing, quit PolyMac once and open it again)
+- After granting a permission, turn the feature off and on in the menu to apply it right away (especially Finder Tools).
 
-**3. (권장) 고정 인증서 만들기** — 인증서가 없으면 ad-hoc 서명이라 **다시 빌드할 때마다 macOS가 권한을 초기화**합니다. 아래 둘 중 하나만 해두면 빌드 스크립트가 자동으로 찾아 쓰고, 그다음부터는 권한이 유지됩니다.
+**3. (Recommended) Create a stable certificate** — Without a certificate the app is ad-hoc signed, so **macOS resets its permissions on every rebuild**. Do one of the following and the build script finds and uses it automatically; permissions then stay.
 
-- **권장 — 스크립트 한 줄**: 10년짜리 자체 서명 인증서 `PolyMac Beomzh`를 만들어 로그인 키체인에 넣습니다. 백업 암호를 정하고, macOS가 신뢰 설정에 암호(Touch ID)를 한 번 묻습니다. 백업 파일(`~/Documents/PolyMac-signing.p12`)은 안전한 곳에 옮겨 두세요.
+- **Recommended — one script**: creates a 10-year self-signed certificate `PolyMac Beomzh` in your login keychain. You choose a backup password, and macOS asks once for your password (Touch ID) to set trust. Move the backup file (`~/Documents/PolyMac-signing.p12`) somewhere safe.
   ```bash
   scripts/make-signing-cert.sh
   ```
-- **직접 만들기**: "키체인 접근" 앱 › 메뉴 **키체인 접근 › 인증서 지원 › 인증서 생성…** → 이름 `PolyMac Local`(`PolyMac `으로 시작하면 빌드 스크립트가 찾습니다), 신원 유형 **자체 서명 루트**, 인증서 유형 **코드 서명**, "기본값 무시"를 켜고 유효 기간을 길게(예: 3650일)
-- **Xcode의 Apple Development 인증서**도 쓸 수 있지만, 서명에 이메일·실명이 드러나고 1년마다 만료됩니다. 남에게 배포할 앱에는 쓰지 마세요.
+- **Create it by hand**: Keychain Access › menu **Keychain Access › Certificate Assistant › Create a Certificate…** → name `PolyMac Local` (the build script picks up names starting with `PolyMac `), Identity Type **Self Signed Root**, Certificate Type **Code Signing**, turn on "Let me override defaults" and set a long validity (for example 3650 days)
+- **Xcode's Apple Development certificate** also works, but the signature reveals your email and name, and it expires every year. Don't use it for apps you give to others.
 
-그다음 `scripts/build-app.sh --install` → 아래 [권한 초기화](#문제-해결) 후 한 번만 다시 허용합니다. (처음 서명할 때 키체인 접근 허용 창이 뜨면 "항상 허용")
+Then run `scripts/build-app.sh --install` → [reset permissions](#troubleshooting) and allow them once more. (If a keychain access prompt appears the first time you sign, choose "Always Allow".)
 
-### 지금 동작하는 단축키
+### Shortcuts that work today
 
-| 단축키 | 동작 |
+| Shortcut | Action |
 |---|---|
-| `⌥⌘←` / `⌥⌘→` | 왼쪽 / 오른쪽 절반 — 반복해서 누르면 ⅓ → ⅔ |
-| `⌥⌘↑` / `⌥⌘↓` | 위 / 아래 절반 |
-| `⌥⌘F` / `⌥⌘C` | 최대화 / 가운데 |
-| `⌃⌥⌘→` / `⌃⌥⌘←` | 다음 / 이전 디스플레이 |
-| `⌥⌘Z` | 창 위치 되돌리기 |
-| `⌃⇧1` | 영역 캡처 → **편집 도구 막대** (사각형·화살표·펜·글자·모자이크·번호, 텍스트 추출, 핀, 저장, 복사) |
-| `⌃⇧2` | 영역 선택 → **텍스트 추출** → 클립보드 (한/영, QR) |
-| `⌃⇧3` | 영역 캡처 → 바로 **화면에 고정(핀)** |
-| `⌃⇧4` | 클립보드 이미지 → 화면에 고정 |
-| `⌃⇧5` | 클립보드 이미지 → **텍스트 추출** (다른 캡처 앱으로 찍은 것도) |
-| `⌃⇧6` | 영역 선택 → **표 추출** (엑셀·Numbers에 칸 그대로 붙여넣기, 또는 Markdown 표 — macOS 26 이상) |
-| `⌃⇧7` | 영역 선택 → **번역** 결과 창 (기기 안에서, macOS 15 이상) |
-| `⇧⌘V` | 클립보드 히스토리 창 (검색 · 전체 내용 미리보기 · 출처 앱) |
-| `⌘X` → `⌘V` | Finder에서 파일 잘라내기 → 붙여넣기(이동) — Finder 안에서만 |
-| `⌃⌥T` | Finder 현재 폴더에서 터미널 열기 (터미널 앱 선택 가능) |
-| `⌃⌥E` | Finder 선택 항목(없으면 현재 폴더)을 에디터로 열기 (에디터 앱 선택 가능) |
-| `⌃⌥C` | Finder 선택 항목 경로 복사 (한글 NFC) |
+| `⌥⌘←` / `⌥⌘→` | Left / right half — press again for ⅓ → ⅔ |
+| `⌥⌘↑` / `⌥⌘↓` | Top / bottom half |
+| `⌥⌘F` / `⌥⌘C` | Maximize / center |
+| `⌃⌥⌘→` / `⌃⌥⌘←` | Next / previous display |
+| `⌥⌘Z` | Undo window position |
+| `⌃⇧1` | Capture area → **editing toolbar** (box, arrow, pen, text, mosaic, numbers, extract text, pin, save, copy) |
+| `⌃⇧2` | Select area → **extract text** → clipboard (Korean/English, QR) |
+| `⌃⇧3` | Capture area → **pin on screen** right away |
+| `⌃⇧4` | Clipboard image → pin on screen |
+| `⌃⇧5` | Clipboard image → **extract text** (works for images from other capture apps too) |
+| `⌃⇧6` | Select area → **extract table** (paste cell by cell into Excel or Numbers, or as a Markdown table — macOS 26 or later) |
+| `⌃⇧7` | Select area → **translation** result window (on-device, macOS 15 or later) |
+| `⇧⌘V` | Clipboard history window (search · full preview · source app) |
+| `⌘X` → `⌘V` | Cut files in Finder → paste (move) — inside Finder only |
+| `⌃⌥T` | Open Terminal in the current Finder folder (terminal app selectable) |
+| `⌃⌥E` | Open the Finder selection (or the current folder) in an editor (editor app selectable) |
+| `⌃⌥C` | Copy paths of the Finder selection (Korean in NFC) |
 
-**캡처 편집 도구 막대** (`⌃⇧1`로 영역을 고르면 아래에 나타남)
+**Capture editing toolbar** (appears below the area after you select it with `⌃⇧1`)
 
-| 도구 | 키 |
+| Tool | Key |
 |---|---|
-| 사각형 / 화살표 / 펜 | `R` / `A` / `P` (다시 누르면 해제) |
-| 글자 / 모자이크 / 번호 | `E` / `M` / `N` — 글자는 누른 곳에 바로 입력합니다. 마우스를 올리면 놓일 자리가 흐리게 보이고, 도구를 안 골라도 영역 안을 두 번 누르면 됩니다. `↩` 확정, `⇧↩` 줄바꿈, `Esc` 취소. 넣은 글자는 끌어서 옮기고, 모서리를 끌어 크기를 바꾸고, 두 번 눌러 고치고, `⌫`로 지웁니다 (방향키로 1px, `⇧` 10px 이동), 모자이크는 가릴 곳을 드래그, 번호는 누를 때마다 1, 2, 3… |
-| 색상 | 도구 막대의 동그라미 8개 또는 `1`~`8` — 빨강(기본)·주황·노랑·초록·파랑·보라·검정·흰색 |
-| 되돌리기 | `⌘Z` |
-| 텍스트 추출 / 화면에 고정 / 저장 | `T` / `F` / `⌘S` |
-| 표 추출 / 번역 (표 macOS 26, 번역 macOS 15 이상) | `G` / `L` |
-| 복사하고 끝내기 / 취소 | `↩︎` 또는 `⌘C` / `Esc` |
+| Box / arrow / pen | `R` / `A` / `P` (press again to deselect) |
+| Text / mosaic / numbers | `E` / `M` / `N` — text is typed right where you click. Hover to see a faint preview of where it goes, or double-click inside the area without choosing a tool. `↩` done, `⇧↩` new line, `Esc` cancel. Drag placed text to move it, drag a corner to resize, double-click to edit, `⌫` to delete (arrow keys move 1px, `⇧` 10px). Mosaic: drag over what to hide. Numbers: 1, 2, 3… on each click |
+| Color | The 8 dots on the toolbar or `1`–`8` — red (default), orange, yellow, green, blue, purple, black, white |
+| Undo | `⌘Z` |
+| Extract text / pin on screen / save | `T` / `F` / `⌘S` |
+| Extract table / translate (table macOS 26, translation macOS 15 or later) | `G` / `L` |
+| Copy and finish / cancel | `↩︎` or `⌘C` / `Esc` |
 
-한글 입력 상태에서도 글자 단축키(R·A·P·T·F·C 등)는 자판 위치대로 동작합니다.
+Letter shortcuts (R, A, P, T, F, C and so on) follow key positions even when a Korean input source is active.
 
-**캡처 화면** — 화면이 어두워지고 커서에 십자선이 생기며, 왼쪽 아래에 그 단계에서 쓸 수 있는 키가 표시됩니다.
-- **돋보기**: 커서 옆에 15×15 픽셀 확대, 좌표, 그 위치 색상(RGB/HEX). `C` 색상 복사, `⇧` RGB↔HEX
-- **크기 표시**: 선택 영역 왼쪽 위에 픽셀 크기
-- **영역 조정** (영역을 고른 뒤): 안쪽 드래그로 이동, **테두리 어디든** 드래그해 크기 조절(모서리는 두 방향), 방향키 1px 이동(`⇧` 10px), `⌘A` 화면 전체
+**Capture screen** — the screen dims, the cursor becomes a crosshair, and the keys available at that step appear at the bottom left.
+- **Magnifier**: 15×15 pixel zoom next to the cursor, coordinates, and the color at that point (RGB/HEX). `C` copies the color, `⇧` switches RGB↔HEX
+- **Size**: pixel size at the top left of the selection
+- **Adjust the area** (after selecting): drag inside to move, drag **anywhere on the border** to resize (corners in two directions), arrow keys move 1px (`⇧` 10px), `⌘A` whole screen
 
-**창 자동 감지** — 영역 선택 화면에서 마우스를 올린 창의 테두리가 파랗게 표시됩니다. **클릭만 하면 그 창 크기 그대로** 선택되고, 드래그하면 원하는 영역을 직접 고릅니다. 캡처가 끝나면 쓰던 앱으로 포커스가 돌아갑니다.
+**Window detection** — while selecting, the window under the mouse gets a blue outline. **Just click to select that window's exact frame**, or drag to choose your own area. When the capture ends, focus returns to the app you were using.
 
-도구를 고르지 않은 상태에서 영역 밖을 드래그하면 영역을 다시 고릅니다 (표시를 그린 뒤에는 영역이 유지됩니다). 텍스트 추출은 그린 표시를 빼고 원본에서 읽습니다.
+Without a tool selected, dragging outside the area selects a new area (once you have drawn markup, the area stays). Text extraction reads the original image, without your markup.
 
-**핀** — 드래그로 이동 · `⌘`+드래그로 다른 앱에 PNG로 넣기 · 가장자리·모서리를 끌거나 스크롤·핀치로 크기 조절 · `⌥`+스크롤로 투명도 · 우클릭 › 클릭 통과(메뉴바에서 끔) · 메뉴바 › 최근 캡처 다시 고정
-닫기: 핀 위에 마우스를 올리고 `Esc` · 핀을 클릭한 뒤 `Esc`/`⌫` · 더블클릭 · 우클릭 › 닫기 (`⌫`는 다른 앱 글자를 지우지 않도록 핀을 클릭했을 때만 받습니다). 클릭한 핀에서 `⌘C`는 복사
-우클릭 › **표시 편집**으로 고정한 뒤에도 사각형·화살표·펜·글자·모자이크·번호를 더하거나 되돌릴 수 있습니다 (표시는 이미지에 굽지 않고 따로 보관). 복사·저장은 표시를 합친 이미지, 텍스트 추출은 원본으로 합니다.
-우클릭 › **텍스트 선택**을 누르면 핀 위 글자를 드래그해 일부만 고를 수 있습니다 (라이브 텍스트, Mac 안에서만 처리). 고른 뒤 `⌘C`는 글자를 복사하고, 고른 게 없으면 이미지를 복사합니다. 켜 있는 동안 테두리가 초록색이고 핀을 끌어 옮기지 않습니다. 끝내기: `Esc` 또는 우클릭 › 텍스트 선택 끝내기.
+**Pins** — drag to move · `⌘`+drag to drop a PNG into another app · drag an edge or corner, scroll, or pinch to resize · `⌥`+scroll for opacity · right-click › Click-Through (turn off from the menu bar) · menu bar › Pin a Recent Capture
+Close: hover over the pin and press `Esc` · click the pin, then `Esc`/`⌫` · double-click · right-click › Close (`⌫` is only taken after you click the pin, so it never deletes text in another app). `⌘C` on a clicked pin copies it
+Right-click › **Markup** lets you add or undo boxes, arrows, pen, text, mosaic and numbers after pinning (markup is kept separately, not baked into the image). Copy and save use the image with markup; text extraction uses the original.
+Right-click › **Select Text** lets you drag over text on the pin to pick part of it (Live Text, processed on your Mac only). After selecting, `⌘C` copies the text; with nothing selected it copies the image. While it is on, the border is green and dragging doesn't move the pin. Finish: `Esc` or right-click › Finish Text Selection.
 
-**클립보드 히스토리 창** (`⇧⌘V`)
-- 평소에는 **간략한 목록**만: 앱 아이콘 + 한 줄 요약(줄바꿈은 ⏎) 또는 **이미지 썸네일**, 오른쪽에 `⌘1`~`⌘0` (위에서 10개)
-- 오른쪽 위 버튼 또는 `⌘→`로 **미리보기 패널이 옆으로 펼쳐짐** (`⌘←`로 접기, 마지막 상태 기억): 전체 텍스트(일부 선택 가능) 또는 큰 이미지, 아래에 복사한 앱·시각·글자 수/해상도
-- 검색: 내용·앱 이름·출처 태그, 띄어쓰기로 여러 단어, "이미지"로 이미지만, "서식"으로 서식 있는 글만. 일치한 글자는 목록(일치 근처부터 보임)과 미리보기에서 노란 배경으로 강조하고 미리보기는 첫 일치로 스크롤합니다. 긴 텍스트는 앞 4,000자 안에서만 찾습니다
-- `↑↓` 이동 · `↩︎`·더블클릭·`⌘1~9`·`⌘0` **클립보드로 복사** · `⇧↩︎` 복사 후 앞의 앱에 바로 붙여넣기 · `⌥↩︎`/`⌥⇧↩︎` **서식 없이** 복사/붙여넣기 · `⌘↩︎` 이미지를 화면에 고정 · `⌘P` 고정/해제 · `⌘⌫` 삭제 · `Esc` 닫기 · 다른 곳 클릭하면 닫힘
-- **서식도 기록**: 굵게·색·링크 같은 서식(RTF, 그리고 Chrome 등이 넣는 HTML)이 함께 복사되면 같이 보관해, 다시 복사할 때 서식과 링크가 살아 있습니다 (목록에 서식 아이콘, 합쳐서 5 MB까지). PolyMac은 서식을 해석하지 않고 그대로 보관했다가 돌려놓기만 합니다.
-- Safari 우클릭 › 링크 복사처럼 주소만 들어온 복사도 글자로 기록합니다.
-- **출처 태그**: PolyMac이 복사한 것은 어느 기능에서 왔는지 아이콘으로 표시합니다 (텍스트 추출 · 캡처 · 경로 복사 · 색상).
-- **지금 클립보드를 서식 없이 붙여넣기**: 기본 단축키는 없습니다(많은 앱이 `⌥⇧⌘V`를 이미 같은 용도로 씁니다). 환경 설정 › 단축키에서 지정하면 어느 앱에서나 글자만 붙여넣습니다.
-- **이미지도 기록**합니다 (캡처, 복사한 사진 등 — 한 장 30 MB까지). 같은 이미지는 한 번만 저장
-- **보관 기간**: 메뉴바 PolyMac 아이콘 › 클립보드 히스토리 › 보관 기간 (1 / 3 / **7** / 30일 / 제한 없음). 기간이 지난 항목은 1시간마다 확인해 지움
-- **보관 개수**: 같은 메뉴 › 보관 개수 (50 / 100 / **200** / 500 / 1000개). 기간 안이라도 개수를 넘으면 오래된 것부터 지움
-- 고정한 항목은 기간·개수 모두에서 빠지며, 지운 항목의 이미지·텍스트 파일도 함께 삭제
-- **긴 텍스트(로그 등)도 전체 보관**: 64 KB가 넘으면 전체를 별도 파일로 저장하고 목록에는 앞부분만 둡니다. 복사하면 전체가 들어가고, 미리보기는 앞 200 KB까지 보여 줍니다. 한 항목 최대 20 MB
-- 앞에 쓰던 앱의 포커스를 빼앗지 않아서 `⇧↩︎`로 고르면 그 앱에 바로 붙여넣어집니다
+**Clipboard history window** (`⇧⌘V`)
+- Normally a **compact list**: app icon + one-line summary (line breaks shown as ⏎) or an **image thumbnail**, with `⌘1`–`⌘0` on the right (top 10)
+- The button at the top right or `⌘→` **slides a preview panel open beside it** (`⌘←` to close, remembers the last state): full text (partly selectable) or a large image, with the source app, time, and character count or resolution below
+- Search: content, app name and source tag; several words separated by spaces; "image" for images only, "rich" for formatted text only. Matches are highlighted in yellow in the list (shown from near the match) and in the preview, and the preview scrolls to the first match. Long text is searched only in its first 4,000 characters
+- `↑↓` move · `↩︎`, double-click, `⌘1–9`, `⌘0` **copy to clipboard** · `⇧↩︎` copy and paste into the app in front · `⌥↩︎`/`⌥⇧↩︎` copy/paste **as plain text** · `⌘↩︎` pin an image on screen · `⌘P` pin/unpin · `⌘⌫` delete · `Esc` close · clicking elsewhere closes it
+- **Formatting is kept too**: when formatting such as bold, color or links (RTF, and the HTML that Chrome and others add) is copied along, it is stored with the text, so formatting and links survive when you copy it again (formatting icon in the list, up to 5 MB combined). PolyMac doesn't interpret the formatting; it only stores it and puts it back.
+- Copies that contain only a URL, such as Safari's right-click › Copy Link, are recorded as text.
+- **Source tags**: things PolyMac copied show an icon for the feature they came from (text extraction · capture · copy path · color).
+- **Paste the current clipboard as plain text**: no default shortcut (many apps already use `⌥⇧⌘V` for this). Set one in Settings › Shortcuts and it pastes plain text in any app.
+- **Images are recorded too** (captures, copied photos — up to 30 MB each). Identical images are stored once
+- **Keep for**: Menu bar PolyMac icon › Clipboard History › Keep for (1 / 3 / **7** / 30 days / no limit). Expired items are checked and removed every hour
+- **Number kept**: same menu › Keep (50 / 100 / **200** / 500 / 1000 items). Over the limit, the oldest go first even within the period
+- Pinned items are exempt from both limits, and removing an item also deletes its image or text file
+- **Long text (logs and so on) is kept in full**: over 64 KB, the whole text is stored in a separate file and the list keeps only the beginning. Copying puts the whole text back, and the preview shows up to the first 200 KB. Up to 20 MB per item
+- It doesn't take focus from the app you were using, so choosing with `⇧↩︎` pastes straight into that app
 
-**Finder 잘라내기에 대해** — macOS Finder에는 파일 잘라내기가 없습니다. 파일을 고르고 `⌘X`를 눌러도 아무 일이 없고(편집 › 잘라내기 비활성), 이름을 편집할 때만 글자 잘라내기로 동작합니다. macOS 기본 이동 방법은 `⌘C` → 옮길 폴더에서 `⌥⌘V`입니다. PolyMac은 Finder 안에서만 `⌘X`를 `⌘C`로, 그 뒤의 `⌘V`를 `⌥⌘V`로 바꿔 보냅니다. 두 키 모두 단축키 설정에서 바꾸거나 끌 수 있습니다.
+**About cutting in Finder** — macOS Finder has no file cut. Selecting files and pressing `⌘X` does nothing (Edit › Cut is disabled); it only cuts text while you edit a name. The built-in way to move is `⌘C` → `⌥⌘V` in the destination folder. Inside Finder only, PolyMac sends `⌘C` for `⌘X`, and `⌥⌘V` for the following `⌘V`. Both keys can be changed or turned off in the shortcut settings.
 
-쓰는 순서:
-1. Finder에서 파일·폴더를 클릭해 **선택만** 한다 (이름이 편집 상태면 안 됨 — 그때는 글자 잘라내기로 동작)
-2. `⌘X` → 화면 아래에 "✂️ n개 잘라냄 — 옮길 폴더에서 ⌘V" 표시가 뜨면 성공
-3. 옮길 폴더를 Finder 창으로 연다 (다른 앱을 잠깐 다녀와도 됨)
-4. 그 Finder 창을 클릭해 앞으로 가져온 뒤 `⌘V` → 파일이 **이동**됨 (`⌘Z`로 되돌리기 가능)
+Steps:
+1. In Finder, click files or folders to **select** them (not while a name is being edited — then it cuts text)
+2. `⌘X` → if "✂️ n item(s) cut — press ⌘V in the destination folder" appears at the bottom of the screen, it worked
+3. Open the destination folder in a Finder window (visiting another app in between is fine)
+4. Click that Finder window to bring it forward and press `⌘V` → the files are **moved** (`⌘Z` undoes it)
 
-`⌘X` 뒤에 다른 것을 복사하면 잘라내기는 취소되고 `⌘V`는 평소 붙여넣기가 됩니다. 2번에서 표시가 뜨지 않으면 환경 설정 › 권한에서 손쉬운 사용을 확인하고, `log stream --predicate 'subsystem == "dev.polymac" AND category == "finder"'`로 어느 단계에서 통과됐는지 볼 수 있습니다 (키 내용은 기록하지 않음).
+Copying something else after `⌘X` cancels the cut, and `⌘V` becomes a normal paste. If nothing appears in step 2, check Accessibility in Settings › Permissions, and run `log stream --predicate 'subsystem == "dev.polymac" AND category == "finder"'` to see which step it got through (key contents are not logged).
 
-**터미널 앱 고르기** — 환경 설정 › Finder 도구, 또는 메뉴바 PolyMac 아이콘 › Finder 도구 › 터미널 앱. 설치된 것만 표시됩니다 (터미널, iTerm2, Ghostty, Warp, WezTerm, Alacritty, kitty).
+**Choose a terminal app** — Settings › Finder Tools, or Menu bar PolyMac icon › Finder Tools › Terminal app. Only installed apps are listed (Terminal, iTerm2, Ghostty, Warp, WezTerm, Alacritty, kitty).
 
-**에디터 앱 고르기** — 환경 설정 › Finder 도구, 또는 메뉴바 PolyMac 아이콘 › Finder 도구 › 에디터 앱. 설치된 것만 표시됩니다 (Visual Studio Code, Cursor, Zed, Sublime Text, Nova, BBEdit, CotEditor, 텍스트 편집기). 목록에 없는 앱은 **다른 앱 고르기…**로 정합니다. 처음에는 위 순서대로 설치된 첫 앱을 씁니다. 폴더를 열지 못하는 앱(CotEditor, 텍스트 편집기)에는 파일만 넘기고, 뺀 폴더 수를 알려 줍니다.
+**Choose an editor app** — Settings › Finder Tools, or Menu bar PolyMac icon › Finder Tools › Editor app. Only installed apps are listed (Visual Studio Code, Cursor, Zed, Sublime Text, Nova, BBEdit, CotEditor, TextEdit). For an app not on the list, use **Choose Another App…**. At first, the first installed app in that order is used. Apps that can't open folders (CotEditor, TextEdit) get the files only, and PolyMac tells you how many folders were left out.
 
-**PolyMac 창 닫기** — 단축키 설정·앱 삭제 창은 `Esc` 또는 `⌘W`로 닫힙니다. `⌘Q`는 PolyMac 창이 떠 있으면 그 창만 닫고, 창이 없을 때만 PolyMac을 종료합니다 (캡처 중에는 아무 일도 하지 않음).
+**Closing PolyMac windows** — the shortcut settings and Uninstaller windows close with `Esc` or `⌘W`. `⌘Q` closes only the PolyMac window if one is open, and quits PolyMac only when no window is open (it does nothing during a capture).
 
-**환경 설정** — 메뉴바 PolyMac 아이콘 › **환경 설정…**(`⌘,`). 탭은 일곱 개입니다.
+**Settings** — Menu bar PolyMac icon › **Settings…** (`⌘,`). There are seven tabs.
 
-| 탭 | 내용 |
+| Tab | Contents |
 |---|---|
-| 기능 | 기능별 켜기/끄기(끄면 메모리에서 내려가고 단축키 해제), 로그인 시 자동 실행, 데이터 폴더 |
-| 언어 | 시스템 설정 따르기 / 한국어 / English — 바로 바뀜 |
-| 알림 | 알림 보이기(끄면 권한·실패 안내도 안 뜸), 위치(아래 가운데·왼쪽/오른쪽 아래·화면 가운데·위 가운데·왼쪽/오른쪽 위), 표시 시간(1~10초, 기본 2초 — 오래 뜨는 안내는 같은 비율로), 글자색·배경색 — 색마다 "시스템"(라이트·다크 모드를 따름, 기본값) / 색 견본 6개 / 직접 고르기(색상 창, 배경은 투명도도 가능) 중 하나, 글자 크기(10~28pt), 알림창 최대 너비(240~800pt), 안쪽 여백 — 바꾸면 바로 미리보기, "기본값으로" 되돌리기 |
-| Finder 도구 | 터미널 열기·에디터로 열기에 쓸 앱 고르기 (메뉴의 Finder 도구 › 터미널 앱/에디터 앱과 같은 설정). 기능이 꺼져 있어도 미리 고를 수 있음 |
-| 한글 파일명 | 자소분리를 검사할 폴더 추가·빼기·켜기/끄기, 기본값(다운로드·데스크탑)으로 |
-| 자동 정리 | 다운로드 자동 정리 규칙(켜기·추가·삭제·끌어서 순서 바꾸기, 조건·동작, 내보내기·가져오기), 감시 폴더, 미리보기 모드, 다운로드 후 기다릴 시간 — **저장**(`⌘S`)을 눌러야 반영. 기능이 꺼져 있어도 미리 고쳐 둘 수 있음 |
-| 단축키 | 모든 단축키 보기·바꾸기·기본값으로 |
-| 권한 | 권한별 허용 상태, 그 권한을 쓰는 기능, 시스템 설정 바로가기 |
+| Features | Turn each feature on or off (off unloads it from memory and releases its shortcuts), open at login, data folder |
+| Language | Use system language / 한국어 / English — changes immediately |
+| Notifications | Show notifications (off also hides permission and failure notices), position (bottom center, bottom left/right, screen center, top center, top left/right), display time (1–10 s, default 2 s — longer notices scale with it), text and background color — for each, "System" (follows light/dark mode, default) / 6 swatches / Custom (color panel, background can be transparent), font size (10–28 pt), maximum width (240–800 pt), padding — changes preview immediately, "Restore Defaults" |
+| Finder Tools | Choose the apps for Open Terminal Here and Open in Editor (same setting as the menu's Finder Tools › Terminal app/Editor app). You can choose even while the feature is off |
+| Korean Filenames | Add, remove, or turn off folders checked for decomposed Korean names; restore the defaults (Downloads, Desktop) |
+| Auto-Organize | Downloads auto-organize rules (turn on, add, delete, drag to reorder, conditions and actions, export and import), watched folders, preview mode, wait time after downloads — takes effect only after **Save** (`⌘S`). You can edit while the feature is off |
+| Shortcuts | See, change, and reset every shortcut |
+| Permissions | Status of each permission, the features that use it, and links to System Settings |
 
-**단축키 바꾸기** — 메뉴바 PolyMac 아이콘 › **환경 설정…**(`⌘,`) › 단축키. 바꿀 항목을 클릭하고 새 조합을 누르면 바로 적용됩니다.
-- `Esc` 취소 · `⌫` 사용 안 함 · ↩︎ 버튼으로 기본값 복원 · "모두 기본값으로"
-- PolyMac 안에서 이미 쓰는 조합은 거부하고, 다른 앱이 쓰는 조합이면 경고 표시로 알려줍니다.
-- `⌘`·`⌃`·`⌥` 중 하나 이상이 들어가야 합니다 (F키는 단독 가능). 바꾼 값은 앱을 다시 빌드·설치해도 유지됩니다.
-- Finder 잘라내기·붙여넣기도 목록에 있습니다 ("Finder 안에서만"). 바꾸면 Finder 안에서 그 조합을 씁니다.
+**Change shortcuts** — Menu bar PolyMac icon › **Settings…** (`⌘,`) › Shortcuts. Click an item and press a new combination; it applies immediately.
+- `Esc` cancel · `⌫` none · ↩︎ button restores the default · "Reset All"
+- Combinations already used inside PolyMac are refused; combinations used by other apps get a warning.
+- At least one of `⌘`, `⌃`, `⌥` is required (F keys can be used alone). Changes survive rebuilding and reinstalling the app.
+- Finder cut and paste are on the list too ("inside Finder only"). If you change them, Finder uses the new combinations.
 
-### 자소분리 자동 정리
+### Automatic Korean filename fix
 
-켜져 있으면 **검사 폴더 바로 아래** 항목의 NFD 이름을 NFC로 바꿉니다(겉보기 이름은 같고, 다른 OS에서 안 깨지게 됩니다). 기본 검사 폴더는 다운로드·데스크탑입니다.
+When on, it changes NFD names to NFC for items **directly inside the checked folders** (the name looks the same, but no longer breaks on other systems). The default folders are Downloads and Desktop.
 
-검사 폴더 바꾸기: 메뉴바 PolyMac 아이콘 › **환경 설정…**(`⌘,`) › **한글 파일명**에서 폴더 추가·빼기·잠시 끄기. 바꾸면 바로 적용됩니다.
-- 홈 폴더 안의 폴더만 지정할 수 있고, 홈 폴더 전체와 `~/Library`(앱 데이터)는 막혀 있습니다. iCloud 동기화 폴더는 목록에 있어도 건드리지 않습니다.
-- 터미널에서 같은 값(변수)을 직접 지정할 수도 있습니다. 목록 전체를 바꾸므로 다운로드·데스크탑도 원하면 넣으세요. 바꾼 뒤 기능을 껐다 켜면 적용됩니다.
+Change the folders: Menu bar PolyMac icon › **Settings…** (`⌘,`) › **Korean Filenames** to add, remove, or pause folders. Changes apply immediately.
+- Only folders inside your home folder can be chosen; the home folder itself and `~/Library` (app data) are blocked. iCloud-synced folders are left alone even if listed.
+- You can also set the same value (variable) from Terminal. It replaces the whole list, so include Downloads and Desktop if you want them. Turn the feature off and on after changing it.
 
 ```bash
 defaults write dev.polymac.app normalize.folders -array "~/Downloads" "~/Desktop" "~/Documents/받은파일"
 ```
 
-- 예전 버전의 `normalize.extraFolders`(추가 폴더)는 자동으로 새 목록에 옮겨집니다.
+- `normalize.extraFolders` (extra folders) from older versions is moved into the new list automatically.
 
-### 다운로드 폴더 자동 정리
+### Downloads auto-organize
 
-기본으로 **꺼져 있습니다.** 메뉴에서 켜면 처음엔 **미리보기 모드**라 실제로 옮기지 않고 기록만 남깁니다.
+**Off by default.** When you turn it on from the menu, it starts in **preview mode**: it only logs what it would do and moves nothing.
 
-1. 메뉴바 PolyMac 아이콘 › 환경 설정 › 기능 › 다운로드 폴더 자동 정리
-2. **환경 설정…**(`⌘,`) › **자동 정리** 탭 (메뉴의 다운로드 폴더 자동 정리 › **규칙 편집…**도 이 탭을 엽니다) → 왼쪽 목록에서 원하는 규칙을 체크(기본 규칙 5개는 모두 꺼진 상태)하거나 `+`로 새 규칙을 만들고, 오른쪽에서 조건·동작을 고른 뒤 **저장** (`⌘S`). 감시 폴더 추가, 미리보기 모드, 다운로드 후 기다릴 시간도 같은 창에서 바꿉니다.
-3. **정리 기록 보기**에서 미리보기 결과 확인
-4. 괜찮으면 **미리보기 모드** 체크 해제 → 실제로 동작. 잘못됐으면 **마지막 정리 되돌리기**
+1. Menu bar PolyMac icon › Settings › Features › Downloads Auto-Organize
+2. **Settings…** (`⌘,`) › **Auto-Organize** tab (the menu's Downloads Auto-Organize › **Edit Rules…** opens this tab too) → check the rules you want in the list on the left (the 5 built-in rules all start off) or create one with `+`, choose conditions and actions on the right, then **Save** (`⌘S`). Watched folders, preview mode and the wait time after downloads are in the same window.
+3. Check the preview results in **Show Log**
+4. If it looks right, uncheck **Preview Mode** → it runs for real. If something went wrong, undo the last run
 
-미리보기 모드에서 메뉴 › **지금 정리 실행**을 누르면 정리할 파일과 동작 목록을 확인 창으로 보여줍니다. **정리하기**를 누르면 이번 한 번만 실제로 정리하고(미리보기 모드는 그대로), **취소**하면 기록만 남깁니다. 맞는 파일이 없으면 "정리할 파일이 없습니다" 알림이 뜹니다. 감시·1시간마다 도는 자동 실행은 미리보기 모드에서 계속 기록만 합니다.
+In preview mode, menu › **Run Now** shows the files and actions in a confirmation dialog. **Organize** runs it for real this once (preview mode stays on); **Cancel** only logs it. If no file matches, a "Nothing to organize" notice appears. Watching and the hourly automatic run keep only logging while preview mode is on.
 
-JSON으로 직접 고치고 싶으면 **규칙 파일(JSON) 편집…** 후 **규칙 파일 다시 불러오기**. 규칙 하나의 모양 (`~/Library/Application Support/PolyMac/organize.json`의 `rules` 배열에 추가):
+To edit JSON directly, use **Edit Rules File (JSON)…** and then **Reload Rules File**. One rule looks like this (add it to the `rules` array in `~/Library/Application Support/PolyMac/organize.json`):
 
 ```json
 {
@@ -227,107 +230,108 @@ JSON으로 직접 고치고 싶으면 **규칙 파일(JSON) 편집…** 후 **�
     { "rename" : { "template" : "{yyyy}{MM}{dd}_{name}" } }
   ],
   "conditions" : [
-    { "sourceDomain" : { "domains" : [ "*.go.kr" ] } },
-    { "nameMatches" : { "isRegex" : false, "pattern" : "*신청서*" } }
+    { "sourceDomain" : { "domains" : [ "*.gov" ] } },
+    { "nameMatches" : { "isRegex" : false, "pattern" : "*application*" } }
   ],
   "id" : "6F1C2A4E-0000-4000-8000-000000000001",
   "isEnabled" : true,
   "match" : "all",
-  "name" : "정부 사이트 신청서는 날짜 붙여 문서 폴더로",
+  "name" : "Government applications go to Documents with a date",
   "stopAfterMatch" : true
 }
 ```
 
-| 조건 키 | 값 |
+| Condition key | Value |
 |---|---|
 | `fileExtension` | `{ "extensions": ["pdf", "hwp"] }` |
 | `kind` | `{ "kinds": ["image"] }` — image, video, audio, document, archive, installer, code, other |
-| `nameMatches` | `{ "pattern": "*견적서*", "isRegex": false }` |
+| `nameMatches` | `{ "pattern": "*invoice*", "isRegex": false }` |
 | `sourceDomain` | `{ "domains": ["github.com", "*.go.kr"] }` |
 | `sizeGreaterThan` / `sizeLessThan` | `{ "bytes": 104857600 }` |
 | `addedMoreThan` / `notOpenedFor` | `{ "days": 7 }` |
-| `isDuplicate` | `{}` — `이름 (1).pdf`처럼 번호가 붙었고 원래 파일과 내용이 같음 |
-| `allFiles` | `{}` — 감시 폴더의 모든 파일 |
-| `not` | `{ "condition": { ...위 조건 하나... } }` |
+| `isDuplicate` | `{}` — numbered like `name (1).pdf` and identical in content to the original |
+| `allFiles` | `{}` — every file in the watched folder |
+| `not` | `{ "condition": { ...one condition above... } }` |
 
-| 동작 키 | 값 |
+| Action key | Value |
 |---|---|
-| `move` / `copy` | `{ "to": "~/폴더/{yyyy}-{MM}" }` — 홈 폴더 밖은 거부 |
-| `rename` | `{ "template": "{yyyy}{MM}{dd}_{name}" }` — 확장자는 자동 유지 |
-| `trash` | `{}` — 휴지통으로 (영구 삭제 없음) |
-| `addTag` | `{ "name": "업무" }` |
-| `notify` | `{}` — 손대지 않고 알림만 |
+| `move` / `copy` | `{ "to": "~/Folder/{yyyy}-{MM}" }` — destinations outside your home folder are refused |
+| `rename` | `{ "template": "{yyyy}{MM}{dd}_{name}" }` — the extension is kept automatically |
+| `trash` | `{}` — to the Trash (never deleted permanently) |
+| `addTag` | `{ "name": "Work" }` |
+| `notify` | `{}` — notify only, don't touch the file |
 
-`"id"`는 규칙마다 달라야 합니다 (터미널에서 `uuidgen`으로 만들 수 있습니다).
+Each rule needs its own `"id"` (you can make one with `uuidgen` in Terminal).
 
-### 데이터 위치
+### Where data is stored
 
-모두 `~/Library/Application Support/PolyMac/` (폴더 0700, 파일 0600) — 환경 설정 › 기능 › 데이터 폴더 "Finder에서 열기"
+Everything is in `~/Library/Application Support/PolyMac/` (folder 0700, files 0600) — Settings › Features › Data folder "Show in Finder"
 
-| 파일 | 내용 |
+| File | Contents |
 |---|---|
-| `clipboard.json` | 클립보드 히스토리 목록 (보관 개수 설정 + 고정 항목, 암호화) |
-| `clipboard-images/` | 클립보드에 복사된 이미지 (PNG를 암호화, 기록에서 지우면 같이 삭제) |
-| `clipboard-texts/` | 64 KB가 넘는 긴 텍스트의 전체 내용 (암호화, 기록에서 지우면 같이 삭제) |
-| `clipboard-rich/` | 서식 있는 텍스트의 RTF·HTML (암호화, 기록에서 지우면 같이 삭제) |
-| `organize.json` | 자동 정리 규칙 |
-| `organize-log.txt` | 자동 정리 기록 (미리보기 포함) |
-| `uninstall-log.txt` | 앱 잔여물 삭제 기록 (휴지통으로 옮긴 경로) |
+| `clipboard.json` | Clipboard history list (up to the number kept, plus pinned items; encrypted) |
+| `clipboard-images/` | Images copied to the clipboard (encrypted PNGs, removed with their history item) |
+| `clipboard-texts/` | Full contents of text longer than 64 KB (encrypted, removed with their history item) |
+| `clipboard-rich/` | RTF and HTML of formatted text (encrypted, removed with their history item) |
+| `organize.json` | Auto-organize rules |
+| `organize-log.txt` | Auto-organize log (including preview) |
+| `uninstall-log.txt` | Uninstaller log (paths moved to the Trash) |
 
-기록 파일(`*-log.txt`)은 1 MB를 넘으면 `organize-log.1.txt`처럼 이름을 바꿔 하나만 남기고 새로 시작합니다. 그래서 기록마다 최대 약 2 MB입니다.
+When a log file (`*-log.txt`) passes 1 MB, it is renamed like `organize-log.1.txt`, only one old file is kept, and a new log starts. So each log is about 2 MB at most.
 
-**클립보드 기록은 암호화해 저장합니다.** `clipboard.json`·`clipboard-images/`·`clipboard-texts/`·`clipboard-rich/`는 AES-GCM으로 봉인돼, 같은 사용자 권한으로 실행되는 다른 프로그램이 파일을 읽어도 내용을 알 수 없습니다. 키는 디스크가 아니라 로그인 키체인("PolyMac 클립보드 기록 암호화 키")에 있고, 같은 인증서로 서명된 PolyMac만 묻지 않고 꺼낼 수 있습니다.
-- 암호화 전의 평문 기록은 처음 켤 때 한 번 봉인해 다시 씁니다. (SSD 특성상 예전 평문이 디스크 빈 공간에 남을 수 있어, 디스크 전체 보호는 FileVault를 켜 두세요)
-- 키체인이 잠겨 있거나 접근을 거절하면 새 키를 만들지 않고, 그 실행 동안은 기록을 디스크에 남기지 않습니다(글자만 메모리에).
-- 키체인의 키를 지우면 예전 기록은 열 수 없습니다 — 열 수 없는 목록은 지우지 않고 `clipboard.unreadable-…json`으로 옆에 둔 뒤 새로 시작합니다.
+**Clipboard history is stored encrypted.** `clipboard.json`, `clipboard-images/`, `clipboard-texts/` and `clipboard-rich/` are sealed with AES-GCM, so other programs running as the same user can read the files but not their contents. The key is not on disk but in the login keychain ("PolyMac 클립보드 기록 암호화 키"), and only PolyMac signed with the same certificate can take it out.
+- macOS ties this keychain item to each exact build, so after every update or rebuild macOS asks once for your login password. Choose "Always Allow" and it won't ask again until the next build.
+- Older unencrypted history is sealed and rewritten once on first launch. (Because of how SSDs work, old plain text may remain in free space on the disk; turn on FileVault for full-disk protection)
+- If the keychain is locked or access is denied, no new key is created, and for that run history is not written to disk (text stays in memory only).
+- If you delete the key from the keychain, the old history can't be opened — the unreadable list is not deleted but kept next to it as `clipboard.unreadable-…json`, and a new one starts.
 
-## 현재 개발 상태
+## Development status
 
-| 모듈 | 상태 | 지금 되는 것 | 아직 안 되는 것 |
+| Module | Status | Works now | Not yet |
 |---|---|---|---|
-| Core | 동작 | 모듈 on/off, 전역 단축키 + **변경 화면**, 권한 안내, 안내 토스트, 로그인 시 실행, 환경설정(기능·언어·단축키·권한) | — |
-| Window | 동작 | 절반·⅓·⅔·4분의 1(단축키는 직접 지정)·최대화·가운데·디스플레이 이동·되돌리기, 가장자리 끌기 배치(절반·최대화·4분의 1) | — |
-| Capture | 동작 | 영역 캡처, 창 자동 감지, 돋보기·색상 복사, 영역 이동·크기 조절, 편집 도구 막대(사각형·화살표·펜·글자·모자이크·번호), 핀 + 표시 다시 편집, 저장, 핀 클릭 통과, `⌘`드래그로 내보내기, 최근 캡처 10개 다시 고정 | - |
-| OCR | 동작 | 한/영 인식, QR, NFC 복사, 클립보드 이미지 인식, 줄바꿈 정리(그대로·문단·한 줄), 작은 글씨 보정·기호 정리, 정확도 측정 도구, 표 인식(macOS 26+, TSV·Markdown), 단축어 앱 동작(App Intents), `polymac://` 연동(허용해야 동작), 들여쓰기 보존, 링크 열기 단추, 핀 위 라이브 텍스트, 온디바이스 번역(macOS 15+) | - |
-| Clipboard | 동작 | 텍스트(긴 로그 포함)·이미지·파일 히스토리, 간략 목록 + 펼치는 미리보기, 검색, 출처 앱, 고정, 보관 기간(기본 7일)·개수, 비밀번호 제외, 앱별 제외, 저장 암호화, 서식(RTF) 보관, 서식 없이 붙여넣기, 출처 태그, 이미지를 화면에 고정(`⌘↩`) | - |
-| Finder | 동작 | 잘라내기(단축키 변경 가능), 터미널 열기(앱 선택), 에디터로 열기(앱 선택), 경로 복사, 우클릭 메뉴(서비스), 지정 폴더로 보내기, 잘라내기 대기 표시 | - |
-| Normalize | 동작 | 다운로드·데스크탑 자동 NFC 변환, 우클릭 정리(하위 폴더까지), Windows용 압축, 복사한 글자의 풀어진 한글 붙이기 | - |
-| Organize | 동작 | 규칙 엔진, 감시·실행·미리보기·되돌리기, 규칙 편집 화면(JSON 편집도 가능, 끌어서 순서 바꾸기), 규칙 내보내기/가져오기, 중복 판정, 백그라운드 검사, 치환어 자동완성·미리보기 | - |
-| Uninstaller | 동작 | 설치된 앱 잔여물 찾기(확실·유력·추정), 이미 지운 앱의 흔적, Finder 휴지통으로 이동, 실행 중 앱 종료·백그라운드 항목 내리기, 설치 기록 `pkgutil --forget`, 삭제 전 목록 저장 | — |
+| Core | Working | Module on/off, global shortcuts + **settings screen**, permission guidance, notices, open at login, Settings (features, language, shortcuts, permissions) | — |
+| Window | Working | Halves, ⅓, ⅔, quarters (shortcuts set by you), maximize, center, move between displays, undo, snap by dragging to edges (halves, maximize, quarters) | — |
+| Capture | Working | Area capture, window detection, magnifier and color copy, move/resize the area, editing toolbar (box, arrow, pen, text, mosaic, numbers), pins + re-editable markup, save, pin click-through, `⌘`-drag to export, re-pin the last 10 captures | - |
+| OCR | Working | Korean/English recognition, QR, NFC copy, clipboard image recognition, line-break handling (as shown, paragraphs, single line), small-text boost and symbol cleanup, accuracy benchmark, table recognition (macOS 26+, TSV and Markdown), Shortcuts actions (App Intents), `polymac://` integration (must be allowed), indentation kept, link open button, Live Text on pins, on-device translation (macOS 15+) | - |
+| Clipboard | Working | Text (including long logs), image and file history, compact list + slide-out preview, search, source app, pinning, retention period (default 7 days) and count, password exclusion, per-app exclusion, encrypted storage, formatting (RTF) kept, paste as plain text, source tags, pin images on screen (`⌘↩`) | - |
+| Finder | Working | Cut (shortcut changeable), open Terminal (app selectable), open in editor (app selectable), copy path, right-click menu (Services), send to a chosen folder, pending-cut indicator | - |
+| Normalize | Working | Automatic NFC in Downloads and Desktop, right-click fix (including subfolders), Windows-friendly zip, fixing decomposed Korean in copied text | - |
+| Organize | Working | Rule engine, watch/run/preview/undo, rule editor (JSON editing too, drag to reorder), rule export/import, duplicate detection, background scanning, placeholder autocomplete and preview | - |
+| Uninstaller | Working | Finds leftovers of installed apps (certain, likely, possible), leftovers of removed apps, moves to the Finder Trash, quits running apps and unloads background items, `pkgutil --forget` for install receipts, saves the list before deleting | — |
 
-설계: 설계만 · 일부: 일부 동작 · 동작: 주요 기능 동작 — 세부 계획은 [ROADMAP](docs/ROADMAP.md)
+Design: design only · Partial: partly working · Working: main features work — detailed plan in the [ROADMAP](docs/ROADMAP.md)
 
-## 설치
+## Install
 
-### 앱 설치 (받아서 쓰기)
+### Install the app (download)
 
-[GitHub Releases](https://github.com/beomzh/PolyMac/releases)에서 `PolyMac-X.Y.Z.zip`과 `PolyMac-X.Y.Z.zip.sha256`을 받습니다. 받은 파일이 변조되지 않았는지 확인하려면 두 파일이 있는 폴더에서:
+Download `PolyMac-X.Y.Z.zip` and `PolyMac-X.Y.Z.zip.sha256` from [GitHub Releases](https://github.com/beomzh/PolyMac/releases). To check the download wasn't tampered with, run this in the folder with both files:
 
 ```bash
 shasum -a 256 -c PolyMac-X.Y.Z.zip.sha256
 ```
 
-`OK`가 나오면 압축을 풀고 `PolyMac.app`을 `/Applications`로 옮긴 뒤 엽니다. (다운로드 폴더에서 바로 열면 macOS가 임시 위치로 옮겨 실행해 권한이 제대로 붙지 않습니다.)
+If it prints `OK`, unzip it, move `PolyMac.app` to `/Applications`, and open it. (Opening it straight from Downloads makes macOS run it from a temporary location, and permissions don't attach properly.)
 
-#### 처음 열 때 막히면
+#### If macOS blocks the first launch
 
-PolyMac은 Apple 개발자 프로그램(유료) 공증을 받지 않았고, 직접 만든 인증서(`PolyMac Beomzh`)로 서명했습니다. macOS는 이 인증서를 모르기 때문에 인터넷에서 받은 PolyMac을 처음 열면 **"'PolyMac'이(가) 손상되었기 때문에 열 수 없습니다"** 창을 띄웁니다. 파일이 실제로 망가진 것은 아니고(위 sha256 확인으로 알 수 있습니다), 이 창에는 "그래도 열기"가 없습니다. 소스가 모두 공개되어 있고 앱은 업데이트 확인을 켜지 않는 한 인터넷에 연결하지 않습니다([개인정보 · 보안](#개인정보--보안)). 믿을 수 있다면:
+PolyMac is not notarized through the (paid) Apple Developer Program; it is signed with its own certificate (`PolyMac Beomzh`). macOS doesn't know this certificate, so the first time you open a PolyMac downloaded from the internet it shows **"'PolyMac' is damaged and can't be opened"**. The file isn't actually damaged (the sha256 check above shows that), and this dialog has no "Open Anyway". All the source is public, and the app doesn't connect to the internet unless you turn on update checks ([Privacy & security](#privacy--security)). If you trust it:
 
-1. 창에서 **취소**를 누릅니다. **휴지통으로 이동**은 누르지 마세요.
-2. 터미널에서 다운로드 표시(quarantine)를 지웁니다:
+1. Click **Cancel** in the dialog. Don't click **Move to Trash**.
+2. Remove the download mark (quarantine) in Terminal:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/PolyMac.app
 ```
 
-3. 다시 PolyMac을 엽니다. 다음부터는 묻지 않습니다.
+3. Open PolyMac again. It won't ask again.
 
-- 앱 안의 **업데이트 확인…** 으로 받은 새 버전은 PolyMac 서명 키(EdDSA)를 확인한 뒤 설치되어 다시 막히지 않습니다.
-- Homebrew로 설치하면 cask가 이 표시를 지워 줍니다. 직접 빌드한 앱은 인터넷에서 받은 것이 아니라 이 과정이 없습니다.
+- New versions installed with the in-app **Check for Updates…** are installed only after the PolyMac signing key (EdDSA) is verified, and are not blocked again.
+- Installing with Homebrew removes this mark for you. An app you built yourself didn't come from the internet, so it skips this step.
 
-#### Homebrew로 설치
+#### Install with Homebrew
 
-Homebrew 공식 저장소는 공증받지 않은 앱을 받지 않아 개인 저장소([beomzh/homebrew-tap](https://github.com/beomzh/homebrew-tap))로 제공합니다:
+Homebrew's official repository doesn't accept apps that aren't notarized, so PolyMac is offered from a personal tap ([beomzh/homebrew-tap](https://github.com/beomzh/homebrew-tap)):
 
 ```bash
 brew tap beomzh/tap
@@ -341,20 +345,20 @@ brew trust --cask beomzh/tap/polymac
 brew install --cask beomzh/tap/polymac
 ```
 
-Homebrew 7부터는 공식 저장소가 아닌 cask를 쓰기 전에 `brew trust`로 한 번 믿는다고 등록해야 합니다 (이 cask 하나만 등록됩니다). cask가 설치한 앱의 다운로드 표시(quarantine)를 지우므로 "손상됨" 창 없이 바로 열립니다.
+From Homebrew 7, casks outside the official repository must be trusted once with `brew trust` before use (only this cask is trusted). The cask removes the download mark (quarantine) from the installed app, so it opens without the "damaged" dialog.
 
-#### 업데이트
+#### Updates
 
-- 메뉴바 PolyMac 아이콘 › **업데이트 확인…** 을 누르면 GitHub에서 새 버전을 찾아 설치합니다. 받은 파일은 PolyMac 서명 키(EdDSA)가 맞아야만 설치됩니다.
-- 하루 한 번 자동으로 확인하려면 환경 설정 › 기능 › 업데이트 › **업데이트 자동 확인**을 켭니다. 기본은 꺼져 있고, 꺼져 있으면 PolyMac은 네트워크를 쓰지 않습니다.
-- Homebrew로 설치했다면 `brew upgrade --cask polymac`도 됩니다. 이름을 붙여야 합니다 — 그냥 `brew upgrade`는 자체 업데이트가 있는 앱이라 건너뜁니다.
-- 직접 빌드한 앱에는 업데이트 확인이 없습니다 (`git pull` 후 다시 빌드).
+- Menu bar PolyMac icon › **Check for Updates…** looks for a new version on GitHub and installs it. A download is installed only if the PolyMac signing key (EdDSA) matches.
+- To check automatically once a day, turn on Settings › Features › Updates › **Check for updates automatically**. It is off by default, and while it is off PolyMac doesn't use the network.
+- If you installed with Homebrew, `brew upgrade --cask polymac` works too. You need the name — a plain `brew upgrade` skips it because the app updates itself.
+- Apps you build yourself have no update check (`git pull` and rebuild).
 
-### 소스에서 빌드 (지금 가능)
+### Build from source
 
-앱 설치는 [지금 바로 쓰기](#지금-바로-쓰기-소스-빌드)의 `scripts/build-app.sh --install`을 쓰세요. 아래는 개발용입니다.
+To install the app, use `scripts/build-app.sh --install` from [Try it now](#try-it-now-build-from-source). The rest is for development.
 
-필요한 것: macOS 14 이상, Command Line Tools (`xcode-select --install`). `swift test` 실행과 단축어 앱 동작(App Intents) 빌드에는 Xcode 16 이상이 필요합니다 — `scripts/build-app.sh`는 `/Applications/Xcode.app`이 있으면 알아서 씁니다. 첫 빌드 때 `scripts/fetch-sparkle.sh`가 Sparkle(자동 업데이트)을 받아 체크섬을 확인합니다.
+Requirements: macOS 14 or later, Command Line Tools (`xcode-select --install`). Running `swift test` and building the Shortcuts actions (App Intents) need Xcode 16 or later — `scripts/build-app.sh` uses `/Applications/Xcode.app` automatically if it is there. On the first build, `scripts/fetch-sparkle.sh` downloads Sparkle (auto-update) and verifies its checksum.
 
 ```bash
 git clone https://github.com/beomzh/PolyMac.git
@@ -368,287 +372,288 @@ cd PolyMac && swift build
 scripts/test.sh
 ```
 
-`scripts/test.sh`는 설치된 Xcode를 찾아 `swift test`를 실행합니다 (`xcode-select`를 바꿀 필요 없음).
+`scripts/test.sh` finds the installed Xcode and runs `swift test` (no need to change `xcode-select`).
 
-OCR 설정을 바꿀 때는 정확도를 재서 비교합니다 ([docs/OCR-BENCH.md](docs/OCR-BENCH.md)):
+When changing OCR settings, measure accuracy and compare ([docs/OCR-BENCH.md](docs/OCR-BENCH.md)):
 
 ```bash
 scripts/ocr-bench.sh
 ```
 
-## 처음 설정하기 (권한)
+## First-time setup (permissions)
 
-macOS는 이런 종류의 앱에 권한을 따로 요구합니다. PolyMac은 **켜 둔 기능에 필요한 권한만** 요청합니다.
+macOS requires separate permissions for apps like this. PolyMac asks **only for the permissions the features you turned on need**.
 
-**시작 안내** — 처음 실행하면 소개 → 기능 고르기 → 권한 → 마무리(자주 쓰는 단축키, 로그인 시 실행) 순서의 안내 창이 뜹니다. 메뉴바 PolyMac 아이콘 › **시작 안내…**에서 언제든 다시 열 수 있습니다.
+**Welcome Guide** — on first launch, a guide opens: introduction → choose features → permissions → finish (common shortcuts, open at login). Reopen it any time from Menu bar PolyMac icon › **Welcome Guide…**.
 
-**권한 화면** — 환경 설정 › 권한(`⌘,`)에서 권한마다 상태(허용됨 · 허용 필요 · 아직 묻지 않음 · 처음 쓸 때 묻기)와 그 권한을 쓰는 켜진 기능을 보여 줍니다. 시스템 설정에서 허용하면 바로 반영됩니다.
-- 화면 녹음은 허용한 뒤 PolyMac을 다시 실행해야 적용됩니다 — 옆의 **허용했다면 다시 실행** 버튼
-- 자동화 › Finder는 **허용하기…**를 누르면 macOS가 바로 묻습니다
-- 예전에 허용했던 권한이 꺼져 있으면(새로 받아 설치해 서명이 바뀐 경우 등) 화면 맨 위와 실행할 때 알려 줍니다
-- **권한 기록 지우기…** — 시스템 설정에는 켜져 있는데 동작하지 않을 때. PolyMac의 손쉬운 사용·화면 녹음·자동화 기록만 지우고 다시 실행합니다(다른 앱은 그대로). 다시 열리면 권한 화면에서 다시 허용합니다.
+**Permissions screen** — Settings › Permissions (`⌘,`) shows each permission's status (allowed · needs permission · not asked yet · asked on first use) and the features that are on and use it. Allowing it in System Settings is reflected immediately.
+- Screen Recording takes effect only after PolyMac restarts — use the **Restart if allowed** button next to it
+- For Automation › Finder, clicking **Allow…** makes macOS ask right away
+- If a permission you allowed before is now off (for example after installing a new download whose signature changed), it tells you at the top of the screen and at launch
+- **Reset permission records…** — for when it's on in System Settings but doesn't work. It clears only PolyMac's Accessibility, Screen Recording and Automation records and restarts (other apps are untouched). When it opens again, allow them again on the permissions screen.
 
-| 권한 | 시스템 설정 위치 | 필요한 모듈 |
+| Permission | Where in System Settings | Needed by |
 |---|---|---|
-| 손쉬운 사용 | 개인정보 보호 및 보안 › 손쉬운 사용 | Window, Finder(`⌘X`) |
-| 화면 및 시스템 오디오 녹음 | 개인정보 보호 및 보안 › 화면 및 시스템 오디오 녹음 | Capture, OCR |
-| 자동화 › Finder | 개인정보 보호 및 보안 › 자동화 | Finder 단축키(터미널 열기·에디터로 열기·경로 복사 — 우클릭 메뉴는 필요 없음) |
-| 파일 및 폴더 | 개인정보 보호 및 보안 › 파일 및 폴더 | Normalize, Organize |
-| 전체 디스크 접근 | 개인정보 보호 및 보안 › 전체 디스크 접근 | (요구하지 않음 — 앱 삭제는 Finder에 맡김) |
-| Finder 확장 | 일반 › 로그인 항목 및 확장 프로그램 › Finder | 터미널 열기·경로 복사 메뉴 |
+| Accessibility | Privacy & Security › Accessibility | Window, Finder (`⌘X`) |
+| Screen & System Audio Recording | Privacy & Security › Screen & System Audio Recording | Capture, OCR |
+| Automation › Finder | Privacy & Security › Automation | Finder shortcuts (open Terminal, open in editor, copy path — not needed for the right-click menu) |
+| Files and Folders | Privacy & Security › Files and Folders | Normalize, Organize |
+| Full Disk Access | Privacy & Security › Full Disk Access | (not requested — uninstalling is left to Finder) |
+| Finder extension | General › Login Items & Extensions › Finder | Open Terminal and copy path menu items |
 
-- 권한을 주지 않아도 앱은 동작하고, 해당 기능만 꺼진 채 안내가 표시됩니다.
-- macOS 15부터 화면 녹음 권한은 주기적으로 다시 확인을 요청합니다. 시스템 정책이라 앱에서 막을 수 없습니다.
+- The app works without permissions; only the affected features stay off, with a notice.
+- From macOS 15, Screen Recording permission periodically asks to be confirmed again. This is system policy and the app can't prevent it.
 
-## 사용 방법
+## Usage
 
-> 아래 단축키는 **기본값**이며 모두 환경 설정 › 단축키에서 바꾸거나 지울 수 있습니다(줄 오른쪽 ⓧ 버튼, 또는 단축키를 누른 뒤 `⌫`). 다른 앱·시스템 단축키와 겹치면 설정 화면에서 경고합니다.
+> The shortcuts below are **defaults**, and every one can be changed or removed in Settings › Shortcuts (the ⓧ button at the right of the row, or press the shortcut and then `⌫`). The settings screen warns you when one overlaps another app or system shortcut.
 
-### 창 분할 — Window (0.1.0)
+### Window layout — Window (0.1.0)
 
-Spectacle 기본 단축키와 같게 맞춰서 옮겨와도 손에 익은 그대로 쓸 수 있습니다.
+Matches Spectacle's default shortcuts, so moving over feels the same.
 
-| 동작 | 단축키 |
+| Action | Shortcut |
 |---|---|
-| 왼쪽 / 오른쪽 절반 | `⌥⌘←` / `⌥⌘→` |
-| 위 / 아래 절반 | `⌥⌘↑` / `⌥⌘↓` |
-| 최대화 | `⌥⌘F` |
-| 가운데 | `⌥⌘C` |
-| 다음 / 이전 디스플레이 | `⌃⌥⌘→` / `⌃⌥⌘←` |
-| 되돌리기 | `⌥⌘Z` |
-| 왼쪽 위 · 오른쪽 위 · 왼쪽 아래 · 오른쪽 아래 4분의 1 | 기본 없음 — 환경 설정 › 단축키에서 지정 |
+| Left / right half | `⌥⌘←` / `⌥⌘→` |
+| Top / bottom half | `⌥⌘↑` / `⌥⌘↓` |
+| Maximize | `⌥⌘F` |
+| Center | `⌥⌘C` |
+| Next / previous display | `⌃⌥⌘→` / `⌃⌥⌘←` |
+| Undo | `⌥⌘Z` |
+| Top left · top right · bottom left · bottom right quarter | No default — set in Settings › Shortcuts |
 
-- 같은 단축키를 반복하면 ½ → ⅓ → ⅔ 순으로 크기가 바뀝니다.
-- `⌥⌘C`(가운데)는 Finder의 기본 "경로 복사" 단축키와 겹칩니다. Spectacle과 같게 두었지만, Finder에서 경로 복사를 자주 쓴다면 설정에서 바꾸세요.
-- 가장자리 끌기 배치 (메뉴 › 창 분할 › 가장자리로 끌어 배치, 기본 꺼짐): 창을 화면 왼쪽·오른쪽 끝으로 끌면 절반, 위쪽 끝은 최대화, 네 모서리는 4분의 1 자리가 미리 보이고 놓으면 맞춰집니다. `⌥⌘Z`로 되돌릴 수 있습니다. macOS 15부터 시스템에도 같은 기능(시스템 설정 › 데스크탑 및 Dock › 창)이 있어, 켜려면 시스템 쪽은 꺼 두세요.
+- Repeating the same shortcut cycles the size ½ → ⅓ → ⅔.
+- `⌥⌘C` (center) overlaps Finder's built-in "Copy path" shortcut. It matches Spectacle, but change it in settings if you copy paths in Finder often.
+- Snap by dragging to edges (menu › Window Layout › Snap by Dragging to Edges, off by default): drag a window to the left or right edge of the screen for a half, the top edge to maximize, or a corner for a quarter; a preview appears and the window snaps when you let go. `⌥⌘Z` undoes it. macOS 15 and later have the same feature (System Settings › Desktop & Dock › Windows), so turn the system one off to use this.
 
-### 캡처 · 핀 · 마크업 — Capture (0.2.0)
+### Capture · pin · markup — Capture (0.2.0)
 
-| 동작 | 단축키 |
+| Action | Shortcut |
 |---|---|
-| 영역 캡처 | `⌃⇧1` |
-| 캡처 즉시 화면에 고정 | `⌃⇧3` |
-| 클립보드 이미지를 화면에 고정 | `⌃⇧4` |
+| Capture area | `⌃⇧1` |
+| Capture and pin on screen | `⌃⇧3` |
+| Pin clipboard image on screen | `⌃⇧4` |
 
-1. `⌃⇧1` → 화면이 어두워지고 마우스를 올린 **창의 경계가 자동으로 잡힙니다**. 클릭하면 그 창, 드래그하면 원하는 영역.
-2. 영역 선택 중 돋보기에 **픽셀 좌표와 색상**이 표시됩니다. `C`를 누르면 색상 코드 복사.
-3. 선택 후 아래 도구 막대에서 사각형·화살표·펜·텍스트·모자이크·번호 스탬프로 표시.
-4. `Enter` 클립보드 복사 · `⌘S` 저장 · `F` 화면에 고정 · `T` 텍스트 추출 · `G` 표 추출 · `L` 번역 · `Esc` 취소
+1. `⌃⇧1` → the screen dims and **the outline of the window under the mouse is detected automatically**. Click for that window, drag for your own area.
+2. While selecting, the magnifier shows **pixel coordinates and the color**. Press `C` to copy the color code.
+3. After selecting, mark it up from the toolbar below with box, arrow, pen, text, mosaic and number stamps.
+4. `Enter` copy to clipboard · `⌘S` save · `F` pin on screen · `T` extract text · `G` extract table · `L` translate · `Esc` cancel
 
-**핀(고정된 캡처)**
-- 크기 조절: 가장자리·모서리 끌기(비율 유지, 반대쪽 고정) · 스크롤 · 트랙패드 핀치 (20%~500%)
-- `⌥` + 스크롤: 투명도 · 더블클릭: 닫기
-- `⌘` + 드래그: 표시까지 합친 **PNG 파일로 Finder·메신저·메일 등에 끌어 넣기** (임시 파일은 사용자 임시 폴더에 두고 1시간 뒤, 또는 기능을 끌 때 지웁니다)
-- 우클릭 메뉴: 마크업 다시 편집 · 모든 데스크톱에 표시 · **클릭 통과**(핀 아래 창을 그대로 클릭·스크롤 — 테두리가 주황색으로 바뀌고, 메뉴바 › 캡처 · 핀 › 클릭 통과 끄기로 되돌림. 핀 위에서 `Esc`로 닫기는 그대로 됨)
-- 메뉴바 › 캡처 · 핀 › **최근 캡처 다시 고정**: 최근 10개를 썸네일로 보여 주고 고르면 표시까지 다시 띄웁니다. 메모리에만 두고 디스크에 쓰지 않아 PolyMac을 끄면 사라집니다.
-- 클립보드 히스토리의 이미지 항목도 `⌘↩`로 핀으로 띄울 수 있습니다.
-- 마크업은 그림에 굽지 않고 따로 저장되므로 **나중에 다시 열어 고칠 수 있습니다.**
+**Pins (pinned captures)**
+- Resize: drag an edge or corner (keeps proportions, opposite side fixed) · scroll · trackpad pinch (20%–500%)
+- `⌥` + scroll: opacity · double-click: close
+- `⌘` + drag: **drop a PNG with markup into Finder, chat apps, Mail and so on** (the temporary file lives in your user temp folder and is deleted after an hour, or when the feature is turned off)
+- Right-click menu: edit markup again · show on all desktops · **Click-Through** (click and scroll the window under the pin — the border turns orange; undo with menu bar › Capture & Pin › Turn Off Click-Through. `Esc` over the pin still closes it)
+- Menu bar › Capture & Pin › **Pin a Recent Capture**: shows the last 10 as thumbnails and re-pins the one you choose, markup included. Kept in memory only, never written to disk, so they disappear when PolyMac quits.
+- Image items in the clipboard history can be pinned with `⌘↩` too.
+- Markup is stored separately rather than baked into the picture, so **you can open and change it later.**
 
-### 텍스트 추출 — OCR (0.3.0)
+### Text recognition — OCR (0.3.0)
 
-| 동작 | 단축키 |
+| Action | Shortcut |
 |---|---|
-| 영역 선택 → 텍스트를 바로 클립보드로 | `⌃⇧2` |
-| 클립보드 이미지 → 텍스트 | `⌃⇧5` |
-| 영역 선택 → 표를 클립보드로 | `⌃⇧6` |
-| 영역 선택 → 번역 (macOS 15 이상) | `⌃⇧7` |
+| Select area → text straight to the clipboard | `⌃⇧2` |
+| Clipboard image → text | `⌃⇧5` |
+| Select area → table to the clipboard | `⌃⇧6` |
+| Select area → translate (macOS 15 or later) | `⌃⇧7` |
 
-- 결과는 안내 알림으로 잠깐 보여 줍니다(제목은 가운데 굵게, 인식한 내용은 아래 칸에). QR·바코드도 내용을 읽어 복사합니다.
-- 인식한 글에 웹 주소가 있으면 알림에 **열기: 주소** 단추가 나옵니다 (최대 3개, http·https만). 눌러야만 기본 브라우저로 열고, 저절로 열지는 않습니다 — QR 코드·화면 속 글은 누구나 만들 수 있어서.
-- 고정한 핀 위에서 글자를 드래그해 일부만 복사: 핀 우클릭 › 텍스트 선택
-- (예정) 알림을 클릭해 고친 뒤 다시 복사
-- 설정
-  - 언어: 한국어 → 영어 순으로 인식 (영어를 먼저 두면 한글을 거의 못 읽어 바꾸지 않습니다 — [측정](docs/OCR-BENCH.md))
-  - 작은 글씨 보정: 캡처가 2 MP 이하면 2배로 키워 읽고, 한글 사이 `•`는 `·`로, `•·•`는 `…`로 고칩니다
-  - 줄바꿈 (메뉴 › 텍스트 추출 › 줄바꿈): 보이는 줄 그대로(기본) / 문단으로 잇기(PDF·웹 글처럼 중간에 끊긴 줄을 잇고 문단 사이만 줄바꿈) / 한 줄로(검색창·번역기용). 영어 줄 끝 하이픈(`recog-` + `nition`)은 붙여 줍니다.
-  - 들여쓰기 보존: "보이는 줄 그대로"에서 코드·YAML·목록의 줄 앞 공백을 살립니다 (고정폭 글꼴에서 가장 정확. 두 칸 미만 차이와 여러 단으로 나란한 글은 그대로 — [측정](docs/OCR-BENCH.md))
-- **번역** (macOS 15 이상, `⌃⇧7` 또는 메뉴 › 텍스트 추출 › 클립보드 글 번역) — Apple 온디바이스 번역입니다. 내 언어가 아닌 글은 내 언어로, 내 언어로 된 글은 영어로 옮겨 결과 창에 보여 줍니다. 번역과 원문을 비교해 보고 **번역 복사**(`↩`)나 **원문 복사**를 누를 때만 클립보드가 바뀝니다. 일부만 고르고 `⌘C`를 누르면 고른 부분만 복사합니다. `Esc`로 닫습니다. 줄바꿈·들여쓰기·목록 기호는 그대로 두고 줄마다 옮기며, 화면 폭 때문에 끊긴 문장은 이어서 옮깁니다. 코드는 번역에 맞지 않습니다. 처음 쓸 때 언어를 내려받을지 macOS가 묻습니다 (받는 일은 시스템이 하고, 번역할 글은 기기 밖으로 나가지 않습니다).
-- **표 추출** (macOS 26 이상, `⌃⇧6`, 캡처 도구 막대의 표 단추(`G`) 또는 메뉴 › 텍스트 추출 › 클립보드 이미지에서 표 추출)
-  - 표 형식 (메뉴 › 텍스트 추출 › 표 형식): **엑셀·Numbers**(기본, 탭으로 나눈 글 — 엑셀·Numbers·구글 시트에 붙이면 칸이 그대로 나뉩니다. Pages·메모에는 표로 들어갑니다) / **Markdown 표**(첫 행이 머리글)
-  - 합쳐진 칸은 맨 왼쪽 위 칸에만 글자를 넣고 나머지는 비워 둡니다. 칸 안의 줄바꿈은 한 칸으로 바꿉니다.
-  - 표를 찾지 못하면 일반 텍스트로 복사합니다. macOS 14~15에서는 늘 일반 텍스트로 복사합니다.
-  - 측정: 합성 표 6개에서 행·열 6/6, 칸 95.8% 일치 ([측정](docs/OCR-BENCH.md#표-인식)). `⌃⇧` 같은 키 기호는 잘 못 읽습니다.
-- **단축어(Shortcuts)에서 부르기** — 기본은 꺼져 있습니다. 메뉴 › 텍스트 추출 › **단축어·URL로 부르기 허용**을 켜야 동작합니다 (웹 페이지 링크로도 불릴 수 있어서).
-  - `polymac://ocr`: 클립보드 이미지 → 텍스트를 클립보드에
-  - `polymac://ocr-table`: 클립보드 이미지 → 표를 클립보드에 (`?format=markdown` 또는 `?format=tsv`로 형식 지정, 없으면 메뉴 설정)
-  - 단축어 예: "스크린샷 찍기"(또는 클립보드 이미지) → **X-Callback URL 열기** `polymac://x-callback-url/ocr` → "클립보드 가져오기". X-Callback으로 부르면 인식이 끝난 뒤 단축어로 돌아옵니다.
-  - 읽는 것은 클립보드 이미지뿐이고 결과도 클립보드에만 넣습니다. 끝난 뒤 돌아가는 주소는 `shortcuts://`만 엽니다.
-- **단축어 앱 동작 목록** — 단축어 앱에서 "PolyMac"을 검색하면 바로 쓸 수 있는 동작이 나옵니다. 결과는 단축어로 돌려주고 클립보드는 건드리지 않습니다. 따로 허용할 필요는 없지만(웹 페이지가 부를 수 없음) 해당 기능이 꺼져 있으면 동작하지 않습니다. Xcode로 빌드한 앱에만 들어 있습니다.
-  - **이미지에서 텍스트 추출** · **이미지에서 표 추출**(엑셀·Markdown): 이미지를 넘기지 않으면 클립보드 이미지를 읽습니다
-  - **화면 영역에서 텍스트 추출**: 영역을 고르는 화면이 뜹니다 (화면 녹음 권한)
-  - **풀어진 한글 붙이기**: 글을 받아 자소분리(NFD) 한글만 붙여 돌려줍니다
+- The result is shown briefly in a notice (title centered in bold, recognized text in the box below). QR codes and barcodes are read and copied too.
+- If the recognized text contains a web address, the notice shows an **Open: address** button (up to 3, http and https only). It opens in your default browser only when you click it, never by itself — because anyone can make a QR code or on-screen text.
+- Copy part of the text on a pin by dragging over it: right-click the pin › Select Text
+- (planned) Click the notice to correct the text and copy again
+- Settings
+  - Languages: recognized in the order Korean → English (putting English first makes it miss almost all Korean, so this isn't changed — [measurements](docs/OCR-BENCH.md))
+  - Small-text boost: captures of 2 MP or less are read at 2× size, and `•` between Korean text becomes `·`, `•·•` becomes `…`
+  - Line breaks (menu › Text Recognition (OCR) › Line breaks): Keep lines as shown (default) / Join into paragraphs (joins lines broken mid-sentence, as in PDFs and web pages, and breaks only between paragraphs) / Single line (for search boxes and translators). English end-of-line hyphens (`recog-` + `nition`) are joined.
+  - Indentation kept: with "Keep lines as shown", leading spaces in code, YAML and lists are kept (most accurate with monospaced fonts. Differences under two spaces and text in several side-by-side columns are left as is — [measurements](docs/OCR-BENCH.md))
+- **Translation** (macOS 15 or later, `⌃⇧7` or menu › Text Recognition (OCR) › Translate Clipboard Text) — Apple's on-device translation. Text not in your language is translated into your language, and text in your language into English, then shown in a result window. Compare the translation with the original; the clipboard changes only when you click **Copy Translation** (`↩`) or **Copy Original**. Select part and press `⌘C` to copy only that part. `Esc` closes it. Line breaks, indentation and list markers are kept and each line is translated; sentences broken by the screen width are joined before translating. Code doesn't translate well. The first time, macOS asks whether to download the languages (the system does the download; the text you translate never leaves the device).
+- **Table extraction** (macOS 26 or later, `⌃⇧6`, the table button (`G`) on the capture toolbar, or menu › Text Recognition (OCR) › Extract Table from Clipboard Image)
+  - Table format (menu › Text Recognition (OCR) › Table format): **Excel / Numbers** (default, tab-separated text — pasting into Excel, Numbers or Google Sheets splits it into cells; Pages and Notes get a table) / **Markdown table** (first row is the header)
+  - Merged cells put the text only in the top-left cell and leave the rest empty. Line breaks inside a cell become a space.
+  - If no table is found, it copies plain text. On macOS 14–15 it always copies plain text.
+  - Measured: on 6 synthetic tables, rows and columns 6/6, cells 95.8% match ([measurements](docs/OCR-BENCH.md#표-인식)). Key symbols such as `⌃⇧` are read poorly.
+- **Call it from Shortcuts** — off by default. Turn on menu › Text Recognition (OCR) › **Allow Shortcuts & URLs** for it to work (because a web page link could also call it).
+  - `polymac://ocr`: clipboard image → text on the clipboard
+  - `polymac://ocr-table`: clipboard image → table on the clipboard (choose the format with `?format=markdown` or `?format=tsv`; without it, the menu setting is used)
+  - Shortcut example: "Take Screenshot" (or the clipboard image) → **Open X-Callback URL** `polymac://x-callback-url/ocr` → "Get Clipboard". Called through X-Callback, it returns to Shortcuts when recognition finishes.
+  - It reads only the clipboard image and puts results only on the clipboard. The return address it opens afterwards is limited to `shortcuts://`.
+- **Actions in the Shortcuts app** — search for "PolyMac" in the Shortcuts app to find ready-to-use actions. Results are returned to the shortcut and the clipboard isn't touched. No separate permission is needed (web pages can't call them), but they don't work while the matching feature is off. Only included in apps built with Xcode.
+  - **Extract Text from Image** · **Extract Table from Image** (Excel, Markdown): reads the clipboard image if no image is passed
+  - **Extract Text from Screen Area**: shows the area selection screen (Screen Recording permission)
+  - **Compose Decomposed Korean**: takes text and returns it with only decomposed (NFD) Korean composed
 
-### 클립보드 히스토리 — Clipboard (0.4.0)
+### Clipboard history — Clipboard (0.4.0)
 
-| 동작 | 단축키 |
+| Action | Shortcut |
 |---|---|
-| 히스토리 열기 | `⇧⌘V` |
-| 선택 항목 복사 / 바로 붙여넣기 | `↩` / `⇧↩` (붙여넣기는 손쉬운 사용 권한 필요) |
-| 서식 없이 복사 / 붙여넣기 | `⌥↩` / `⌥⇧↩` |
-| 위에서 1~10번째 바로 고르기 | `⌘1` ~ `⌘0` |
-| 고정 / 고정 해제 | `⌘P` |
-| 이미지 항목을 화면에 고정(핀) | `⌘↩` (캡처 · 핀 기능이 켜져 있어야 함) |
-| 삭제 | `⌘⌫` |
-| 미리보기 펼치기 / 접기 | `⌘→` / `⌘←` |
+| Open history | `⇧⌘V` |
+| Copy the selected item / paste right away | `↩` / `⇧↩` (pasting needs Accessibility permission) |
+| Copy / paste as plain text | `⌥↩` / `⌥⇧↩` |
+| Pick the 1st–10th item from the top | `⌘1` – `⌘0` |
+| Pin / unpin | `⌘P` |
+| Pin an image item on screen | `⌘↩` (Capture & Pin must be on) |
+| Delete | `⌘⌫` |
+| Open / close the preview | `⌘→` / `⌘←` |
 
-- 목록을 연 상태에서 바로 타이핑하면 검색됩니다.
-- 기록하는 것: 텍스트(20 MB까지, 긴 로그는 전체 보관), 이미지, **Finder에서 복사한 파일·폴더**(경로만 기록 — 고르면 다시 파일로 들어가 Finder에서 `⌘V`로 붙여넣기).
-- 각 항목에 복사한 앱 아이콘이 붙고, PolyMac의 텍스트 추출·캡처·경로 복사·색상 복사에는 출처 태그가, 서식 있는 글에는 서식 아이콘이 붙습니다.
-- **기록하지 않는 것**: 비밀번호 관리자가 "숨김"으로 표시한 복사, 키체인 접근·암호·1Password·Bitwarden, 직접 제외한 앱.
-- **앱 제외**: 제외할 앱을 앞에 둔 채 메뉴바 › 클립보드 히스토리 › **기록하지 않을 앱** › "'앱 이름'에서 복사한 것은 기록 안 함". 같은 메뉴에서 눌러 다시 기록.
-- 메뉴바 › 클립보드 히스토리 › "기록 일시정지"로 잠시 멈출 수 있고, 보관 개수·기간(기본 200개·7일)도 여기서 바꿉니다.
+- Start typing while the list is open to search.
+- What's recorded: text (up to 20 MB, long logs kept in full), images, and **files and folders copied in Finder** (only the paths — choosing one puts it back as a file to paste with `⌘V` in Finder).
+- Each item shows the icon of the app it was copied from; PolyMac's text extraction, capture, copy path and color copy get a source tag, and formatted text gets a formatting icon.
+- **Not recorded**: copies a password manager marks as "concealed", Keychain Access, Passwords, 1Password, Bitwarden, and apps you exclude.
+- **Exclude an app**: with that app in front, menu bar › Clipboard History › **Don't Record From** › "Don't record copies from 'app name'". Click it again in the same menu to record again.
+- Menu bar › Clipboard History › "Pause Recording" stops it for a while; the number kept and the period (default 200 items, 7 days) are also changed here.
 
-### Finder 도구 — Finder (0.5.0)
+### Finder tools — Finder (0.5.0)
 
-**잘라내기 / 붙여넣기**
+**Cut / paste**
 
-| 동작 | 단축키 |
+| Action | Shortcut |
 |---|---|
-| 잘라내기 | `⌘X` (Finder에서 파일 선택 후) |
-| 이동 붙여넣기 | `⌘V` (옮길 폴더의 Finder 창에서) |
-| 지정 폴더로 보내기 | Finder 우클릭 › 빠른 동작(또는 서비스) › **PolyMac: 폴더로 보내기…** — 이동 또는 복사, 마지막 폴더 기억 |
-| 에디터로 열기 | `⌃⌥E` 또는 Finder 우클릭 › 서비스 › **PolyMac: 에디터로 열기** — 폴더는 에디터의 작업 공간으로 열림 |
+| Cut | `⌘X` (after selecting files in Finder) |
+| Paste to move | `⌘V` (in the Finder window of the destination folder) |
+| Send to a chosen folder | Finder right-click › Quick Actions (or Services) › **PolyMac: Send to Folder…** — move or copy, remembers the last folder |
+| Open in editor | `⌃⌥E` or Finder right-click › Services › **PolyMac: Open in Editor** — folders open as the editor's workspace |
 
-- `⌘X` 후 옮길 때까지 화면 아래에 **"✂️ n개 잘라냄 — 옮길 폴더에서 ⌘V"** 표시가 남습니다 (Finder가 앞에 있을 때만 보임). 옮기면 사라집니다.
-  - 취소: 표시의 ⓧ 버튼, 다른 것을 복사, 또는 그냥 `⌘C`. 파일은 그대로 있고 `⌘V`는 복사가 됩니다.
-  - 표시가 거슬리면 메뉴 › Finder 도구 › **잘라낸 동안 화면 아래에 표시**를 끄면 예전처럼 잠깐 알림만 뜹니다.
-  - 클립보드에서는 파일 개수만 보고 이름은 읽지 않습니다.
-- 실제 이동은 Finder가 하므로 **`⌘Z`로 되돌리기**, 이름 충돌 대화상자, 진행률 표시가 그대로 동작합니다.
-- 파일 이름을 편집 중일 때의 `⌘X`는 평소처럼 글자 잘라내기로 동작합니다.
-- 자세한 순서와 안 될 때 확인할 것은 위 "지금 바로 쓰기"의 Finder 잘라내기 부분을 보세요.
+- After `⌘X`, **"✂️ n item(s) cut — press ⌘V in the destination folder"** stays at the bottom of the screen until you move them (shown only while Finder is in front). It disappears after the move.
+  - Cancel: the ⓧ button on the indicator, copying something else, or just `⌘C`. The files stay put and `⌘V` makes a copy.
+  - If the indicator bothers you, turn off menu › Finder Tools › **Show Pending Cut at Bottom of Screen** to get only a brief notice as before.
+  - From the clipboard, it reads only the number of files, never their names.
+- Finder does the actual move, so **`⌘Z` undo**, the name conflict dialog and the progress display all work as usual.
+- `⌘X` while editing a file name cuts text as usual.
+- For detailed steps and what to check when it doesn't work, see the Finder cut section in "Try it now" above.
 
-**터미널 열기 · 경로 복사** — 단축키 `⌃⌥T` / `⌃⌥C`, 또는 Finder 우클릭 › 빠른 동작(또는 서비스) › **PolyMac: 여기서 터미널 열기 / 경로 복사** (우클릭은 자동화 권한 없이 동작)
-- 터미널 앱 선택: 터미널 / iTerm2 / Ghostty / Warp / WezTerm / Alacritty / kitty (설치된 것만)
-- 경로 복사: 여러 개면 줄바꿈으로, 한글은 NFC로
+**Open Terminal · copy path** — shortcuts `⌃⌥T` / `⌃⌥C`, or Finder right-click › Quick Actions (or Services) › **PolyMac: Open Terminal Here / Copy Path** (the right-click menu works without Automation permission)
+- Terminal app: Terminal / iTerm2 / Ghostty / Warp / WezTerm / Alacritty / kitty (installed ones only)
+- Copy path: several paths separated by line breaks, Korean in NFC
 
-> 참고: macOS 기본 기능으로도 Finder에서 `⌥⌘C`를 누르면 경로가 복사됩니다.
+> Note: macOS can also copy a path in Finder with `⌥⌘C` on its own.
 
-### 한글 자소분리 해결 — Normalize (0.5.0)
+### Korean filename fix — Normalize (0.5.0)
 
-Mac에서 만든 한글 파일명이 Windows나 웹 업로드에서 `ㅎㅏㄴㄱㅡㄹ`처럼 깨지는 문제를 막습니다.
+Prevents Korean filenames made on a Mac from breaking into `ㅎㅏㄴㄱㅡㄹ` on Windows or in web uploads.
 
-- **자동**: 감시 폴더(기본: 다운로드·데스크탑·스크린샷 폴더)에 들어온 파일 이름을 자동으로 고칩니다. 설정에서 폴더 추가·제외.
-- **수동**: Finder 우클릭 › **PolyMac: 한글 파일명 정리** → 바뀔 개수를 먼저 보여주고 확인 후 하위 폴더까지 변환 (앱·번들 안, 숨김 파일, .git은 그대로).
-- **압축**: Finder 우클릭 › **PolyMac: Windows용으로 압축** → 이름을 NFC로 바꾸고 zip에 "UTF-8 이름" 표시를 켜서 Windows에서도 한글이 정상인 zip을 옆에 만듭니다. `.DS_Store`·`__MACOSX`는 넣지 않습니다 (4 GB까지). macOS 기본 압축은 이 표시를 남기지 않아 Windows에서 이름이 깨집니다.
-- **복사한 글자**: Finder 파일명 등에서 복사한 풀어진 한글(`ㅎㅏㄴㄱㅡㄹ`)을 붙인 한글로 바꿔 클립보드에 다시 넣습니다. 경로 복사(`⌃⌥C`)는 처음부터 붙인 한글로 넣습니다.
-  - 한글 낱자 조합만 바꾸고 다른 글자(한자 호환 문자 등)는 그대로 둡니다. 서식(RTF·HTML)도 같이 고칩니다.
-  - 비밀번호처럼 감춘 항목, Finder에서 복사한 파일(⌘X 잘라내기가 이 복사를 알아봐야 함)은 건드리지 않습니다.
-  - 끄기: 메뉴 › 한글 자소분리 자동 정리 › **복사한 글자의 풀어진 한글도 붙이기**. 이 기능이 켜져 있을 때만 동작합니다.
-- 다음 위치는 기본적으로 **건드리지 않습니다**: git 저장소, iCloud Drive·Dropbox 폴더, 앱 번들 내부, `~/Library`, 오래된 형식(HFS+)의 외장 디스크.
+- **Automatic**: fixes the names of files that arrive in watched folders (default: Downloads, Desktop, the screenshot folder). Add or exclude folders in settings.
+- **Manual**: Finder right-click › **PolyMac: Fix Korean Filenames** → shows how many will change first, then converts after you confirm, including subfolders (inside apps and bundles, hidden files and .git are left alone).
+- **Zip**: Finder right-click › **PolyMac: Compress for Windows** → changes names to NFC and turns on the zip "UTF-8 names" flag, creating a zip next to it whose Korean names are correct on Windows too. `.DS_Store` and `__MACOSX` are left out (up to 4 GB). The built-in macOS compression doesn't set this flag, so names break on Windows.
+- **Copied text**: decomposed Korean (`ㅎㅏㄴㄱㅡㄹ`) copied from Finder filenames and elsewhere is composed and put back on the clipboard. Copy path (`⌃⌥C`) puts composed Korean from the start.
+  - Only Korean jamo sequences are changed; other characters (such as CJK compatibility ideographs) are left as is. Formatting (RTF, HTML) is fixed too.
+  - Concealed items like passwords, and files copied in Finder (the `⌘X` cut needs to recognize that copy), are not touched.
+  - Turn off: menu › Korean Filename Fix › **Also Fix Decomposed Korean in Copied Text**. Works only while this feature is on.
+- These places are **left alone** by default: git repositories, iCloud Drive and Dropbox folders, inside app bundles, `~/Library`, external disks in the old format (HFS+).
 
-### 다운로드 폴더 자동 정리 — Organize (0.6.0)
+### Downloads auto-organize — Organize (0.6.0)
 
-정리 방식은 사람마다 다르므로, **규칙을 직접 조합**합니다. 기능 전체 / 감시 폴더별 / 규칙별로 각각 켜고 끌 수 있습니다.
+Everyone organizes differently, so **you build the rules yourself**. The whole feature, each watched folder, and each rule can be turned on or off separately.
 
-**규칙 = 조건 + 동작**
+**Rule = conditions + actions**
 
-| 조건 | 예 |
+| Condition | Example |
 |---|---|
-| 확장자 | `pdf`, `hwp` |
-| 파일 종류 | 이미지 · 동영상 · 오디오 · 문서 · 압축 · 설치 파일 · 코드 |
-| 이름 패턴 | `*견적서*` 또는 정규식 |
-| 받은 사이트 | `github.com`, `*.go.kr` |
-| 크기 | 100 MB 초과 / 1 MB 미만 |
-| 받은 지 지남 | 7일 · 2개월 · 1년 지남 (일·개월·년 단위 선택, 1개월 = 30일 · 1년 = 365일) |
-| 안 연 지 지남 | 30일 · 6개월 · 1년 동안 안 열어봄 (단위는 위와 같음) |
-| 중복 | `이름 (1).pdf`·`이름 2.pdf`처럼 번호가 붙었고 같은 폴더의 원래 파일과 내용이 똑같음 |
-| 모든 파일 | 감시 폴더 바로 아래의 모든 파일 (다운로드 중인 파일·폴더 제외) — 조건이 비어 있는 규칙은 아무 파일과도 맞지 않으므로, 전체에 걸려면 이 조건을 고릅니다 |
-| ~이 아님 | 위 조건을 뒤집기 |
+| Extension | `pdf`, `hwp` |
+| File kind | image · video · audio · document · archive · installer · code |
+| Name pattern | `*invoice*` or a regular expression |
+| Source website | `github.com`, `*.go.kr` |
+| Size | over 100 MB / under 1 MB |
+| Downloaded more than | 7 days · 2 months · 1 year ago (unit: days, months or years; 1 month = 30 days · 1 year = 365 days) |
+| Not opened for | 30 days · 6 months · 1 year (same units as above) |
+| Duplicate | numbered like `name (1).pdf` or `name 2.pdf` and identical in content to the original file in the same folder |
+| All files | every file directly in the watched folder (except files and folders still downloading) — a rule with no conditions matches nothing, so choose this to cover everything |
+| Is not | inverts a condition above |
 
-조건은 "모두 만족" 또는 "하나라도 만족"으로 묶고, 위에서부터 순서대로 검사합니다.
+Conditions are combined with "all match" or "any match", and rules are checked from the top in order.
 
-| 동작 | 예 |
+| Action | Example |
 |---|---|
-| 이동 / 복사 | `~/Documents/받은문서/{yyyy}-{MM}` |
-| 이름 바꾸기 | `{yyyy}{MM}{dd}_{name}` |
-| 휴지통으로 | (영구 삭제는 지원하지 않음) |
-| Finder 태그 | `업무` |
-| 알림만 | 손대지 않고 "정리 후보"로 표시 |
+| Move / copy | `~/Documents/Received/{yyyy}-{MM}` |
+| Rename | `{yyyy}{MM}{dd}_{name}` |
+| Move to Trash | (permanent deletion is not supported) |
+| Finder tag | `Work` |
+| Notify only | doesn't touch the file, marks it as an "organize candidate" |
 
-경로·이름에 쓸 수 있는 값: `{name}` 파일 이름 · `{ext}` 확장자 · `{kind}` 종류 · `{domain}` 받은 사이트 · `{yyyy}` `{MM}` `{dd}` 날짜
-- 규칙 편집 화면에서 폴더·이름 칸 아래 단추로 넣을 수 있고, `{`를 치면 맞는 것만 남아 눌러서 마저 채웁니다.
-- 칸 아래에 예시 파일(`보고서.pdf`, example.com에서 받음)로 바꿔 본 결과가 보이고, 목록에 없는 값(`{date}` 같은 오타)은 주황색으로 알려 줍니다.
+Values for paths and names: `{name}` file name · `{ext}` extension · `{kind}` kind · `{domain}` source website · `{yyyy}` `{MM}` `{dd}` date
+- In the rule editor, insert them with the buttons below the folder and name fields; type `{` to narrow the list and click to complete.
+- Below each field you see the result for a sample file (`보고서.pdf`, downloaded from example.com), and values not on the list (typos like `{date}`) are shown in orange.
 
-**예시 규칙** — "정부 사이트에서 받은 신청서는 날짜를 붙여 문서 폴더로"
-- 조건(모두 만족): 받은 사이트 `*.go.kr` + 이름 패턴 `*신청서*`
-- 동작: 이동 `~/Documents/{domain}/{yyyy}-{MM}` + 이름 바꾸기 `{yyyy}{MM}{dd}_{name}`
-- 결과: `지원금 신청서.hwp` → `~/Documents/gov.go.kr/2026-10/20261027_지원금 신청서.hwp`
+**Example rule** — "Applications downloaded from government sites go to Documents with a date"
+- Conditions (all match): source website `*.go.kr` + name pattern `*신청서*` ("application form")
+- Actions: move `~/Documents/{domain}/{yyyy}-{MM}` + rename `{yyyy}{MM}{dd}_{name}`
+- Result: `지원금 신청서.hwp` → `~/Documents/gov.go.kr/2026-10/20261027_지원금 신청서.hwp`
 
-**기본 제공 프리셋** (모두 꺼진 상태, 골라서 켜기): 설치 파일 7일 후 휴지통 · 문서는 월별 폴더로 · 이미지는 사진 폴더로 · 받은 사이트별 폴더로 · 30일 안 연 파일 알림
+**Built-in presets** (all off, turn on the ones you want): Trash installers after 7 days · Documents into monthly folders · Images to Pictures · Folders by source website · Notify about files unopened for 30 days
 
-**안전장치**
-- 처음 켜면 **미리보기 모드**: 실제로 옮기지 않고 "이렇게 정리될 예정" 목록만 보여줍니다. 확인 후 끄면 실제로 동작합니다.
-- 다운로드 중인 파일은 건드리지 않고, 다운로드가 끝난 뒤 10초(변경 가능) 기다렸다 처리합니다. 오래전에 받은 파일이라도 **방금 덮어쓰거나 고쳐 저장했으면** 같은 시간만큼 다시 기다리고, Finder가 아직 복사 중인 파일은 건너뜁니다.
-- 폴더 검사는 백그라운드에서 하고, 실제로 옮기기 직전에 파일의 크기·수정 시각을 다시 확인합니다. 검사한 뒤 그사이 바뀐 파일은 이번엔 손대지 않고 기록에 "건너뜀"으로 남긴 뒤 잠시 후 다시 봅니다. 검사가 도는 중에 또 변화가 생기면 겹쳐 돌지 않고, 끝난 뒤 한 번 더 검사합니다.
-- 같은 이름이 있으면 덮어쓰지 않고 `이름 (2)`로 저장합니다.
-- 처리 기록에서 언제든 **되돌리기** 할 수 있습니다.
-- 규칙 목록 아래 **더 보기 › 규칙 내보내기…/가져오기…**로 규칙만 담은 JSON 파일을 주고받습니다 (감시 폴더·미리보기 모드는 빠짐). `organize.json`도 가져올 수 있습니다.
-- 가져온 규칙은 **꺼진 상태**로 들어가고, 지금 규칙 뒤에 붙이거나 모두 바꿀 수 있습니다. 확인하고 켠 뒤 **저장**해야 적용됩니다. 더 새 버전의 PolyMac에서 내보낸 파일, 1MB가 넘는 파일, 규칙 파일이 아닌 JSON은 받지 않습니다.
+**Safeguards**
+- It starts in **preview mode**: nothing is moved, it only shows the list of what "would be organized". Turn it off after checking and it runs for real.
+- Files being downloaded are left alone; it waits 10 seconds (changeable) after a download finishes. Even an old file is waited on again for the same time if it was **just overwritten or saved**, and files Finder is still copying are skipped.
+- Folders are scanned in the background, and right before moving, each file's size and modification time are checked again. Files that changed after the scan are not touched this time; they are logged as "skipped" and checked again shortly. If more changes arrive during a scan, scans don't overlap; one more scan runs after it finishes.
+- If the name already exists, nothing is overwritten; it saves as `name (2)`.
+- You can **undo** any time from the log.
+- Below the rule list, **More › Export Rules…/Import Rules…** exchanges a JSON file with just the rules (watched folders and preview mode are left out). `organize.json` can be imported too.
+- Imported rules arrive **turned off**, and can be added after the current rules or replace them all. Check them, turn them on, and **Save** to apply. Files exported from a newer PolyMac version, files over 1 MB, and JSON that isn't a rules file are refused.
 
-### 앱 완전 삭제 — Uninstaller
+### App Uninstaller — Uninstaller
 
-메뉴바 PolyMac 아이콘 › 맨 위 **앱 완전 삭제…** (이미 지운 앱의 흔적은 창 왼쪽 위 **남은 흔적** 탭, 또는 메뉴 › 앱 완전 삭제 › 이미 지운 앱의 흔적 찾기…). 창을 닫으면 메모리에서 내려갑니다.
+Menu bar PolyMac icon › **Uninstall an App…** at the top (for leftovers of apps already removed, use the **Leftovers** tab at the top left of the window, or menu › App Uninstaller › Find Leftovers of Removed Apps…). Closing the window unloads it from memory.
 
-**설치된 앱 지우기**
-1. 왼쪽 목록에서 고르거나(검색 가능, `/Applications` 아래 폴더까지) 앱을 창에 끌어다 놓기
-2. 남는 파일이 **종류별로** 묶여 용량과 함께 표시됩니다 — 앱 본체 · 앱 데이터 · 캐시 · 설정 · 샌드박스 데이터 · 공유 데이터 · 창 상태 · 웹 데이터 · 로그 · 백그라운드 항목 · 관리자 도우미 · 설치 기록. 종류마다 **지워도 되는지 설명**이 붙어 있습니다
-3. 항목마다 **판단 근거**와 등급
-   - **확실** — 앱 ID(`com.회사.앱`)와 일치, 또는 개발사 팀 ID + 앱 ID (기본 선택)
-   - **유력** — 같은 개발사 데이터, 앱 안의 프로그램을 실행하는 백그라운드 항목, 앱 이름과 같은 폴더, 설치 기록 (기본 선택)
-   - **추정** — 이름에 앱 이름이 들어 있을 뿐 (기본 선택 안 함, 돋보기 버튼으로 Finder에서 확인 후 직접 선택)
-4. **휴지통으로 이동** (`⌘⌫`) — 앱이 실행 중이면 먼저 종료하고, 로그인 시 실행되는 백그라운드 항목은 내린 뒤, **Finder에게 휴지통으로 옮기게** 합니다
-   - Finder 휴지통의 **되돌려 놓기**로 복구할 수 있습니다
-   - `/Library` 아래 항목은 Finder가 관리자 암호를 묻습니다
-   - **설치 기록**(pkg)은 휴지통으로 옮기지 않고 `pkgutil --forget`으로 지웁니다 (macOS 암호 창이 한 번 뜸). 파일만 옮기면 pkgutil 목록에 흔적이 남기 때문입니다
-   - macOS 기본 앱과 PolyMac 자신은 지울 수 없습니다
-5. (선택) **목록 저장…** — 지우기 전에 고른 항목(없으면 전체)의 경로·크기·수정일·이유를 표 파일(.tsv)로 남깁니다
+**Remove an installed app**
+1. Choose from the list on the left (searchable, including folders under `/Applications`) or drag an app onto the window
+2. The files left behind are grouped **by kind** with their sizes — app · app data · caches · preferences · sandbox data · shared data · window state · web data · logs · background items · privileged helpers · install receipts. Each kind comes with **an explanation of whether it's safe to remove**
+3. Each item shows **why it was matched** and a grade
+   - **Certain** — matches the app ID (`com.company.app`), or the developer team ID + app ID (selected by default)
+   - **Likely** — data from the same developer, a background item that runs a program inside the app, a folder with the app's name, install receipts (selected by default)
+   - **Possible** — only contains the app's name (not selected by default; check it in Finder with the magnifier button and select it yourself)
+4. **Move to Trash** (`⌘⌫`) — if the app is running it is quit first, background items that run at login are unloaded, and then **Finder moves them to the Trash**
+   - Recover them with **Put Back** in the Finder Trash
+   - Items under `/Library` make Finder ask for an administrator password
+   - **Install receipts** (pkg) are not moved to the Trash but removed with `pkgutil --forget` (a macOS password dialog appears once). Moving only the files would leave traces in the pkgutil list
+   - Built-in macOS apps and PolyMac itself can't be removed
+5. (Optional) **Export List…** — before removing, saves the path, size, modification date and reason of the selected items (or all) to a table file (.tsv)
 
-**이미 지운 앱의 흔적** — 앱은 지웠는데 설정·캐시·데이터가 남은 것을 찾습니다.
-- 앱 ID 형태의 이름 중 **이 Mac에 그 앱이 없는 것**만 (macOS 기본 `com.apple.*` 제외)
-- 설치된 앱의 하위 항목(예: `com.회사.앱.ShipIt` 업데이터)은 제외
-- 백그라운드 항목은 **실행할 프로그램이 아직 있으면 제외** (앱 없이 설치되는 보안 프로그램 등을 깨뜨리지 않게), 프로그램이 지워졌으면 "유력"
-- 지금 등록된 서비스가 쓰는 파일(관리자 도우미 등)은 제외
-- 같은 회사의 다른 앱이 설치돼 있으면 공용 구성요소일 수 있어 "추정"으로 낮춤
+**Leftovers of removed apps** — finds settings, caches and data left after an app was removed.
+- Only app-ID-style names whose app **isn't on this Mac** (built-in `com.apple.*` excluded)
+- Sub-items of installed apps (such as a `com.company.app.ShipIt` updater) are excluded
+- Background items are **excluded if their program still exists** (so security software installed without an app isn't broken); if the program is gone they are "Likely"
+- Files used by currently registered services (privileged helpers and so on) are excluded
+- If another app from the same company is installed, it may be a shared component, so it is lowered to "Possible"
 
-**지우기 전에 보이는 것**
-- 항목마다 **마지막 수정일**(안쪽 파일까지 포함), 앱은 **마지막 사용일**(Spotlight 기록)
-- **사용 중**인 항목 — 실행 파일이 그 안에 있거나 파일을 열어 둔 프로그램이 있으면 "사용 중 (프로그램 이름)"으로 표시하고 선택할 수 없습니다. 그 프로그램을 끄고 다시 찾으면 됩니다
-- 앱이 자기 폴더(`/Applications/회사/앱.app`) 안에 있고 그 폴더에 다른 앱이 없으면 **폴더째** 후보에 들어갑니다 (설치 관리자·리소스까지). 여러 앱을 모아 둔 폴더는 건드리지 않습니다
-- 다른 앱의 샌드박스 데이터(`~/Library/Containers/…`)는 macOS가 보호해서, 지울 때 "다른 앱의 데이터에 접근" 허용 창이 뜰 수 있습니다
+**What you see before removing**
+- Each item's **last modified date** (including files inside), and for apps the **last used date** (Spotlight records)
+- Items **in use** — if a running executable is inside it or a program has its files open, it shows "In use (program name)" and can't be selected. Quit that program and search again
+- If an app sits in its own folder (`/Applications/Company/App.app`) with no other app in it, the **whole folder** becomes a candidate (installers and resources included). Folders that collect several apps are left alone
+- Other apps' sandbox data (`~/Library/Containers/…`) is protected by macOS, so a "access data from other apps" prompt may appear when removing it
 
-어떤 기준으로 판단하는지(찾는 위치 전체, 등급 조건, 회사 이름 필터, 제외 조건)는 [docs/UNINSTALLER.md](docs/UNINSTALLER.md)에 있습니다.
+The criteria (every location searched, grade conditions, company name filter, exclusions) are in [docs/UNINSTALLER.md](docs/UNINSTALLER.md).
 
-삭제 기록: `~/Library/Application Support/PolyMac/uninstall-log.txt`
+Removal log: `~/Library/Application Support/PolyMac/uninstall-log.txt`
 
-## 문제 해결
+## Troubleshooting
 
-**PolyMac을 다른 폴더(예: `/Applications/다운로드 폴더/`)로 옮기면**
-- 권한(손쉬운 사용·화면 녹음)은 위치가 아니라 서명으로 묶여 있어 그대로 유지됩니다.
-- 기능·데이터(`~/Library/Application Support/PolyMac`)는 영향이 없습니다.
-- **로그인 시 자동 실행**은 옮기기 전 위치를 기억할 수 있으니 환경 설정 › 기능에서 껐다 켜 주세요.
-- `scripts/build-app.sh --install`은 항상 `/Applications/PolyMac.app`에 설치합니다. 옮긴 복사본이 따로 남아 두 개가 되면, 둘이 동시에 실행돼 단축키가 겹칠 수 있으니 하나는 지우세요.
+**If you move PolyMac to another folder (for example `/Applications/Downloads folder/`)**
+- Permissions (Accessibility, Screen Recording) are tied to the signature, not the location, so they stay.
+- Features and data (`~/Library/Application Support/PolyMac`) are not affected.
+- **Open at login** may remember the old location, so turn it off and on in Settings › Features.
+- `scripts/build-app.sh --install` always installs to `/Applications/PolyMac.app`. If a moved copy is left so there are two, both can run at once and shortcuts may clash, so delete one.
 
 
-| 증상 | 해결 |
+| Symptom | Fix |
 |---|---|
-| 단축키가 안 먹히거나 다른 앱이 반응함 | 같은 단축키를 쓰는 앱(Spectacle 등)을 종료. macOS는 다른 앱과의 충돌을 항상 알려주지는 않으므로 환경 설정 › 단축키에 경고 표시가 없어도 겹칠 수 있음. 창 분할은 손쉬운 사용 권한 필요 |
-| 권한을 줬는데도 계속 요청함 | 시스템 설정에서 PolyMac 항목을 `-`로 지우고 앱 재시작 후 다시 허용. 직접 빌드했다면 매번 같은 인증서로 서명했는지 확인 ([RELEASING](docs/RELEASING.md) 6) |
-| 캡처 중 화면이 어둡게 멈춘 것 같음 | `Esc`(다른 앱에 포커스가 있어도 동작) 또는 우클릭으로 취소. 모니터 연결·해제·덮개 닫기 등 화면 구성이 바뀌면 자동 취소, 60초가 지나도 자동 취소 |
-| 캡처가 검은 화면이거나 바탕화면만 찍힘 | 화면 녹음 권한 허용 후 PolyMac 종료 → 다시 실행 |
-| 설정에선 허용돼 있는데 동작 안 함 / 다시 빌드했더니 권한이 풀림 | 서명이 바뀐 앱(ad-hoc 서명 빌드, 다른 인증서로 서명한 새 버전)은 다른 앱으로 취급돼, 설정의 허용 표시가 **예전 앱**을 가리킵니다. 환경 설정 › 권한 › **권한 기록 지우기…**(또는 아래 "권한 초기화") 후 다시 허용하세요. 반복을 막으려면 [고정 인증서](#지금-바로-쓰기-소스-빌드)를 만드세요 |
-| Finder `⌘X`가 그냥 복사만 됨 | 손쉬운 사용 권한이 없는 상태입니다. 허용하면 2초 안에 자동으로 켜지고 "⌘X 잘라내기가 켜졌습니다" 안내가 뜹니다. PolyMac 아이콘 › Finder 도구에서 상태 확인 |
-| Finder 우클릭 메뉴에 PolyMac이 없음 | 항목을 고른 뒤 우클릭 › 빠른 동작 또는 서비스 아래를 확인. 그래도 없으면 시스템 설정 › 키보드 › 키보드 단축키 › 서비스 › 파일 및 폴더에서 PolyMac 항목을 켜고, PolyMac을 /Applications에서 한 번 다시 실행 |
-| 자동 정리가 동작하지 않음 | 모듈·감시 폴더·규칙이 모두 켜져 있는지, 미리보기 모드가 켜져 있는지 확인 |
+| A shortcut doesn't work or another app reacts | Quit apps that use the same shortcut (Spectacle and so on). macOS doesn't always report conflicts with other apps, so shortcuts may overlap even without a warning in Settings › Shortcuts. Window layout needs Accessibility permission |
+| It keeps asking for a permission you granted | Remove the PolyMac item with `-` in System Settings, restart the app, and allow it again. If you built it yourself, check that you sign with the same certificate every time ([RELEASING](docs/RELEASING.md) 6) |
+| Asks for the login keychain password after every update or rebuild | That's the clipboard encryption key. macOS ties the keychain item to each exact build of a self-signed app, so it asks once per build. Choose "Always Allow". It's separate from Accessibility and Screen Recording, which stay |
+| The screen seems frozen dark during a capture | `Esc` (works even when another app has focus) or right-click to cancel. Changes to the screen setup (connecting or disconnecting a monitor, closing the lid) cancel automatically, and so does 60 seconds passing |
+| Captures are black or show only the desktop | Allow Screen Recording, then quit PolyMac → open it again |
+| Allowed in settings but not working / permissions lost after a rebuild | An app whose signature changed (ad-hoc signed builds, a new version signed with another certificate) is treated as a different app, and the allowed entry in settings points to the **old app**. Use Settings › Permissions › **Reset permission records…** (or "Reset permissions" below) and allow them again. To stop this from repeating, create a [stable certificate](#try-it-now-build-from-source) |
+| Finder `⌘X` only copies | Accessibility permission is missing. Once allowed, it turns on within 2 seconds and shows "⌘X cut is on". Check the status in PolyMac icon › Finder Tools |
+| PolyMac is missing from the Finder right-click menu | Select an item, right-click, and look under Quick Actions or Services. If it's still missing, turn on the PolyMac items in System Settings › Keyboard › Keyboard Shortcuts › Services › Files and Folders, and open PolyMac from /Applications once more |
+| Auto-organize doesn't work | Check that the module, watched folder and rules are all on, and whether preview mode is on |
 
-**인증서를 만들었는데 빌드가 "인증서가 없어 ad-hoc 서명"이라고 함** — 인증서를 검증할 Apple 중간 인증서(WWDR G3)가 키체인에 없는 경우입니다. 확인:
+**You made a certificate but the build says "no certificate, ad-hoc signing"** — the Apple intermediate certificate (WWDR G3) needed to validate it is missing from the keychain. Check:
 
 ```bash
 security find-identity -v -p codesigning
 ```
 
-`0 valid identities found`이면 [Apple PKI](https://www.apple.com/certificateauthority/) 페이지에서 **Worldwide Developer Relations - G3** 인증서(`AppleWWDRCAG3.cer`)를 받아 더블클릭해 키체인에 추가한 뒤 다시 확인하세요. `1 valid identities found`가 나오면 터미널에서 `scripts/build-app.sh --install` (처음 한 번 키체인 접근 허용 창 → "항상 허용").
+If it says `0 valid identities found`, download the **Worldwide Developer Relations - G3** certificate (`AppleWWDRCAG3.cer`) from the [Apple PKI](https://www.apple.com/certificateauthority/) page, double-click it to add it to the keychain, and check again. When it says `1 valid identities found`, run `scripts/build-app.sh --install` in Terminal (the first time, a keychain access prompt → "Always Allow").
 
-**권한 초기화** — PolyMac 항목만 지웁니다 (다른 앱 권한은 그대로). 실행 후 PolyMac을 다시 열고 허용하세요.
+**Reset permissions** — clears only PolyMac's entries (other apps' permissions stay). Open PolyMac again afterwards and allow them.
 
 ```bash
 tccutil reset Accessibility dev.polymac.app
@@ -658,57 +663,59 @@ tccutil reset Accessibility dev.polymac.app
 tccutil reset ScreenCapture dev.polymac.app
 ```
 
-**로그 보기** — 문제를 보고할 때 함께 첨부해 주세요. 키 입력이나 클립보드 내용은 로그에 남지 않습니다.
+**View logs** — please attach them when reporting a problem. Key presses and clipboard contents are never logged.
 
 ```bash
 log stream --predicate 'subsystem == "dev.polymac"' --level info
 ```
 
-## 개인정보 · 보안
+## Privacy & security
 
-- **인터넷 연결을 하지 않습니다.** OCR·번역·정리·클립보드 모두 Mac 안에서만 처리하며, 사용 통계도 보내지 않습니다. 예외는 사용자가 누르거나 켜는 **업데이트 확인** 하나뿐입니다 (GitHub에서 새 버전 정보만 받고, 기기 정보는 보내지 않음).
-- 키 입력은 단축키 판단에만 쓰고 저장하지 않습니다.
-- 파일을 **영구 삭제하거나 덮어쓰지 않습니다.** 삭제는 전부 휴지통으로 갑니다.
-- 관리자 권한을 상시 보유하지 않고, 다른 앱에 코드를 주입하지 않으며, 시스템 무결성 보호(SIP) 해제를 요구하지 않습니다.
+- **It doesn't connect to the internet.** OCR, translation, organizing and the clipboard are all processed on your Mac, and no usage statistics are sent. The only exception is the **update check** you click or turn on (it fetches only new version information from GitHub and sends no device information).
+- Key presses are used only to detect shortcuts and are never stored.
+- It **never permanently deletes or overwrites files.** Everything removed goes to the Trash.
+- It doesn't hold administrator rights, doesn't inject code into other apps, and doesn't ask you to disable System Integrity Protection (SIP).
 
-자세한 원칙: [docs/SECURITY.md](docs/SECURITY.md)
+Full principles: [docs/SECURITY.md](docs/SECURITY.md)
 
-## 버전 · 릴리즈
+## Versions & releases
 
-- [Semantic Versioning](https://semver.org/lang/ko/)을 따릅니다. 1.0.0 전까지는 MINOR 버전 하나가 [ROADMAP](docs/ROADMAP.md)의 한 단계입니다.
-- 현재 버전: [`VERSION`](VERSION) 파일
-- 개발 이력: [CHANGELOG.md](CHANGELOG.md) · 사용자용 변경 요약: GitHub Releases
-- 릴리즈마다 **호환성 변경**과 **새로 요청하는 권한**을 따로 표기합니다.
-- 상세 규칙(브랜치, 태그, 릴리즈 체크리스트, 지원 macOS 정책): [docs/RELEASING.md](docs/RELEASING.md)
-- 기여 방법과 커밋 메시지 규칙: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Follows [Semantic Versioning](https://semver.org/). Until 1.0.0, each MINOR version is one stage of the [ROADMAP](docs/ROADMAP.md).
+- Current version: the [`VERSION`](VERSION) file
+- Development history: [CHANGELOG.md](CHANGELOG.md) · user-facing summary: GitHub Releases
+- Each release lists **compatibility changes** and **newly requested permissions** separately.
+- Detailed rules (branches, tags, release checklist, supported macOS policy): [docs/RELEASING.md](docs/RELEASING.md)
+- How to contribute and commit message rules: [CONTRIBUTING.md](CONTRIBUTING.md)
 
-## 라이선스
+The project documents under `docs/` are written in Korean.
 
-PolyMac은 [MIT 라이선스](LICENSE)입니다.
+## License
 
-**할 수 있는 것**: 개인·회사·상업적 용도로 자유롭게 사용, 수정, 재배포, 다른 프로젝트에 포함
-**조건**: 재배포할 때 `LICENSE` 파일의 저작권 표시와 라이선스 문구를 함께 포함
-**보증 없음**: 소프트웨어는 "있는 그대로" 제공되며 사용으로 생긴 문제에 저작자는 책임지지 않습니다.
+PolyMac is under the [MIT License](LICENSE).
 
-**외부 코드**
-- 자동 업데이트에 [Sparkle](https://sparkle-project.org)(MIT)을 함께 배포합니다. 저작권과 라이선스는 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)에 있습니다.
-- 다른 오픈소스는 구조·아이디어를 참고했으며, 무엇을 어떻게 참고했는지와 코드 사용 정책은 [docs/REFERENCES.md](docs/REFERENCES.md)에 공개합니다. GPL·Commons Clause 코드는 가져오지 않습니다.
+**You may**: use it freely for personal, company or commercial purposes, modify it, redistribute it, and include it in other projects
+**Condition**: include the copyright notice and license text from the `LICENSE` file when you redistribute
+**No warranty**: the software is provided "as is", and the authors are not liable for problems arising from its use.
 
-**상표**
-- PolyMac은 Apple Inc.와 관련이 없으며 Apple의 승인·후원을 받지 않았습니다. Mac, macOS, Finder는 Apple Inc.의 상표입니다.
-- 이 문서에 나오는 다른 앱 이름(Spectacle, TRex, Snipaste, AppCleaner, Maccy, Hazel 등)은 각 소유자의 상표이며, 비교 설명 목적으로만 언급합니다.
+**Third-party code**
+- [Sparkle](https://sparkle-project.org) (MIT) is distributed with the app for auto-update. Its copyright and license are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+- Other open-source projects were consulted for structure and ideas; what was consulted and how, and the code use policy, are published in [docs/REFERENCES.md](docs/REFERENCES.md). No GPL or Commons Clause code is brought in.
 
-## 문서
+**Trademarks**
+- PolyMac is not affiliated with Apple Inc. and is not approved or sponsored by Apple. Mac, macOS and Finder are trademarks of Apple Inc.
+- Other app names in this document (Spectacle, TRex, Snipaste, AppCleaner, Maccy, Hazel and so on) are trademarks of their owners and are mentioned only for comparison.
 
-| 문서 | 내용 |
+## Documentation
+
+| Document | Contents |
 |---|---|
-| [docs/CONCEPT.md](docs/CONCEPT.md) | 컨셉, 목표/비목표, 기능별 실현 가능성 분석 |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 모듈 구조, 권한, 자원 예산, 기술 선택 |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | 버전별 개발 계획 |
-| [docs/SECURITY.md](docs/SECURITY.md) | 로컬 전용 보안 원칙 |
-| [docs/RELEASING.md](docs/RELEASING.md) | 버전 관리·릴리즈 규칙 |
-| [docs/OCR-BENCH.md](docs/OCR-BENCH.md) | OCR 정확도 샘플·측정 방법·결과와 그에 따른 설정 결정 |
-| [docs/UNINSTALLER.md](docs/UNINSTALLER.md) | 앱 완전 삭제의 판단 기준 (찾는 위치, 등급, 회사 이름 필터, 제외 조건) |
-| [docs/REFERENCES.md](docs/REFERENCES.md) | 참고한 오픈소스·API, 라이선스 확인 결과, 출처 표기 정책 |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | 개발 환경, 커밋 규칙 |
-| [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) | 외부 코드 저작권 고지 |
+| [docs/CONCEPT.md](docs/CONCEPT.md) | Concept, goals and non-goals, feasibility of each feature |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Module structure, permissions, resource budget, technology choices |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Development plan by version |
+| [docs/SECURITY.md](docs/SECURITY.md) | Local-only security principles |
+| [docs/RELEASING.md](docs/RELEASING.md) | Versioning and release rules |
+| [docs/OCR-BENCH.md](docs/OCR-BENCH.md) | OCR accuracy samples, method, results, and the settings decided from them |
+| [docs/UNINSTALLER.md](docs/UNINSTALLER.md) | App Uninstaller criteria (locations searched, grades, company name filter, exclusions) |
+| [docs/REFERENCES.md](docs/REFERENCES.md) | Open source and APIs consulted, license checks, attribution policy |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Development setup, commit rules |
+| [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) | Copyright notices for third-party code |
