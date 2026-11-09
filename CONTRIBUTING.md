@@ -1,11 +1,13 @@
-# 기여 가이드
+# Contributing
 
-## 개발 환경
+**English** · [한국어](CONTRIBUTING.ko.md)
 
-- macOS 14 이상, Apple Silicon 권장
-- **Xcode 16 이상** — 테스트 실행과 Finder 확장 빌드에 필요
-  (Command Line Tools만 있어도 `swift build`와 `scripts/build-app.sh`로 앱 설치까지는 됨)
-- Xcodes.app(버전 관리 도구)만으로는 안 되고, 그 안에서 Xcode 자체를 설치해야 함
+## Development environment
+
+- macOS 14 or later, Apple Silicon recommended
+- **Xcode 16 or later** — needed to run the tests and to build the Finder extension
+  (with only the Command Line Tools, `swift build` and `scripts/build-app.sh` still build and install the app)
+- Xcodes.app (a version manager) alone is not enough; install Xcode itself from it
 
 ```bash
 git clone https://github.com/beomzh/PolyMac.git
@@ -19,46 +21,46 @@ cd PolyMac && swift build
 scripts/test.sh
 ```
 
-앱으로 묶어 설치·실행 (Command Line Tools만으로 가능):
+Bundle, install and run the app (works with only the Command Line Tools):
 
 ```bash
 scripts/build-app.sh --install
 ```
 
-## 코드 위치
+## Where the code lives
 
-- 로직은 전부 `Sources/<모듈>/` (SwiftPM) — UI 없는 부분은 순수 함수로 두고 `Tests/`에 테스트
-- 앱 진입점·메뉴바는 `Sources/PolyMacApp/`, 번들 설정(Info.plist·entitlements)은 `App/`, 번들 조립·서명은 `scripts/build-app.sh`
-- 새 모듈은 `PolyMacModule` 프로토콜을 따르고 `Package.swift`의 `modules` 배열에 추가
+- All logic lives in `Sources/<module>/` (SwiftPM). Keep the parts without UI as pure functions and test them in `Tests/`
+- The app entry point and menu bar are in `Sources/PolyMacApp/`, bundle settings (Info.plist, entitlements) in `App/`, bundle assembly and signing in `scripts/build-app.sh`
+- A new module follows the `PolyMacModule` protocol and is added to the `modules` array in `Package.swift`
 
-## 작업 흐름 — 브랜치 + Pull Request
+## Workflow — branch + pull request
 
-`main`에는 직접 push하지 않는다. 모든 변경은 브랜치에서 작업하고 Pull Request(PR)로 합친다.
+Never push directly to `main`. Every change is made on a branch and merged through a pull request (PR).
 
-1. **브랜치 만들기**
-   - 외부 기여자: 저장소를 fork → fork에서 브랜치
-   - 메인테이너: 이 저장소에서 바로 브랜치
-   - 이름: `feat/<모듈>-<설명>`, `fix/<설명>`, `docs/<설명>`, `chore/<설명>` (예: `fix/finder-cut-paste`)
-2. **작업·커밋** — 아래 커밋 메시지 규칙, 커밋마다 `CHANGELOG.md` 항목
-3. **PR 열기** — 대상은 `main`. 설명에 다음을 적는다
-   - 무엇을 왜 바꿨는지, 어떻게 확인했는지
-   - **새로 요구하는 권한**이 있으면 명시 (손쉬운 사용·화면 녹음 등)
-   - **설정 형식이 바뀌면** 마이그레이션 여부 ([docs/RELEASING.md](docs/RELEASING.md) 1)
-   - 화면이 바뀌면 스크린샷
-4. **체크리스트** (PR 템플릿과 같음)
-   - [ ] `scripts/test.sh` 통과
-   - [ ] `swift build -c release` 경고 0
-   - [ ] [docs/SECURITY.md](docs/SECURITY.md) 원칙 위반 없음 (네트워크 호출·키 입력 저장·영구 삭제·덮어쓰기 없음)
-   - [ ] 외부 코드를 가져왔으면 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 갱신
-5. **리뷰** — 메인테이너 1명 이상 승인
-6. **머지** — Squash merge. 합쳐진 커밋 제목은 PR 제목(`type(scope): 제목` 형식)
-7. 머지 후 브랜치 삭제
+1. **Create a branch**
+   - Outside contributors: fork the repository and branch in the fork
+   - Maintainers: branch in this repository
+   - Names: `feat/<module>-<description>`, `fix/<description>`, `docs/<description>`, `chore/<description>` (e.g. `fix/finder-cut-paste`)
+2. **Work and commit** — follow the commit message rules below, with a `CHANGELOG.md` entry for each commit
+3. **Open a PR** — against `main`. In the description, write
+   - what changed and why, and how you checked it
+   - any **new permissions** it needs (Accessibility, Screen Recording, …)
+   - whether there is a migration, **if the settings format changes** ([docs/RELEASING.md](docs/RELEASING.md) 1)
+   - screenshots if the UI changes
+4. **Checklist** (same as the PR template)
+   - [ ] `scripts/test.sh` passes
+   - [ ] `swift build -c release` has no warnings
+   - [ ] No violation of [docs/SECURITY.md](docs/SECURITY.md) (no network calls, stored key presses, permanent deletion or overwriting)
+   - [ ] [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) updated if third-party code was added
+5. **Review** — approval from at least one maintainer
+6. **Merge** — squash merge. The squashed commit title is the PR title (`type(scope): title` format)
+7. Delete the branch after merging
 
-저장소 설정(메인테이너): `main` 브랜치 보호 — PR 필수, 승인 1명, 강제 push 금지. CI가 생기면 테스트 통과도 필수로.
+Repository settings (maintainers): protect the `main` branch — PR required, one approval, no force pushes. Once there is CI, require the tests to pass too.
 
-## 커밋 메시지
+## Commit messages
 
-커밋 메시지와 PR 제목·설명은 **영어**로 쓴다 (2026-11-09부터, 그 전 커밋은 한국어). `CHANGELOG.md` 항목은 한국어 그대로다.
+Commit messages, PR titles and PR descriptions are written in **English** (since 2026-11-09; earlier commits are in Korean). `CHANGELOG.md` entries are also in English from 0.2.15 on; older entries stay in Korean.
 
 ```
 <type>(<scope>): <English title>
@@ -69,33 +71,34 @@ scripts/build-app.sh --install
 Date: YYYY-MM-DD HH:MM
 ```
 
-| type | 언제 |
+| type | When |
 |---|---|
-| `feat` | 새 기능 |
-| `fix` | 버그 수정 |
-| `docs` | 문서만 |
-| `refactor` | 동작 변화 없는 코드 정리 |
-| `test` | 테스트 추가·수정 |
-| `chore` | 설정·빌드·릴리즈 (`chore(release): 0.2.0`) |
-| `del` | 파일·코드 삭제 |
+| `feat` | New feature |
+| `fix` | Bug fix |
+| `docs` | Documentation only |
+| `refactor` | Code cleanup without behavior changes |
+| `test` | Adding or changing tests |
+| `chore` | Settings, build, release (`chore(release): 0.2.0`) |
+| `del` | Removing files or code |
 
-`scope`는 모듈 id 또는 영역: `window` `capture` `ocr` `clipboard` `finder` `normalize` `organize` `uninstaller` `core` `docs` `release`
+`scope` is a module id or area: `window` `capture` `ocr` `clipboard` `finder` `normalize` `organize` `uninstaller` `core` `docs` `release`
 
-예: `feat(organize): add source website condition`
+Example: `feat(organize): add source website condition`
 
-- `git add -A` / `git add .` 대신 파일을 명시해서 추가 (시크릿·인증서 섞임 방지)
-- 커밋할 때마다 [CHANGELOG.md](CHANGELOG.md) 맨 위에 항목 추가 (형식은 [docs/RELEASING.md](docs/RELEASING.md))
+- Add files by name instead of `git add -A` / `git add .` (so secrets and certificates don't slip in)
+- Add an entry at the top of [CHANGELOG.md](CHANGELOG.md) with every commit (format in [docs/RELEASING.md](docs/RELEASING.md))
 
-## README는 두 언어로
+## Documents in two languages
 
-- 기본 [README.md](README.md)는 영어, [README.ko.md](README.ko.md)는 한국어다. 내용은 같고 언어만 다르다.
-- 한쪽을 고치면 **같은 PR에서 다른 쪽도** 고친다. 기능·단축키·메뉴 이름·버전 표기·링크 모두 해당한다.
-- 영어판의 메뉴·버튼 이름은 앱의 영어 표시(`L("한국어", "English")`의 두 번째 값, `App/en.lproj`)와 맞춘다.
-- `scripts/check-readme.sh`가 두 파일의 제목 구조, bash 명령, 저장소 안 링크, 현재 버전이 같은지 확인한다. `scripts/test.sh`가 먼저 실행하므로 한쪽만 고치면 테스트가 실패한다. 문장 내용까지는 보지 못하니 고친 문단은 직접 맞춘다.
-- `docs/` 아래 설계 문서는 한국어로만 둔다.
+- Every Markdown document comes in two files: `NAME.md` in English (the default) and `NAME.ko.md` in Korean. They say the same thing in different languages. This covers `README`, `CONTRIBUTING`, `THIRD_PARTY_NOTICES`, `App/README` and everything in `docs/`.
+- Exceptions: `CHANGELOG.md` (one file; English from 0.2.15 on) and the PR template (English only).
+- When you change one, change **the other in the same PR** — features, shortcuts, menu names, version numbers and links all count.
+- Each file starts with a language switch line under the title. Links in a Korean document point to the Korean version of other documents (`SECURITY.ko.md`), links in an English one to the English version.
+- Menu and button names in English documents match the app's English text (the second argument of `L("한국어", "English")`, `App/en.lproj`).
+- `scripts/check-docs.sh` checks that each pair has the same heading structure, the same bash commands, links to the same files and the language switch line, and that the two READMEs show the same current version. `scripts/test.sh` runs it first, so changing only one side fails the tests. It can't compare the sentences themselves, so line up the paragraphs you changed by hand.
 
-## 꼭 지킬 것
+## Must follow
 
-- [docs/SECURITY.md](docs/SECURITY.md) — 네트워크 호출 추가, 키 입력 저장, 영구 삭제, 덮어쓰기 금지
-- [docs/REFERENCES.md](docs/REFERENCES.md)의 출처 표기 정책 — GPL·Commons Clause 코드 복사 금지, 외부 코드를 가져오면 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)에 기록
-- 새 권한이 필요한 기능은 PR 설명과 릴리즈 노트 "권한 변경"에 명시
+- [docs/SECURITY.md](docs/SECURITY.md) — no new network calls, no storing key presses, no permanent deletion, no overwriting
+- The attribution policy in [docs/REFERENCES.md](docs/REFERENCES.md) — no copying GPL or Commons Clause code; record any third-party code you bring in in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+- Features that need a new permission must say so in the PR description and under "Permission changes" in the release notes

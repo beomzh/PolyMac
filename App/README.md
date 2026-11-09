@@ -1,8 +1,10 @@
 # App
 
-앱 번들 설정 파일. 번들 조립과 서명은 `scripts/build-app.sh`가 한다.
+**English** · [한국어](README.ko.md)
 
-- `Info.plist` — 번들 정보 템플릿 (`__VERSION__` 등은 빌드 때 `VERSION` 파일로 채움), 메뉴바 전용(LSUIElement), 권한 요청 문구
-- `PolyMac.entitlements` — Hardened Runtime에서 Finder에 Apple Events를 보내기 위한 권한
+App bundle configuration files. `scripts/build-app.sh` assembles and signs the bundle.
 
-Finder 우클릭 메뉴(Finder Sync 확장)는 앱 확장 빌드가 필요해 Xcode 프로젝트가 생기면 여기에 추가한다.
+- `Info.plist` — bundle info template (`__VERSION__` and the like are filled in from the `VERSION` file at build time), menu bar only (LSUIElement), permission prompt texts
+- `PolyMac.entitlements` — lets the app send Apple Events to Finder under the Hardened Runtime
+
+The Finder right-click menu (Finder Sync extension) needs an app extension build, so it will be added here once there is an Xcode project.

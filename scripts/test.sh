@@ -5,7 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # 영어·한국어 README가 함께 고쳐졌는지 (빠름, Xcode 불필요)
-scripts/check-readme.sh
+scripts/check-docs.sh
 
 if [[ -z "${DEVELOPER_DIR:-}" ]]; then
     SELECTED="$(xcode-select -p 2>/dev/null || true)"

@@ -1,6 +1,20 @@
 # CHANGELOG
 
-개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
+Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
+
+[2026-11-09 20:25]
+- [Added] - CONTRIBUTING.ko.md, THIRD_PARTY_NOTICES.ko.md, App/README.ko.md, docs/*.ko.md: Korean copies of every document, with a language switch line and links to the other Korean documents
+- [Changed] - CONTRIBUTING.md, THIRD_PARTY_NOTICES.md, App/README.md, docs/*.md: now in English, so every document has an English default like the README
+- [Changed] - README.ko.md: links to docs and CONTRIBUTING point to the Korean versions
+- [Changed] - README.md: OCR-BENCH table link uses the English anchor
+- [Changed] - scripts/check-readme.sh -> scripts/check-docs.sh: checks every NAME.md / NAME.ko.md pair (headings, bash blocks, linked files with .ko.md matched to .md, language links) plus the README version
+- [Changed] - scripts/test.sh: runs check-docs.sh
+- [Changed] - CONTRIBUTING.md, CONTRIBUTING.ko.md: "Documents in two languages" rule replaces the README-only rule; CHANGELOG entries in English from 0.2.15
+- [Changed] - docs/RELEASING.md, docs/RELEASING.ko.md: CHANGELOG language note, `--notes-file notes.md` in the example
+- [Fixed] - docs/ARCHITECTURE.ko.md: dependency note said zero dependencies; Sparkle is the one dependency
+- [Changed] - .github/pull_request_template.md: checklist item for updating both language versions
+- [Changed] - CHANGELOG.md: header in English
+- [Changed] - VERSION: 0.2.15
 
 [2026-11-09 17:51]
 - [Changed] - CHANGELOG.md: PR #35 (fix/cask-postflight-steps) push 기록

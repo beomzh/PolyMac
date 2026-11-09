@@ -298,7 +298,7 @@ JSON으로 직접 고치고 싶으면 **규칙 파일(JSON) 편집…** 후 **�
 | Organize | 동작 | 규칙 엔진, 감시·실행·미리보기·되돌리기, 규칙 편집 화면(JSON 편집도 가능, 끌어서 순서 바꾸기), 규칙 내보내기/가져오기, 중복 판정, 백그라운드 검사, 치환어 자동완성·미리보기 | - |
 | Uninstaller | 동작 | 설치된 앱 잔여물 찾기(확실·유력·추정), 이미 지운 앱의 흔적, Finder 휴지통으로 이동, 실행 중 앱 종료·백그라운드 항목 내리기, 설치 기록 `pkgutil --forget`, 삭제 전 목록 저장 | — |
 
-설계: 설계만 · 일부: 일부 동작 · 동작: 주요 기능 동작 — 세부 계획은 [ROADMAP](docs/ROADMAP.md)
+설계: 설계만 · 일부: 일부 동작 · 동작: 주요 기능 동작 — 세부 계획은 [ROADMAP](docs/ROADMAP.ko.md)
 
 ## 설치
 
@@ -373,7 +373,7 @@ scripts/test.sh
 
 `scripts/test.sh`는 설치된 Xcode를 찾아 `swift test`를 실행합니다 (`xcode-select`를 바꿀 필요 없음).
 
-OCR 설정을 바꿀 때는 정확도를 재서 비교합니다 ([docs/OCR-BENCH.md](docs/OCR-BENCH.md)):
+OCR 설정을 바꿀 때는 정확도를 재서 비교합니다 ([docs/OCR-BENCH.md](docs/OCR-BENCH.ko.md)):
 
 ```bash
 scripts/ocr-bench.sh
@@ -461,16 +461,16 @@ Spectacle 기본 단축키와 같게 맞춰서 옮겨와도 손에 익은 그대
 - 고정한 핀 위에서 글자를 드래그해 일부만 복사: 핀 우클릭 › 텍스트 선택
 - (예정) 알림을 클릭해 고친 뒤 다시 복사
 - 설정
-  - 언어: 한국어 → 영어 순으로 인식 (영어를 먼저 두면 한글을 거의 못 읽어 바꾸지 않습니다 — [측정](docs/OCR-BENCH.md))
+  - 언어: 한국어 → 영어 순으로 인식 (영어를 먼저 두면 한글을 거의 못 읽어 바꾸지 않습니다 — [측정](docs/OCR-BENCH.ko.md))
   - 작은 글씨 보정: 캡처가 2 MP 이하면 2배로 키워 읽고, 한글 사이 `•`는 `·`로, `•·•`는 `…`로 고칩니다
   - 줄바꿈 (메뉴 › 텍스트 추출 › 줄바꿈): 보이는 줄 그대로(기본) / 문단으로 잇기(PDF·웹 글처럼 중간에 끊긴 줄을 잇고 문단 사이만 줄바꿈) / 한 줄로(검색창·번역기용). 영어 줄 끝 하이픈(`recog-` + `nition`)은 붙여 줍니다.
-  - 들여쓰기 보존: "보이는 줄 그대로"에서 코드·YAML·목록의 줄 앞 공백을 살립니다 (고정폭 글꼴에서 가장 정확. 두 칸 미만 차이와 여러 단으로 나란한 글은 그대로 — [측정](docs/OCR-BENCH.md))
+  - 들여쓰기 보존: "보이는 줄 그대로"에서 코드·YAML·목록의 줄 앞 공백을 살립니다 (고정폭 글꼴에서 가장 정확. 두 칸 미만 차이와 여러 단으로 나란한 글은 그대로 — [측정](docs/OCR-BENCH.ko.md))
 - **번역** (macOS 15 이상, `⌃⇧7` 또는 메뉴 › 텍스트 추출 › 클립보드 글 번역) — Apple 온디바이스 번역입니다. 내 언어가 아닌 글은 내 언어로, 내 언어로 된 글은 영어로 옮겨 결과 창에 보여 줍니다. 번역과 원문을 비교해 보고 **번역 복사**(`↩`)나 **원문 복사**를 누를 때만 클립보드가 바뀝니다. 일부만 고르고 `⌘C`를 누르면 고른 부분만 복사합니다. `Esc`로 닫습니다. 줄바꿈·들여쓰기·목록 기호는 그대로 두고 줄마다 옮기며, 화면 폭 때문에 끊긴 문장은 이어서 옮깁니다. 코드는 번역에 맞지 않습니다. 처음 쓸 때 언어를 내려받을지 macOS가 묻습니다 (받는 일은 시스템이 하고, 번역할 글은 기기 밖으로 나가지 않습니다).
 - **표 추출** (macOS 26 이상, `⌃⇧6`, 캡처 도구 막대의 표 단추(`G`) 또는 메뉴 › 텍스트 추출 › 클립보드 이미지에서 표 추출)
   - 표 형식 (메뉴 › 텍스트 추출 › 표 형식): **엑셀·Numbers**(기본, 탭으로 나눈 글 — 엑셀·Numbers·구글 시트에 붙이면 칸이 그대로 나뉩니다. Pages·메모에는 표로 들어갑니다) / **Markdown 표**(첫 행이 머리글)
   - 합쳐진 칸은 맨 왼쪽 위 칸에만 글자를 넣고 나머지는 비워 둡니다. 칸 안의 줄바꿈은 한 칸으로 바꿉니다.
   - 표를 찾지 못하면 일반 텍스트로 복사합니다. macOS 14~15에서는 늘 일반 텍스트로 복사합니다.
-  - 측정: 합성 표 6개에서 행·열 6/6, 칸 95.8% 일치 ([측정](docs/OCR-BENCH.md#표-인식)). `⌃⇧` 같은 키 기호는 잘 못 읽습니다.
+  - 측정: 합성 표 6개에서 행·열 6/6, 칸 95.8% 일치 ([측정](docs/OCR-BENCH.ko.md#표-인식)). `⌃⇧` 같은 키 기호는 잘 못 읽습니다.
 - **단축어(Shortcuts)에서 부르기** — 기본은 꺼져 있습니다. 메뉴 › 텍스트 추출 › **단축어·URL로 부르기 허용**을 켜야 동작합니다 (웹 페이지 링크로도 불릴 수 있어서).
   - `polymac://ocr`: 클립보드 이미지 → 텍스트를 클립보드에
   - `polymac://ocr-table`: 클립보드 이미지 → 표를 클립보드에 (`?format=markdown` 또는 `?format=tsv`로 형식 지정, 없으면 메뉴 설정)
@@ -619,7 +619,7 @@ Mac에서 만든 한글 파일명이 Windows나 웹 업로드에서 `ㅎㅏㄴ�
 - 앱이 자기 폴더(`/Applications/회사/앱.app`) 안에 있고 그 폴더에 다른 앱이 없으면 **폴더째** 후보에 들어갑니다 (설치 관리자·리소스까지). 여러 앱을 모아 둔 폴더는 건드리지 않습니다
 - 다른 앱의 샌드박스 데이터(`~/Library/Containers/…`)는 macOS가 보호해서, 지울 때 "다른 앱의 데이터에 접근" 허용 창이 뜰 수 있습니다
 
-어떤 기준으로 판단하는지(찾는 위치 전체, 등급 조건, 회사 이름 필터, 제외 조건)는 [docs/UNINSTALLER.md](docs/UNINSTALLER.md)에 있습니다.
+어떤 기준으로 판단하는지(찾는 위치 전체, 등급 조건, 회사 이름 필터, 제외 조건)는 [docs/UNINSTALLER.md](docs/UNINSTALLER.ko.md)에 있습니다.
 
 삭제 기록: `~/Library/Application Support/PolyMac/uninstall-log.txt`
 
@@ -635,7 +635,7 @@ Mac에서 만든 한글 파일명이 Windows나 웹 업로드에서 `ㅎㅏㄴ�
 | 증상 | 해결 |
 |---|---|
 | 단축키가 안 먹히거나 다른 앱이 반응함 | 같은 단축키를 쓰는 앱(Spectacle 등)을 종료. macOS는 다른 앱과의 충돌을 항상 알려주지는 않으므로 환경 설정 › 단축키에 경고 표시가 없어도 겹칠 수 있음. 창 분할은 손쉬운 사용 권한 필요 |
-| 권한을 줬는데도 계속 요청함 | 시스템 설정에서 PolyMac 항목을 `-`로 지우고 앱 재시작 후 다시 허용. 직접 빌드했다면 매번 같은 인증서로 서명했는지 확인 ([RELEASING](docs/RELEASING.md) 6) |
+| 권한을 줬는데도 계속 요청함 | 시스템 설정에서 PolyMac 항목을 `-`로 지우고 앱 재시작 후 다시 허용. 직접 빌드했다면 매번 같은 인증서로 서명했는지 확인 ([RELEASING](docs/RELEASING.ko.md) 6) |
 | 업데이트하거나 다시 빌드할 때마다 로그인 키체인 암호를 물음 | 클립보드 암호화 키 때문입니다. 자체 서명 앱은 macOS가 키체인 항목을 빌드 하나하나에 묶어서 빌드마다 한 번 묻습니다. "항상 허용"을 누르세요. 손쉬운 사용·화면 녹음 권한과는 별개이고 그 권한들은 유지됩니다 |
 | 캡처 중 화면이 어둡게 멈춘 것 같음 | `Esc`(다른 앱에 포커스가 있어도 동작) 또는 우클릭으로 취소. 모니터 연결·해제·덮개 닫기 등 화면 구성이 바뀌면 자동 취소, 60초가 지나도 자동 취소 |
 | 캡처가 검은 화면이거나 바탕화면만 찍힘 | 화면 녹음 권한 허용 후 PolyMac 종료 → 다시 실행 |
@@ -675,16 +675,16 @@ log stream --predicate 'subsystem == "dev.polymac"' --level info
 - 파일을 **영구 삭제하거나 덮어쓰지 않습니다.** 삭제는 전부 휴지통으로 갑니다.
 - 관리자 권한을 상시 보유하지 않고, 다른 앱에 코드를 주입하지 않으며, 시스템 무결성 보호(SIP) 해제를 요구하지 않습니다.
 
-자세한 원칙: [docs/SECURITY.md](docs/SECURITY.md)
+자세한 원칙: [docs/SECURITY.md](docs/SECURITY.ko.md)
 
 ## 버전 · 릴리즈
 
-- [Semantic Versioning](https://semver.org/lang/ko/)을 따릅니다. 1.0.0 전까지는 MINOR 버전 하나가 [ROADMAP](docs/ROADMAP.md)의 한 단계입니다.
+- [Semantic Versioning](https://semver.org/lang/ko/)을 따릅니다. 1.0.0 전까지는 MINOR 버전 하나가 [ROADMAP](docs/ROADMAP.ko.md)의 한 단계입니다.
 - 현재 버전: [`VERSION`](VERSION) 파일
 - 개발 이력: [CHANGELOG.md](CHANGELOG.md) · 사용자용 변경 요약: GitHub Releases
 - 릴리즈마다 **호환성 변경**과 **새로 요청하는 권한**을 따로 표기합니다.
-- 상세 규칙(브랜치, 태그, 릴리즈 체크리스트, 지원 macOS 정책): [docs/RELEASING.md](docs/RELEASING.md)
-- 기여 방법과 커밋 메시지 규칙: [CONTRIBUTING.md](CONTRIBUTING.md)
+- 상세 규칙(브랜치, 태그, 릴리즈 체크리스트, 지원 macOS 정책): [docs/RELEASING.md](docs/RELEASING.ko.md)
+- 기여 방법과 커밋 메시지 규칙: [CONTRIBUTING.md](CONTRIBUTING.ko.md)
 
 ## 라이선스
 
@@ -695,8 +695,8 @@ PolyMac은 [MIT 라이선스](LICENSE)입니다.
 **보증 없음**: 소프트웨어는 "있는 그대로" 제공되며 사용으로 생긴 문제에 저작자는 책임지지 않습니다.
 
 **외부 코드**
-- 자동 업데이트에 [Sparkle](https://sparkle-project.org)(MIT)을 함께 배포합니다. 저작권과 라이선스는 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)에 있습니다.
-- 다른 오픈소스는 구조·아이디어를 참고했으며, 무엇을 어떻게 참고했는지와 코드 사용 정책은 [docs/REFERENCES.md](docs/REFERENCES.md)에 공개합니다. GPL·Commons Clause 코드는 가져오지 않습니다.
+- 자동 업데이트에 [Sparkle](https://sparkle-project.org)(MIT)을 함께 배포합니다. 저작권과 라이선스는 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.ko.md)에 있습니다.
+- 다른 오픈소스는 구조·아이디어를 참고했으며, 무엇을 어떻게 참고했는지와 코드 사용 정책은 [docs/REFERENCES.md](docs/REFERENCES.ko.md)에 공개합니다. GPL·Commons Clause 코드는 가져오지 않습니다.
 
 **상표**
 - PolyMac은 Apple Inc.와 관련이 없으며 Apple의 승인·후원을 받지 않았습니다. Mac, macOS, Finder는 Apple Inc.의 상표입니다.
@@ -706,13 +706,13 @@ PolyMac은 [MIT 라이선스](LICENSE)입니다.
 
 | 문서 | 내용 |
 |---|---|
-| [docs/CONCEPT.md](docs/CONCEPT.md) | 컨셉, 목표/비목표, 기능별 실현 가능성 분석 |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 모듈 구조, 권한, 자원 예산, 기술 선택 |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | 버전별 개발 계획 |
-| [docs/SECURITY.md](docs/SECURITY.md) | 로컬 전용 보안 원칙 |
-| [docs/RELEASING.md](docs/RELEASING.md) | 버전 관리·릴리즈 규칙 |
-| [docs/OCR-BENCH.md](docs/OCR-BENCH.md) | OCR 정확도 샘플·측정 방법·결과와 그에 따른 설정 결정 |
-| [docs/UNINSTALLER.md](docs/UNINSTALLER.md) | 앱 완전 삭제의 판단 기준 (찾는 위치, 등급, 회사 이름 필터, 제외 조건) |
-| [docs/REFERENCES.md](docs/REFERENCES.md) | 참고한 오픈소스·API, 라이선스 확인 결과, 출처 표기 정책 |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | 개발 환경, 커밋 규칙 |
-| [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) | 외부 코드 저작권 고지 |
+| [docs/CONCEPT.md](docs/CONCEPT.ko.md) | 컨셉, 목표/비목표, 기능별 실현 가능성 분석 |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.ko.md) | 모듈 구조, 권한, 자원 예산, 기술 선택 |
+| [docs/ROADMAP.md](docs/ROADMAP.ko.md) | 버전별 개발 계획 |
+| [docs/SECURITY.md](docs/SECURITY.ko.md) | 로컬 전용 보안 원칙 |
+| [docs/RELEASING.md](docs/RELEASING.ko.md) | 버전 관리·릴리즈 규칙 |
+| [docs/OCR-BENCH.md](docs/OCR-BENCH.ko.md) | OCR 정확도 샘플·측정 방법·결과와 그에 따른 설정 결정 |
+| [docs/UNINSTALLER.md](docs/UNINSTALLER.ko.md) | 앱 완전 삭제의 판단 기준 (찾는 위치, 등급, 회사 이름 필터, 제외 조건) |
+| [docs/REFERENCES.md](docs/REFERENCES.ko.md) | 참고한 오픈소스·API, 라이선스 확인 결과, 출처 표기 정책 |
+| [CONTRIBUTING.md](CONTRIBUTING.ko.md) | 개발 환경, 커밋 규칙 |
+| [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.ko.md) | 외부 코드 저작권 고지 |

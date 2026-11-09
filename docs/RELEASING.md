@@ -1,91 +1,93 @@
-# 버전 관리 & 릴리즈 규칙
+# Versioning & release rules
 
-## 1. 버전 번호 — Semantic Versioning
+**English** · [한국어](RELEASING.ko.md)
 
-형식: `MAJOR.MINOR.PATCH` (예: `0.3.1`), 사전 배포는 `0.3.0-beta.1`
+## 1. Version numbers — Semantic Versioning
 
-현재 버전은 저장소 루트의 [`VERSION`](../VERSION) 파일 하나가 기준(single source of truth)이다. Xcode 프로젝트가 생기면 `MARKETING_VERSION`은 이 파일에서 읽는다.
+Format: `MAJOR.MINOR.PATCH` (e.g. `0.3.1`), pre-releases `0.3.0-beta.1`
 
-### 1.0.0 이전 (지금)
+The current version comes from one file, [`VERSION`](../VERSION) at the repository root (single source of truth). Once there is an Xcode project, `MARKETING_VERSION` reads it from this file.
 
-| 올리는 자리 | 언제 | 예 |
+### Before 1.0.0 (now)
+
+| Part to bump | When | Example |
 |---|---|---|
-| MINOR (`0.x.0`) | [ROADMAP](ROADMAP.md)의 한 단계 완료, 새 모듈 추가, 설정 형식 변경 | `0.2.0` 캡처·핀 추가 |
-| PATCH (`0.x.y`) | 버그 수정, 문서, 성능 개선 (동작·설정 형식 그대로) | `0.2.1` 멀티 모니터 좌표 수정 |
+| MINOR (`0.x.0`) | A [ROADMAP](ROADMAP.md) stage is finished, a new module is added, the settings format changes | `0.2.0` capture and pins added |
+| PATCH (`0.x.y`) | Bug fixes, docs, performance (same behavior and settings format) | `0.2.1` multi-monitor coordinate fix |
 
-- 0.x에서는 설정 형식이 바뀔 수 있다. 바뀔 때는 **반드시 자동 마이그레이션**을 넣고 릴리즈 노트의 "호환성" 항목에 적는다.
+- In 0.x the settings format may change. When it does, **always add an automatic migration** and note it under "Compatibility" in the release notes.
 
-### 1.0.0 이후
+### After 1.0.0
 
-| 올리는 자리 | 언제 |
+| Part to bump | When |
 |---|---|
-| MAJOR | 설정·규칙 JSON 호환이 깨짐, **최소 macOS 버전 상향**, 모듈 제거, 단축키 기본값 대규모 변경 |
-| MINOR | 기능·모듈 추가, 새 권한이 필요한 기능 추가 (하위 호환 유지) |
-| PATCH | 버그·보안 수정, 문서 |
+| MAJOR | Settings or rule JSON compatibility breaks, **minimum macOS version goes up**, a module is removed, large changes to default shortcuts |
+| MINOR | Features or modules added, a feature that needs a new permission (backward compatible) |
+| PATCH | Bug and security fixes, docs |
 
-### 빌드 번호
-`CURRENT_PROJECT_VERSION` = `git rev-list --count HEAD` (계속 증가하는 정수). macOS는 같은 버전 문자열이라도 빌드 번호로 업데이트 여부를 판단한다.
+### Build number
+`CURRENT_PROJECT_VERSION` = `git rev-list --count HEAD` (an ever-increasing integer). macOS uses the build number to decide on updates even when the version string is the same.
 
-### 설정 파일 버전
-사용자 데이터(규칙 JSON, 클립보드 DB 등)에는 앱 버전과 별개로 `schemaVersion` 정수를 둔다. 형식이 바뀌면 +1 하고 이전 버전을 읽어 변환하는 코드를 남긴다. 가져오기한 JSON의 `schemaVersion`이 앱보다 높으면 적용하지 않고 업데이트를 안내한다.
+### Settings file version
+User data (rule JSON, the clipboard store, etc.) carries a `schemaVersion` integer separate from the app version. When the format changes, add 1 and keep code that reads and converts the previous version. If an imported JSON has a `schemaVersion` higher than the app's, it is not applied and the user is told to update.
 
-## 2. 브랜치 · 태그
+## 2. Branches · tags
 
-| 이름 | 용도 |
+| Name | Purpose |
 |---|---|
-| `main` | 항상 빌드되는 상태. 릴리즈 태그는 여기서만 |
-| `feat/<모듈>-<설명>` | 기능 개발 (`feat/capture-pin`) |
-| `fix/<설명>` | 버그 수정 |
-| `docs/<설명>` | 문서만 |
-| 태그 `vX.Y.Z` | 릴리즈. **annotated 태그**(`git tag -a`)만 사용, 한 번 푼 태그는 옮기거나 지우지 않음 |
+| `main` | Always builds. Release tags only from here |
+| `feat/<module>-<description>` | Feature work (`feat/capture-pin`) |
+| `fix/<description>` | Bug fixes |
+| `docs/<description>` | Docs only |
+| tag `vX.Y.Z` | Releases. **Annotated tags** only (`git tag -a`); a published tag is never moved or deleted |
 
-- 급한 수정은 `main`에서 `fix/` 브랜치를 따서 고치고 PATCH 릴리즈.
-- 커밋 메시지 규칙은 [CONTRIBUTING.md](../CONTRIBUTING.md).
+- Urgent fixes branch off `main` as `fix/`, then ship as a PATCH release.
+- Commit message rules are in [CONTRIBUTING.md](../CONTRIBUTING.md).
 
-## 3. 변경 기록 — 두 가지를 구분한다
+## 3. Change records — keep two kinds apart
 
-| 파일 | 대상 | 내용 | 언제 |
+| File | Audience | Content | When |
 |---|---|---|---|
-| [`CHANGELOG.md`](../CHANGELOG.md) | 개발자 | 커밋 단위 상세 이력 (파일·함수 단위) | 커밋할 때마다 맨 위에 추가 |
-| GitHub Release 노트 | 사용자 | "무엇이 좋아졌는지" 몇 줄 + 호환성·권한 변경 | 태그를 만들 때 |
+| [`CHANGELOG.md`](../CHANGELOG.md) | Developers | Detailed per-commit history (by file and function) | Added at the top with every commit |
+| GitHub Release notes | Users | A few lines on "what got better" plus compatibility and permission changes | When creating a tag |
 
-CHANGELOG 항목 형식:
+CHANGELOG entry format (in English from 0.2.15 on; older entries are in Korean):
 
 ```
 [YYYY-MM-DD HH:MM]
-- [Added|Changed|Fixed|Removed|Security] - <파일경로>: <무엇을 왜>
+- [Added|Changed|Fixed|Removed|Security] - <file path>: <what and why>
 ```
 
-릴리즈 노트 템플릿:
+Release notes template:
 
 ```markdown
 ## PolyMac X.Y.Z
 
-### 새 기능
+### New features
 - ...
 
-### 개선 · 수정
+### Improvements · fixes
 - ...
 
-### 호환성      ← 설정 형식·최소 macOS·단축키 기본값 변경 (없으면 "없음")
-### 권한 변경   ← 새로 요청하는 권한 (없으면 "없음")
-### 보안        ← 보안 관련 수정 (없으면 생략)
+### Compatibility      ← settings format, minimum macOS, default shortcut changes ("None" if none)
+### Permission changes ← newly requested permissions ("None" if none)
+### Security           ← security fixes (omit if none)
 ```
 
-## 3-1. 버전별로 무엇이 바뀌었는지 찾기
+## 3-1. Finding what changed in each version
 
-세 군데에서 같은 정보를 다른 깊이로 볼 수 있다.
+The same information can be seen at three depths.
 
-| 보고 싶은 것 | 어디서 |
+| What you want to see | Where |
 |---|---|
-| 이번 버전에서 사용자에게 달라진 점 (몇 줄) | GitHub Releases 의 해당 버전 노트 |
-| 이번 버전에 들어간 모든 개발 변경 (파일 단위) | `CHANGELOG.md`의 해당 버전 구간 |
-| 두 버전 사이의 코드 차이 | `git log v0.1.0..v0.2.0`, GitHub의 `compare/v0.1.0...v0.2.0` |
+| What changed for users in this version (a few lines) | That version's notes in GitHub Releases |
+| Every development change in this version (by file) | That version's section in `CHANGELOG.md` |
+| The code difference between two versions | `git log v0.1.0..v0.2.0`, GitHub's `compare/v0.1.0...v0.2.0` |
 
-**CHANGELOG 버전 구간 규칙** — 커밋마다 항목이 맨 위에 쌓이므로, 릴리즈할 때 마지막 릴리즈 이후 쌓인 항목들 **맨 위에** 버전 줄을 넣는다.
+**CHANGELOG version section rule** — entries pile up at the top with every commit, so at release time put a version line **above** the entries collected since the last release.
 
 ```
-## 0.2.0 (2026-11-10) — 이 줄부터 아래 0.1.0 줄 전까지가 0.2.0에 들어간 변경
+## 0.2.0 (2026-11-10) — from this line down to the 0.1.0 line is what went into 0.2.0
 [2026-11-09 18:20]
 - [Fixed] - ...
 ...
@@ -93,63 +95,63 @@ CHANGELOG 항목 형식:
 ...
 ```
 
-버전 줄보다 위에 있는 항목은 아직 릴리즈되지 않은 변경이다.
+Entries above the topmost version line are changes that haven't been released yet.
 
-## 4. 릴리즈 절차 (체크리스트)
+## 4. Release steps (checklist)
 
-1. **범위 확인** — ROADMAP 해당 단계 체크박스 완료, 미완 항목은 다음 버전으로 이동
-2. **검증**
-   - [ ] `swift build && swift test` 통과 (Xcode 필요)
-   - [ ] 앱 빌드 후 수동 확인: 해당 버전 모듈 동작, 권한 없을 때 안내
-   - [ ] 자원 예산: 유휴 메모리 < 40 MB, 유휴 CPU 0% (Activity Monitor)
-3. **보안** — [SECURITY.md](SECURITY.md) 기준
-   - [ ] 유휴·기능 사용 중 외부 네트워크 연결 0건 (`nettop -p PolyMac`)
-   - [ ] `secret-scan` 통과 (하드코딩 경로·키 없음)
-   - [ ] 의존성 추가 시 `dependency-audit` + [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) 갱신
-4. **버전 올리기** — `VERSION` 수정, `CHANGELOG.md` 맨 위에 버전 줄(3-1), README 두 개(`README.md`·`README.ko.md`)의 현재 버전 줄, PR로 `chore(release): X.Y.Z` 머지
-5. **태그**
+1. **Check the scope** — the ROADMAP stage's checkboxes are done; move unfinished items to the next version
+2. **Verify**
+   - [ ] `swift build && swift test` pass (needs Xcode)
+   - [ ] Manual check after building the app: that version's modules work, guidance shows when permissions are missing
+   - [ ] Resource budget: idle memory < 40 MB, idle CPU 0% (Activity Monitor)
+3. **Security** — per [SECURITY.md](SECURITY.md)
+   - [ ] Zero outside network connections while idle and while using features (`nettop -p PolyMac`)
+   - [ ] `secret-scan` passes (no hardcoded paths or keys)
+   - [ ] When adding a dependency, `dependency-audit` + update [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md)
+4. **Bump the version** — edit `VERSION`, add the version line at the top of `CHANGELOG.md` (3-1), update the current version line in both READMEs (`README.md` and `README.ko.md`), merge as a PR `chore(release): X.Y.Z`
+5. **Tag**
    ```bash
    git tag -a vX.Y.Z -m "PolyMac X.Y.Z"
    git push origin main --tags
    ```
-6. **빌드 · 서명 · 묶기** — 태그를 찍은 main에서
+6. **Build · sign · package** — on the tagged main
    ```bash
    scripts/package-release.sh
    ```
-   - 고정 인증서(이름이 `PolyMac `으로 시작하는 자체 서명 인증서)로 서명한다. 매번 같은 인증서여야 받는 사람의 macOS 권한(손쉬운 사용·화면 녹음)이 업데이트 뒤에도 유지된다. 고를 때는 `POLYMAC_SIGN_IDENTITY`.
-   - 배포용 인증서는 `PolyMac Beomzh`(자체 서명, 10년, 백업 `~/Documents/PolyMac-signing.p12`) — `scripts/make-signing-cert.sh`로 만들었다. `Apple Development`는 쓰지 않는다: 서명에 이메일·실명·팀 ID가 드러나고(`codesign -dvv`), 1년마다 만료되며 시각 기록이 없어 만료 뒤 새로 받는 사람에게 무효로 보일 수 있다.
-   - 자체 서명 인증서는 **잃어버리면 같은 것을 다시 만들 수 없다** — 새 인증서로 서명한 업데이트는 다른 앱으로 취급돼 모든 사용자가 권한을 다시 줘야 한다. 백업 `.p12`를 저장소 밖 안전한 곳에 보관한다.
-   - **공증하지 않는다** (Apple 개발자 프로그램 미가입). Hardened Runtime은 켜 둔다. 자체 서명 인증서는 받는 Mac이 모르는 인증서라 Gatekeeper가 "손상됨"으로 막는다(그래도 열기 없음). 받는 사람은 `xattr -dr com.apple.quarantine`이 한 번 필요하고 — README "처음 열 때 막히면" — Homebrew cask는 설치 후 단계(`postflight_steps`)에서 이를 대신한다.
-   - 스크립트는 VERSION이 사전 배포(`-alpha` 등)가 아니고 작업 트리가 깨끗하며 `vX.Y.Z` 태그가 HEAD에 있을 때만 묶는다.
-   - zip에는 확장 속성을 넣지 않는다(`ditto --norsrc --noextattr`). 넣으면 `._` 파일이 앱 안에 생겨 `unzip`으로 푼 사람에게 서명이 깨진다. 스크립트가 묶은 뒤 `unzip`으로 풀어 서명을 다시 확인한다.
-7. **배포 파일** — `build/release/PolyMac-X.Y.Z.zip` + `.zip.sha256`
+   - Signs with the fixed certificate (a self-signed certificate whose name starts with `PolyMac `). It must be the same certificate every time so that users' macOS permissions (Accessibility, Screen Recording) survive updates. Choose one with `POLYMAC_SIGN_IDENTITY`.
+   - The release certificate is `PolyMac Beomzh` (self-signed, 10 years, backup at `~/Documents/PolyMac-signing.p12`), made with `scripts/make-signing-cert.sh`. `Apple Development` is not used: its signature reveals an email, real name and team ID (`codesign -dvv`), it expires every year, and without a timestamp it can look invalid to new downloaders after it expires.
+   - A self-signed certificate **can't be recreated if it is lost** — updates signed with a new certificate are treated as a different app, and every user has to grant permissions again. Keep the `.p12` backup somewhere safe outside the repository.
+   - **No notarization** (not in the Apple Developer Program). The Hardened Runtime stays on. The receiving Mac doesn't know a self-signed certificate, so Gatekeeper blocks the app as "damaged" (with no Open Anyway). Downloaders need `xattr -dr com.apple.quarantine` once — README "If macOS blocks the first launch" — and the Homebrew cask does this for them in its post-install step (`postflight_steps`).
+   - The script only packages when VERSION is not a pre-release (`-alpha` etc.), the working tree is clean, and the `vX.Y.Z` tag is on HEAD.
+   - The zip carries no extended attributes (`ditto --norsrc --noextattr`). With them, `._` files appear inside the app and break the signature for people who unpack with `unzip`. After packaging, the script unpacks with `unzip` and checks the signature again.
+7. **Release files** — `build/release/PolyMac-X.Y.Z.zip` + `.zip.sha256`
    ```bash
-   gh release create vX.Y.Z build/release/PolyMac-X.Y.Z.zip build/release/PolyMac-X.Y.Z.zip.sha256 --title "PolyMac X.Y.Z" --notes-file <노트 파일>
+   gh release create vX.Y.Z build/release/PolyMac-X.Y.Z.zip build/release/PolyMac-X.Y.Z.zip.sha256 --title "PolyMac X.Y.Z" --notes-file notes.md
    ```
-   - `appcast.xml`도 같이 올린다 — 앱은 `releases/latest/download/appcast.xml`을 읽으므로 **가장 최근 릴리즈**에 붙어 있어야 한다.
-8. **Homebrew** — `packaging/homebrew/polymac.rb`의 `version`·`sha256`(스크립트가 출력)을 바꿔 커밋하고, 같은 파일(맨 위 설명 주석은 빼고)을 개인 tap 저장소 [`beomzh/homebrew-tap`](https://github.com/beomzh/homebrew-tap)의 `Casks/polymac.rb`로 올린다. Homebrew 7부터 사용자는 설치 전에 `brew trust --cask beomzh/tap/polymac`이 필요하다(README에 안내). 공식 cask 저장소는 공증 안 된 앱을 받지 않는다.
+   - Upload `appcast.xml` too — the app reads `releases/latest/download/appcast.xml`, so it must be attached to **the most recent release**.
+8. **Homebrew** — change `version` and `sha256` (printed by the script) in `packaging/homebrew/polymac.rb` and commit, then push the same file (without the description comment at the top) to `Casks/polymac.rb` in the personal tap repository [`beomzh/homebrew-tap`](https://github.com/beomzh/homebrew-tap). Since Homebrew 7, users need `brew trust --cask beomzh/tap/polymac` before installing (explained in the README). The official cask repository doesn't accept apps that aren't notarized.
 
-### 업데이트 서명 키 (Sparkle EdDSA)
+### Update signing key (Sparkle EdDSA)
 
-처음 한 번, 배포하는 Mac에서 직접 만든다 (비밀 키는 로그인 키체인에 들어간다):
+Create it once, by hand, on the Mac that publishes releases (the private key goes into the login keychain):
 
 ```bash
 scripts/fetch-sparkle.sh && Vendor/Sparkle/bin/generate_keys
 ```
 
-출력된 공개 키를 `App/sparkle-public-key.txt`에 넣어 커밋한다. 이 파일이 있어야 빌드에 업데이트 기능이 켜진다.
+Put the printed public key in `App/sparkle-public-key.txt` and commit it. The update feature is only built in when this file exists.
 
-- 비밀 키를 잃으면 이미 배포된 앱에 업데이트를 보낼 수 없다 — `generate_keys -x <파일>`로 내보내 저장소 밖 안전한 곳에 보관한다.
-- `package-release.sh`는 키체인의 키가 `App/sparkle-public-key.txt`와 같은지 확인한 뒤 zip에 서명한다.
+- If the private key is lost, updates can no longer be sent to apps already released — export it with `generate_keys -x <file>` and keep it somewhere safe outside the repository.
+- `package-release.sh` checks that the key in the keychain matches `App/sparkle-public-key.txt` before signing the zip.
 
-### 버전 올리기 (0.2.0부터)
+### Bumping versions (since 0.2.0)
 
-- 작업(PR)마다 `VERSION`을 PATCH 한 칸씩 올린다(0.2.1, 0.2.2, …). 평소에는 태그를 만들지 않는다.
-- 사용자에게 내보낼 때만 그 버전을 태그·릴리즈한다. 태그·릴리즈가 없는 버전에는 Sparkle·Homebrew 업데이트가 가지 않는다.
-- 릴리즈 노트에는 마지막 릴리즈 이후 모든 버전의 변경을 적는다.
+- Every task (PR) bumps `VERSION` by one PATCH step (0.2.1, 0.2.2, …). No tags are made along the way.
+- A version is tagged and released only when it is shipped to users. Versions without a tag and release get no Sparkle or Homebrew update.
+- Release notes cover the changes of every version since the last release.
 
-## 5. 지원 정책
+## 5. Support policy
 
-- **최소 macOS**: 14 Sonoma. 올리는 것은 0.x에서는 MINOR, 1.0 이후에는 MAJOR 변경으로만.
-- 신기능이 새 OS 전용이면(예: macOS 26 표 인식) `if #available`로 감싸고 구버전에서는 메뉴를 숨긴다.
-- 보안 수정은 최신 MINOR에만 반영한다 (구버전 백포트 없음).
+- **Minimum macOS**: 14 Sonoma. Raising it is only done as a MINOR change in 0.x and a MAJOR change after 1.0.
+- If a new feature needs a newer OS (e.g. macOS 26 table recognition), wrap it in `if #available` and hide the menu item on older versions.
+- Security fixes go only into the latest MINOR (no backports to older versions).
