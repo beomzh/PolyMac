@@ -3,6 +3,9 @@
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
 [2026-11-09 14:42]
+- [Changed] - CHANGELOG.md: PR #32 (docs/readme-english) push 기록
+
+[2026-11-09 14:42]
 - [Changed] - README.md: 기본 README를 영어로 바꿈. 메뉴·버튼 이름은 앱의 영어 표시와 맞추고 한국어판 링크를 둠
 - [Added] - README.ko.md: 기존 한국어 README를 옮기고 영어판 링크와 빌드마다 뜨는 키체인 암호 창 안내를 더함
 - [Added] - scripts/check-readme.sh: 두 README의 제목 구조, bash 명령, 저장소 안 링크, 현재 버전이 같은지 검사해 한쪽만 고치는 것을 막음
