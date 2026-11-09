@@ -2,6 +2,11 @@
 
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
+[2026-11-09 21:18]
+- [Added] - .github/workflows/ci.yml: CI on every PR and push to main (macOS 26 runner) — scripts/test.sh (docs check + unit tests) and a release build that fails on compiler warnings
+- [Changed] - CONTRIBUTING.md, CONTRIBUTING.ko.md: describe CI and require its `test` check in branch protection
+- [Changed] - VERSION: 0.2.17
+
 [2026-11-09 20:56]
 - [Changed] - docs/*.md: reworded literal translations (SECURITY intro and headings, CONCEPT tagline and goals, ROADMAP, REFERENCES, UNINSTALLER, OCR-BENCH, RELEASING tables)
 - [Changed] - docs/SECURITY.md, docs/CONCEPT.md, docs/ROADMAP.md: menu names match the app's English strings (Fix Korean Filenames, Pause Recording, Clear History (keeps pinned))
