@@ -106,7 +106,7 @@ CHANGELOG 항목 형식:
    - [ ] 유휴·기능 사용 중 외부 네트워크 연결 0건 (`nettop -p PolyMac`)
    - [ ] `secret-scan` 통과 (하드코딩 경로·키 없음)
    - [ ] 의존성 추가 시 `dependency-audit` + [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) 갱신
-4. **버전 올리기** — `VERSION` 수정, `CHANGELOG.md` 맨 위에 버전 줄(3-1), PR로 `chore(release): X.Y.Z` 머지
+4. **버전 올리기** — `VERSION` 수정, `CHANGELOG.md` 맨 위에 버전 줄(3-1), README 두 개(`README.md`·`README.ko.md`)의 현재 버전 줄, PR로 `chore(release): X.Y.Z` 머지
 5. **태그**
    ```bash
    git tag -a vX.Y.Z -m "PolyMac X.Y.Z"

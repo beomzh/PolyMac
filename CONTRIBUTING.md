@@ -58,13 +58,15 @@ scripts/build-app.sh --install
 
 ## 커밋 메시지
 
+커밋 메시지와 PR 제목·설명은 **영어**로 쓴다 (2026-11-09부터, 그 전 커밋은 한국어). `CHANGELOG.md` 항목은 한국어 그대로다.
+
 ```
-<type>(<scope>): <한글 제목>
+<type>(<scope>): <English title>
 
-- <파일명>: <변경 내용 한 줄>
-- <파일명>: <변경 내용 한 줄>
+- <file>: <one-line change>
+- <file>: <one-line change>
 
-작업일시: yyyy년 mm월 dd일 hh시 mm분
+Date: YYYY-MM-DD HH:MM
 ```
 
 | type | 언제 |
@@ -79,10 +81,18 @@ scripts/build-app.sh --install
 
 `scope`는 모듈 id 또는 영역: `window` `capture` `ocr` `clipboard` `finder` `normalize` `organize` `uninstaller` `core` `docs` `release`
 
-예: `feat(organize): 받은 사이트 조건 추가`
+예: `feat(organize): add source website condition`
 
 - `git add -A` / `git add .` 대신 파일을 명시해서 추가 (시크릿·인증서 섞임 방지)
 - 커밋할 때마다 [CHANGELOG.md](CHANGELOG.md) 맨 위에 항목 추가 (형식은 [docs/RELEASING.md](docs/RELEASING.md))
+
+## README는 두 언어로
+
+- 기본 [README.md](README.md)는 영어, [README.ko.md](README.ko.md)는 한국어다. 내용은 같고 언어만 다르다.
+- 한쪽을 고치면 **같은 PR에서 다른 쪽도** 고친다. 기능·단축키·메뉴 이름·버전 표기·링크 모두 해당한다.
+- 영어판의 메뉴·버튼 이름은 앱의 영어 표시(`L("한국어", "English")`의 두 번째 값, `App/en.lproj`)와 맞춘다.
+- `scripts/check-readme.sh`가 두 파일의 제목 구조, bash 명령, 저장소 안 링크, 현재 버전이 같은지 확인한다. `scripts/test.sh`가 먼저 실행하므로 한쪽만 고치면 테스트가 실패한다. 문장 내용까지는 보지 못하니 고친 문단은 직접 맞춘다.
+- `docs/` 아래 설계 문서는 한국어로만 둔다.
 
 ## 꼭 지킬 것
 
