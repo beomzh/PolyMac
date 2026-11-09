@@ -3,6 +3,9 @@
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
 [2026-11-09 21:25]
+- [Changed] - CHANGELOG.md: record the PR #39 (chore/ci) push
+
+[2026-11-09 21:25]
 - [Fixed] - scripts/check-docs.sh: brace `$pairs` and `$en` before Korean text; bash 3.2 in a UTF-8 locale read the following character as part of the name and CI failed with "unbound variable"
 - [Fixed] - scripts/package-release.sh: same fix for `$VERSION` in the missing-tag message
 
