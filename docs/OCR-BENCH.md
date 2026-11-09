@@ -2,7 +2,7 @@
 
 **English** · [한국어](OCR-BENCH.ko.md)
 
-How text recognition (OCR) is measured and what the results were, used as evidence when changing OCR settings. Everything runs on this Mac with Apple Vision, without the internet.
+How OCR accuracy is measured, and the results that OCR setting changes are based on. Everything runs on this Mac with Apple Vision, without the internet.
 
 ## Running
 

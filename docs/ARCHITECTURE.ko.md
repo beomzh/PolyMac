@@ -17,7 +17,7 @@
 │   ├─ WindowModule    : AXUIElement 창 조작                                         │
 │   ├─ CaptureModule   : 오버레이·핀·마크업  ──→ OCRModule (첫 호출 시 lazy load)    │
 │   ├─ FinderModule    : ⌘X 리매핑, 지정 폴더 보내기                                 │
-│   ├─ ClipboardModule : 히스토리 저장·검색·고정 (SQLite + 이미지 파일)              │
+│   ├─ ClipboardModule : 히스토리 저장·검색·고정 (암호화 JSON + 이미지 파일)         │
 │   ├─ NormalizeModule : FSEvents 감시 → NFD 파일명 NFC 변환, 클립보드 정규화        │
 │   └─ OrganizeModule  : 같은 FSEvents 이벤트 → 사용자 규칙 엔진 → 이동/태그/휴지통   │
 └───────────────────────────────────────────────────────────────────────────────────┘

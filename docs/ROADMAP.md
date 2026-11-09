@@ -2,7 +2,7 @@
 
 **English** · [한국어](ROADMAP.ko.md)
 
-Each stage is done when "one existing app can be deleted".
+A stage is done when it lets you uninstall one of the apps it replaces.
 For version numbering see [RELEASING.md](RELEASING.md) — each stage below maps to one MINOR version.
 
 ## 0.1.0 — Skeleton + window layout (replaces Spectacle)
@@ -48,7 +48,7 @@ For version numbering see [RELEASING.md](RELEASING.md) — each stage below maps
 - [x] Open in editor (`⌃⌥E`, right-click, editor app choice)
 - [x] Cut pending indicator (count, cancel button, only while Finder is in front)
 - [x] Automatic NFD → NFC conversion in watched folders (iCloud excluded)
-- [x] Right-click "Fix Korean filenames" (after confirmation, including subfolders, bundles and .git excluded), "Compress for Windows"
+- [x] Right-click "Fix Korean Filenames" (after confirmation, including subfolders, bundles and .git excluded), "Compress for Windows"
 - [x] Joining decomposed Korean in copied text (Korean letters only, passwords and file copies excluded)
 
 ## 0.6.0 — Downloads auto-organize (replaces Hazel)

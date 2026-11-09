@@ -2,6 +2,12 @@
 
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
+[2026-11-09 20:56]
+- [Changed] - docs/*.md: reworded literal translations (SECURITY intro and headings, CONCEPT tagline and goals, ROADMAP, REFERENCES, UNINSTALLER, OCR-BENCH, RELEASING tables)
+- [Changed] - docs/SECURITY.md, docs/CONCEPT.md, docs/ROADMAP.md: menu names match the app's English strings (Fix Korean Filenames, Pause Recording, Clear History (keeps pinned))
+- [Fixed] - docs/ARCHITECTURE.md: rebuilt the overview diagram so every line fits its box
+- [Fixed] - docs/ARCHITECTURE.md, docs/ARCHITECTURE.ko.md: clipboard storage is encrypted JSON, not SQLite
+
 [2026-11-09 20:26]
 - [Changed] - CHANGELOG.md: record the PR #37 (docs/english-docs) push
 

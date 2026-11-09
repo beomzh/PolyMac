@@ -10,7 +10,7 @@ The current version comes from one file, [`VERSION`](../VERSION) at the reposito
 
 ### Before 1.0.0 (now)
 
-| Part to bump | When | Example |
+| Bump | When | Example |
 |---|---|---|
 | MINOR (`0.x.0`) | A [ROADMAP](ROADMAP.md) stage is finished, a new module is added, the settings format changes | `0.2.0` capture and pins added |
 | PATCH (`0.x.y`) | Bug fixes, docs, performance (same behavior and settings format) | `0.2.1` multi-monitor coordinate fix |
@@ -19,7 +19,7 @@ The current version comes from one file, [`VERSION`](../VERSION) at the reposito
 
 ### After 1.0.0
 
-| Part to bump | When |
+| Bump | When |
 |---|---|
 | MAJOR | Settings or rule JSON compatibility breaks, **minimum macOS version goes up**, a module is removed, large changes to default shortcuts |
 | MINOR | Features or modules added, a feature that needs a new permission (backward compatible) |
@@ -76,7 +76,7 @@ Release notes template:
 
 ## 3-1. Finding what changed in each version
 
-The same information can be seen at three depths.
+The same information is available at three levels of detail.
 
 | What you want to see | Where |
 |---|---|

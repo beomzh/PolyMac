@@ -2,7 +2,7 @@
 
 **English** · [한국어](SECURITY.ko.md)
 
-This app assumes it **works only inside your own Mac**. It gathers powerful features in one place — Accessibility, Screen Recording, the clipboard, moving files — so a single hole would do a lot of damage. The principles below take priority over features.
+PolyMac is built to **work entirely on your own Mac**. It bundles powerful capabilities — Accessibility, Screen Recording, the clipboard, moving files — so a single weak spot could do a lot of harm. The principles below come before any feature.
 
 ## 1. Network: none by default
 - OCR (Vision), translation (Translation), file organizing and the clipboard are **all on-device**, with no calls to outside servers.
@@ -13,12 +13,12 @@ This app assumes it **works only inside your own Mac**. It gathers powerful feat
   - Sending device info (`SUEnableSystemProfiling`) is off, automatic install (`SUAutomaticallyUpdate`) is off — it always asks before installing.
   - A downloaded zip is extracted only if its EdDSA signature matches `SUPublicEDKey` in Info.plist (`SUVerifyUpdateBeforeExtraction`). The private key exists only in the publisher's keychain.
   - Builds without the public key (`App/sparkle-public-key.txt`), i.e. your own builds, don't start the update feature.
-- Check: before a release, confirm zero outside connections with `nettop`/Little Snitch while idle and while using features.
+- Verification: before each release, confirm with `nettop` or Little Snitch that there are no outbound connections, both idle and while using features.
 
 ## 2. Input monitoring (event taps)
 - Key presses are **used in memory only to match shortcuts** and are never written to disk or logs (so it can't become a key logger).
 - Except for the Finder `⌘X` remapping, it uses **listen-only taps** that can't modify events.
-- The event tap only does meaningful work when Finder is frontmost and passes everything else through at once.
+- The event tap only does real work when Finder is frontmost and lets everything else through immediately.
 - **An active event tap sits in the path of every key press on the Mac**, so if its callback blocks, system typing stops. Therefore
   - the tap runs on a **dedicated thread**, not the main thread (the main thread can briefly block on AppleScript, menus and modals).
   - Accessibility calls inside the callback that ask another app get a **0.1-second timeout** (default 6 seconds). If it can't confirm, it passes the event through untouched.
@@ -27,8 +27,8 @@ This app assumes it **works only inside your own Mac**. It gathers powerful feat
 
 - The global key monitor (`Esc` to cancel a capture or close a pin) is installed **only while capturing or while a pin is open**, and ignores every key except `Esc`.
 
-## 2-1. Windows that cover the screen
-- A **window that covers the whole screen, like capture area selection, must always be escapable**: `Esc` regardless of focus, right-click, automatic cancel when the screen layout changes, and automatic cancel after 60 seconds.
+## 2-1. Full-screen overlays
+- **Any window that covers the whole screen, such as capture area selection, must always offer a way out**: `Esc` regardless of focus, right-click, automatic cancel when the screen layout changes, and automatic cancel after 60 seconds.
 - Work that synchronously asks other apps or Finder (AppleScript and the like) is never done on the main thread.
 
 ## 3. Clipboard history
@@ -41,7 +41,7 @@ This app assumes it **works only inside your own Mac**. It gathers powerful feat
   - Plaintext files from before encryption are sealed and rewritten once on first run. On APFS/SSD old blocks may remain, so disk-level protection is left to FileVault.
 - **Kept for 7 days by default** plus a limit on the number of items (pinned items excluded). When an item is deleted, its separately stored image or text file is deleted right away too.
 - Size limit per item: text 20 MB (over 64 KB goes to a separate file), images 30 MB.
-- "Pause recording" and "Clear history (except pinned)" menu items are provided.
+- "Pause Recording" and "Clear History (keeps pinned)" menu items are provided.
 - **The clipboard is rewritten in only one place** — when Korean filename fix (Normalize) joins decomposed Korean letters back into composed syllables. It only changes how letters are combined (not a full NFC pass), and leaves concealed or transient items and Finder file copies alone. If another app copied something new in the meantime, it doesn't overwrite it. The contents are never stored or logged.
 - The Finder cut pending indicator only looks at the clipboard change count and the **number** of files (it doesn't read names).
 
@@ -65,7 +65,7 @@ This app assumes it **works only inside your own Mac**. It gathers powerful feat
 - Private APIs are called through `dlsym`, mostly read-only; on failure the feature is disabled.
 - No code injection into other apps, no `DYLD_INSERT_LIBRARIES`, no debugger attach.
 
-## 7. Ways to call the app from outside
+## 7. Calling the app from outside
 - The URL scheme (`<app>://`) and Shortcuts actions expose **only read/create operations** (e.g. run OCR, start a capture).
   - Shortcuts app actions (App Intents) can only be called from shortcuts the user made or from Spotlight, not from web pages, so they don't need a separate opt-in. Results are returned only to the shortcut, the clipboard is left alone, and they refuse if the feature is turned off.
   Moving or deleting files and changing settings can't be done through outside calls — this stops web pages from driving the app through links.
@@ -84,7 +84,7 @@ This app assumes it **works only inside your own Mac**. It gathers powerful feat
   - Homebrew cask: the post-install step (`postflight_steps`) removes the download flag (decided 2026-11-02). This applies only to people who trusted this cask with `brew trust`, and only to the app installed from the zip whose sha256 Homebrew checked against the cask. It skips macOS's first-launch check to that extent.
   - Sparkle updates: Sparkle removes the flag after checking the EdDSA signature.
 - Release builds don't keep rpaths pointing outside the app (the Xcode toolchain path of the build Mac) — `build-app.sh` removes them.
-- Personal builds are signed with a **fixed self-signed certificate** — ad-hoc signatures change with every build, which resets TCC permissions (Accessibility and others) every time, and training people to re-grant permissions is itself a risk.
+- Local builds are signed with a **fixed self-signed certificate** — ad-hoc signatures change with every build, which resets TCC permissions (Accessibility and others) every time, and training people to re-grant permissions is itself a risk.
 - Keep external dependencies to a minimum (currently 1: Sparkle). Version and checksum pinned (`scripts/fetch-sparkle.sh`) plus `dependency-audit`.
 - `secret-scan` before committing.
 

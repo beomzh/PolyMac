@@ -2,7 +2,7 @@
 
 **English** · [한국어](UNINSTALLER.ko.md)
 
-This document describes, at the same level of detail as the code, which files PolyMac treats as "belonging to this app" and what it never touches.
+This document spells out, as precisely as the code does, which files PolyMac treats as "belonging to this app" and what it never touches.
 The rules are implemented in `Sources/UninstallerCore/LeftoverScanner.swift`, with tests in `Tests/UninstallerCoreTests/`.
 
 ## 1. Principles

@@ -4,15 +4,15 @@
 
 ## 1. One-line concept
 
-**"The macOS helper tools you use every day, in one lightweight menu bar app."**
-Poly (many) + Mac. Many tools gathered into one, but split into modules, and modules you don't use are never loaded.
+**"The small macOS utilities you reach for every day, in one lightweight menu bar app."**
+Poly (many) + Mac. Many tools in one app, split into modules — and the modules you don't use never load.
 
 ## 2. Core principles
 
 1. **One entry point** — one menu bar icon, one Settings window, one place to manage shortcuts (with automatic conflict detection).
 2. **Zero when unused** — disabled modules don't load their code, and rarely used modules run as a separate process only when opened.
-3. **An unbroken flow** — capture → pin → markup → OCR → clipboard continues on one screen. Before, this meant switching between three apps.
-4. **Make it visible** — always show "what state things are in", like files waiting to be cut or files left behind after uninstalling an app.
+3. **An unbroken flow** — capture → pin → markup → OCR → clipboard continues on one screen. This used to mean juggling three apps.
+4. **Make it visible** — always show what is going on, like files waiting to be cut or files left behind after uninstalling an app.
 5. **Make it undoable** — deletes go to the Trash, moves are done in a way Finder's undo (`⌘Z`) works with.
 6. **Never leave your Mac** — no network or telemetry, no recorded key presses, no disabling SIP or code injection. Detailed rules in [SECURITY.md](SECURITY.md).
 7. **Public APIs first, private APIs opt-in** — private APIs sit behind feature flags, and the app must not crash if they disappear.
@@ -88,7 +88,7 @@ macOS today: `⌘C` then `⌘⌥V` does "move", but ① you can't see what was c
 
 ### 4.6 Complete app uninstall (replaces AppCleaner) — Feasible / Caution
 
-The complaint about AppCleaner = "you can't tell what is left where". So **classification and reasons** are the key difference.
+The common complaint about AppCleaner is that you can't tell what is left behind, or where. So **grouping leftovers and showing the reason for each** is what sets this apart.
 
 - **Search locations**: `~/Library/{Application Support, Caches, Preferences, Containers, Group Containers, Saved Application State, HTTPStorages, WebKit, Logs, LaunchAgents, Application Scripts}`, `/Library/{LaunchAgents, LaunchDaemons, PrivilegedHelperTools, Application Support}`, `pkgutil --pkgs` install receipts, login items/background items.
 - **Confidence shown per matching reason**:
@@ -123,12 +123,12 @@ The complaint about AppCleaner = "you can't tell what is left where". So **class
 
 **Cause**: macOS often creates file names in Unicode **NFD** (jamo spelled out separately, `ㅎ+ㅏ+ㄴ`), while Windows and most of the web expect **NFC** (the composed syllable `한`). So names of files sent, zipped or uploaded from a Mac show up as `ㅎㅏㄴㄱㅡㄹ` elsewhere. Finder shows both the same, so it's hard to notice.
 
-The fix is "convert to NFC before sending", blocked at each way in:
+The fix is to convert names to NFC before they leave the Mac, at every point where files come in:
 
 | Path | How |
 |---|---|
 | New files | Watch chosen folders (default: Downloads, Desktop, the screenshot location) with **FSEvents** → rename NFD file names to NFC automatically. Event-based, so zero idle cost |
-| Existing files | Finder right-click "Fix Korean filenames" → convert a folder recursively, with a preview before changing |
+| Existing files | Finder right-click "Fix Korean Filenames" → convert a folder recursively, with a preview before changing |
 | Archives | Finder right-click "Compress for Windows" → write file names inside the zip as NFC with the UTF-8 flag (macOS's built-in compression stores NFD) |
 | Clipboard | Normalize copied text and paths to NFC (file names copied from Finder are often NFD) |
 | Files PolyMac creates | Capture file names and the like are NFC from the start |
@@ -146,7 +146,7 @@ The fix is "convert to NFC before sending", blocked at each way in:
 
 ### 4.9 Downloads auto-organize (replaces Hazel) — Feasible
 
-Everyone organizes differently, so instead of **a fixed scheme, it's a rule engine the user puts together**.
+Everyone organizes files differently, so this is **a rule engine you assemble yourself, not a fixed scheme**.
 
 **Turning it on and off (3 levels)**
 1. The whole module on/off — off stops watching and unloads it from memory
@@ -193,7 +193,7 @@ Rules are stored as JSON and can be **exported/imported** to share with another 
 
 ### 4.10 Scope of "reverse engineering / private APIs" — Experimental
 
-Only where it really matters:
+Only where it is actually worth it:
 
 | Target | Use | Risk |
 |---|---|---|
@@ -205,9 +205,9 @@ Only where it really matters:
 - Closed-source apps like Snipaste, AppCleaner and Hazel are referenced **for UX only** (clean room); no decompiling or binary analysis. GPL and Commons Clause code is not copied either (the attribution policy in REFERENCES.md).
 - Every private API call is loaded dynamically with `dlsym` and the feature is disabled on failure. The app must never crash.
 
-## 5. Features worth adding, given reality
+## 5. Extra features worth adding
 
-Not in the original request, but very useful for the goal of "gathering tools into one":
+Not part of the original list, but they pay off well in an app that brings tools together:
 
 | Feature | Why | Cost |
 |---|---|---|
@@ -218,8 +218,8 @@ Not in the original request, but very useful for the goal of "gathering tools in
 
 ## 6. Success criteria (1.0.0)
 
-- **Delete** the Spectacle, TRex, Snipaste, AppCleaner and Maccy I was using **and go two weeks without missing them**
+- **Uninstall** Spectacle, TRex, Snipaste, AppCleaner and Maccy **and not miss them for two weeks**
 - 100% of NFD file names arriving in Downloads converted to NFC, Korean file names correct in zips opened on Windows
 - Idle memory 40 MB or less (Activity Monitor), energy impact "Low"
 - Korean screenshot OCR accuracy: 95%+ on typical UI text (measured with our own sample set)
-- Install with the Homebrew cask → permissions set up within 5 minutes
+- From installing with the Homebrew cask to finishing permission setup in under 5 minutes

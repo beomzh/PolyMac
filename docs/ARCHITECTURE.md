@@ -5,29 +5,29 @@
 ## 1. Overall structure
 
 ```
-┌──────────────────────── PolyMac.app (menu bar, LSUIElement) ───────────────────────┐
-│  PolyMacCore                                                                        │
-│   ├─ ModuleRegistry   : register, enable, disable modules (lazy init per settings)   │
-│   ├─ HotkeyCenter     : global shortcuts + conflict detection (Carbon RegisterEventHotKey) │
-│   ├─ EventTapHub      : one CGEventTap shared by all modules (more taps = more delay) │
-│   ├─ PermissionCenter : Accessibility/Screen Recording/Automation/Full Disk status  │
-│   └─ Settings / Log   : UserDefaults + os.Logger (per subsystem)                    │
-│                                                                                   │
-│  Resident modules (in-process, initialized only when turned on)                    │
-│   ├─ WindowModule    : window control through AXUIElement                          │
-│   ├─ CaptureModule   : overlay, pins, markup  ──→ OCRModule (lazy load on first use)│
+┌─────────────────────── PolyMac.app (menu bar, LSUIElement) ────────────────────────┐
+│  PolyMacCore                                                                       │
+│   ├─ ModuleRegistry   : registers and enables modules (lazy init per settings)     │
+│   ├─ HotkeyCenter     : global shortcuts + conflict check (RegisterEventHotKey)    │
+│   ├─ EventTapHub      : one CGEventTap shared by all modules (more taps add lag)   │
+│   ├─ PermissionCenter : Accessibility / Screen Recording / Automation / Full Disk  │
+│   └─ Settings / Log   : UserDefaults + os.Logger (per subsystem)                   │
+│                                                                                    │
+│  Resident modules (in-process, created only when turned on)                        │
+│   ├─ WindowModule    : moves and resizes windows via AXUIElement                   │
+│   ├─ CaptureModule   : overlay, pins, markup ──→ OCRModule (loaded on first use)   │
 │   ├─ FinderModule    : ⌘X remapping, send to folder                                │
-│   ├─ ClipboardModule : history storage, search, pins (SQLite + image files)        │
-│   ├─ NormalizeModule : FSEvents → NFD file names to NFC, clipboard normalization   │
-│   └─ OrganizeModule  : same FSEvents events → user rule engine → move/tag/trash     │
-└───────────────────────────────────────────────────────────────────────────────────┘
-        │ App Group (shared settings)           │ runs only when opened (NSWorkspace.open)
-        ▼                                       ▼
-┌─ PolyMacFinderSync.appex ─┐          ┌─ PolyMacUninstaller.app ─────────────┐
-│ Finder toolbar/right-click│          │ separate process, quits when closed  │
-│ (open terminal, copy path)│          │ scanner + results UI, admin work     │
-│ process managed by Finder │          │ via one-time auth dialog             │
-└──────────────────────────┘          └────────────────────────────────────┘
+│   ├─ ClipboardModule : history, search, pins (encrypted JSON + image files)        │
+│   ├─ NormalizeModule : FSEvents → NFD file names to NFC, clipboard cleanup         │
+│   └─ OrganizeModule  : same FSEvents events → user rules → move / tag / trash      │
+└────────────────────────────────────────────────────────────────────────────────────┘
+        │ App Group (shared settings)   │ runs only when opened (NSWorkspace.open)
+        ▼                               ▼
+┌─ PolyMacFinderSync.appex ───┐         ┌─ PolyMacUninstaller.app ────────────┐
+│ Finder toolbar / right-click│         │ separate process, quits on close    │
+│ (open terminal, copy path)  │         │ scanner + results UI; admin work    │
+│ process managed by Finder   │         │ via a one-time auth dialog          │
+└─────────────────────────────┘         └─────────────────────────────────────┘
 ```
 
 ## 2. Module design
@@ -38,7 +38,7 @@ A plugin structure that loads `.bundle`s at runtime is possible on macOS, but:
 - under the Hardened Runtime (library validation), loading bundles with a different signature is blocked (`library validation`) or needs an exception entitlement → weaker security
 - a Mach-O that has been loaded effectively can't be unloaded → "zero memory when off" can't be reached
 
-So **two approaches are mixed**:
+So PolyMac **mixes two approaches**:
 
 | Approach | Used for | When off |
 |---|---|---|

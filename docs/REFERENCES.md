@@ -6,7 +6,7 @@
 
 ## Attribution policy
 
-This document exists **for transparency, not as a legal obligation**. Making public what was referenced and how prevents misunderstandings about "copying" and gives a record if a problem ever comes up.
+This document exists **for transparency, not as a legal obligation**. Being open about what was referenced, and how, heads off accusations of copying and leaves a record if a question ever comes up.
 
 | Kind of reference | Allowed | What to do |
 |---|---|---|
