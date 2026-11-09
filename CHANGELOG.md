@@ -3,6 +3,9 @@
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
 [2026-11-09 21:17]
+- [Changed] - CHANGELOG.md: record the PR #38 (fix/ocr-worker-memory) push
+
+[2026-11-09 21:17]
 - [Fixed] - Sources/OCRModule/OCRWorker.swift: OCR text and table recognition run in a short-lived `--ocr-worker` child process that exits 60 s after its last request, because Vision keeps its model in the calling process (+154 MB after three OCRs) with no way to unload it
 - [Changed] - Sources/OCRModule/TextRecognizer.swift `OCRRunner`, Sources/OCRModule/TextTranslator.swift, Sources/PolyMacApp/Intents.swift: recognize through `OCRWorker.shared` (falls back to in-process outside an app bundle)
 - [Changed] - Sources/PolyMacApp/main.swift: start as the OCR worker when launched with `--ocr-worker`
