@@ -28,7 +28,7 @@ final class ClipboardPanelController {
     private(set) var panel: NSPanel?
     private var keyMonitor: Any?
     private var resignObserver: NSObjectProtocol?
-    private var model: ClipboardPanelModel?
+    private(set) var model: ClipboardPanelModel?
     private var callbacks: Callbacks?
 
     var isOpen: Bool { panel?.isVisible == true }
@@ -146,7 +146,7 @@ final class ClipboardPanelController {
         model?.prefetch()
     }
 
-    private func handle(_ event: NSEvent, _ callbacks: Callbacks) -> Bool {
+    func handle(_ event: NSEvent, _ callbacks: Callbacks) -> Bool {
         guard let model else { return false }
         let cmd = event.modifierFlags.contains(.command)
         switch Int(event.keyCode) {
@@ -174,8 +174,9 @@ final class ClipboardPanelController {
         }
         guard cmd, let key = event.latinKey else { return false }
         if key == "p", let id = model.selected?.id {
+            // 고정 상태의 주인은 기록 쪽이다. 기록이 바뀐 목록을 다시 넣어 주므로 여기서 또 뒤집지 않는다
+            // (또 뒤집으면 화면이 기록과 반대로 보이고, 다음 복사 때 실제 상태로 돌아가 고정이 풀린 것처럼 보인다)
             callbacks.togglePin(id)
-            model.togglePin(id)
             return true
         }
         // ⌘1~⌘9, ⌘0 = 10번째
@@ -285,11 +286,6 @@ final class ClipboardPanelModel: ObservableObject {
         guard !filtered.isEmpty else { return }
         let index = filtered.firstIndex { $0.id == highlightedID } ?? 0
         selectedID = filtered[min(max(index + delta, 0), filtered.count - 1)].id
-    }
-
-    func togglePin(_ id: UUID) {
-        guard let i = items.firstIndex(where: { $0.id == id }) else { return }
-        items[i].isPinned.toggle()
     }
 
     func remove(_ id: UUID) {
