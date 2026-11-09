@@ -2,6 +2,15 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-11-09 15:33]
+- [Changed] - CHANGELOG.md: PR #33 (fix/0.2.11-clipboard-pin) push 기록
+
+[2026-11-09 15:33]
+- [Fixed] - Sources/ClipboardModule/ClipboardPanel.swift `handle`: ⌘P가 기록과 패널 목록을 따로 뒤집어 화면의 고정 표시가 실제와 반대로 보이던 문제. 여러 개를 고정해도 다음 복사 때 풀린 것처럼 보이고 해제도 거꾸로 동작했다. 고정은 기록 쪽에서만 바꾸고 패널은 그 결과를 받는다
+- [Changed] - Sources/ClipboardModule/ClipboardPanel.swift `ClipboardPanelModel.togglePin`: 두 번 뒤집는 원인이라 삭제
+- [Added] - Tests/ClipboardModuleTests/ClipboardPinTests.swift: ⌘P 키로 여러 개 고정, 새 복사 뒤 유지, 다시 눌러 해제 (수정 전 실패 확인)
+- [Changed] - VERSION: 0.2.11
+
 [2026-11-09 14:48]
 - [Changed] - CHANGELOG.md: PR #32 (docs/readme-english) push 기록
 
