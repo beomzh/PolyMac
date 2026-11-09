@@ -18,7 +18,7 @@ if [[ "${1:-}" != "--dry" ]]; then
     [[ "$VERSION" != *-* ]] || { echo "✗ VERSION이 사전 배포($VERSION)입니다 — 정식 번호로 올린 뒤 묶으세요"; exit 1; }
     [[ -z "$(git status --porcelain)" ]] || { echo "✗ 커밋하지 않은 변경이 있습니다"; exit 1; }
     [[ "$(git describe --exact-match --tags HEAD 2>/dev/null || true)" == "v$VERSION" ]] \
-        || { echo "✗ HEAD에 태그 v$VERSION이 없습니다 — git tag -a v$VERSION -m \"PolyMac $VERSION\""; exit 1; }
+        || { echo "✗ HEAD에 태그 v${VERSION}이 없습니다 — git tag -a v$VERSION -m \"PolyMac $VERSION\""; exit 1; }
 fi
 
 scripts/build-app.sh
