@@ -2,6 +2,9 @@
 
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
+[2026-11-09 20:26]
+- [Changed] - CHANGELOG.md: record the PR #37 (docs/english-docs) push
+
 [2026-11-09 20:25]
 - [Added] - CONTRIBUTING.ko.md, THIRD_PARTY_NOTICES.ko.md, App/README.ko.md, docs/*.ko.md: Korean copies of every document, with a language switch line and links to the other Korean documents
 - [Changed] - CONTRIBUTING.md, THIRD_PARTY_NOTICES.md, App/README.md, docs/*.md: now in English, so every document has an English default like the README
