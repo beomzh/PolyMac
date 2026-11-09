@@ -2,6 +2,10 @@
 
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
+[2026-11-09 21:32]
+- [Fixed] - Sources/OCRModule/TextTranslator.swift `TranslationTaskView`: drop `await` on the synchronous `done` calls (compiler warning that failed the CI release-build step); same change as PR #38
+- [Fixed] - Sources/CaptureModule/PinPanel.swift: `case 123...126 where` so the condition covers all four arrow keys, not only the last (compiler warning); same change as PR #38
+
 [2026-11-09 21:25]
 - [Changed] - CHANGELOG.md: record the PR #39 (chore/ci) push
 

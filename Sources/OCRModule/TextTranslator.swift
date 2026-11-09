@@ -149,9 +149,9 @@ private struct TranslationTaskView: View {
                     for response in try await session.translations(from: requests) {
                         if let index = response.clientIdentifier.flatMap(Int.init) { translated[index] = response.targetText }
                     }
-                    await done(.success(TranslationText.rebuild(blocks, translated: translated)))
+                    done(.success(TranslationText.rebuild(blocks, translated: translated)))
                 } catch {
-                    await done(.failure(error))
+                    done(.failure(error))
                 }
             }
     }
