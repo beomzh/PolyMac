@@ -2,6 +2,17 @@
 
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
+[2026-11-09 21:39]
+- [Fixed] - scripts/build-app.sh: ship `LICENSE.txt` and `THIRD_PARTY_NOTICES.md` in `Contents/Resources`; release zips had no license text although Sparkle (MIT) and its bsdiff code (BSD) require the notice with binary copies
+- [Added] - scripts/package-release.sh: refuse to package an app without the two license files
+- [Added] - App/Info.plist: `NSHumanReadableCopyright` with the license and where the notices are
+- [Added] - scripts/build-number.sh: build number from VERSION (major*1,000,000 + minor*1,000 + patch, pre-release one less); the commit count let feature-branch builds outnumber the next release so Sparkle hid it, and gave 1 in shallow clones
+- [Changed] - scripts/build-app.sh: use scripts/build-number.sh for `CFBundleVersion`
+- [Added] - scripts/test.sh: build number checks, including that it stays above the last commit-count build (43)
+- [Fixed] - Sources/WindowModule/WindowModule.swift `frame(of:)`: check the AX value types before casting so an app returning something else cannot crash PolyMac
+- [Changed] - docs/RELEASING.md, docs/RELEASING.ko.md, THIRD_PARTY_NOTICES.md, THIRD_PARTY_NOTICES.ko.md: describe the build number and the bundled notices
+- [Changed] - VERSION: 0.2.18
+
 [2026-11-09 21:32]
 - [Changed] - CHANGELOG.md: record the PR #39 (chore/ci) push
 

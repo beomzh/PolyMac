@@ -51,6 +51,8 @@
     <false/>
     <key>SUVerifyUpdateBeforeExtraction</key>
     <true/>
+    <key>NSHumanReadableCopyright</key>
+    <string>Copyright © 2026 PolyMac contributors. MIT License. Third-party notices: Contents/Resources/THIRD_PARTY_NOTICES.md</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>LSUIElement</key>
