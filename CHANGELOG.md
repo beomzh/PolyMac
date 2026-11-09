@@ -2,6 +2,9 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-11-09 17:51]
+- [Changed] - CHANGELOG.md: PR #35 (fix/cask-postflight-steps) push 기록
+
 [2026-11-09 17:50]
 - [Fixed] - packaging/homebrew/polymac.rb: Homebrew 7에서 deprecated 경고가 나는 `postflight` 블록을 `postflight_steps`의 `run`으로 교체 (동작 동일, 임시 폴더에서 quarantine 제거 확인)
 - [Changed] - packaging/homebrew/polymac.rb: brew style 지적 반영 — desc 80자 미만, `depends_on macos: :sonoma`
