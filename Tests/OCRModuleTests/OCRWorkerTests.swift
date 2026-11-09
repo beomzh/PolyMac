@@ -56,10 +56,19 @@ func workerProcessRecognizesTables() async throws {
     #expect(try await worker.recognizeTables(image) == (try await TableRecognizer.recognize(image)))
 }
 
+@Test func missingWorkerExecutableFallsBackToInProcess() async throws {
+    let image = try #require(sample("english"))
+    let worker = OCRWorker(executable: URL(fileURLWithPath: "/nonexistent/PolyMac"))
+    #expect(try await worker.recognizeText(image, lineMode: .keep) == (try await TextRecognizer.recognize(image, lineMode: .keep)))
+    #expect(worker.workerPID == nil)
+}
+
 private let repoRoot = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
 
+/// POLYMAC_WORKER로 다른 실행 파일(예: 설치한 서명된 앱)을 일꾼으로 시험할 수 있다
 private let workerBinary: URL? = {
-    let url = repoRoot.appendingPathComponent(".build/debug/PolyMac")
+    let path = ProcessInfo.processInfo.environment["POLYMAC_WORKER"]
+    let url = path.map(URL.init(fileURLWithPath:)) ?? repoRoot.appendingPathComponent(".build/debug/PolyMac")
     return FileManager.default.isExecutableFile(atPath: url.path) ? url : nil
 }()
 

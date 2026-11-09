@@ -36,15 +36,23 @@ public final class OCRWorker: @unchecked Sendable {
     /// 글자 인식 (TextRecognizer.recognize와 같은 결과)
     public func recognizeText(_ image: CGImage, lineMode: OCRLineMode = .current) async throws -> String {
         guard executable != nil else { return try await TextRecognizer.recognize(image, lineMode: lineMode) }
-        let reply = try await send(Request(kind: .text, lineMode: lineMode.rawValue), image: image)
-        return reply.text ?? ""
+        do {
+            let reply = try await send(Request(kind: .text, lineMode: lineMode.rawValue), image: image)
+            return reply.text ?? ""
+        } catch WorkerError.launchFailed {
+            return try await TextRecognizer.recognize(image, lineMode: lineMode)
+        }
     }
 
     /// 표 인식 (TableRecognizer.recognize와 같은 결과)
     public func recognizeTables(_ image: CGImage) async throws -> [TableGrid] {
         guard executable != nil else { return try await TableRecognizer.recognize(image) }
-        let reply = try await send(Request(kind: .tables, lineMode: nil), image: image)
-        return (reply.tables ?? []).map(TableGrid.init(rows:))
+        do {
+            let reply = try await send(Request(kind: .tables, lineMode: nil), image: image)
+            return (reply.tables ?? []).map(TableGrid.init(rows:))
+        } catch WorkerError.launchFailed {
+            return try await TableRecognizer.recognize(image)
+        }
     }
 
     private func send(_ request: Request, image: CGImage) async throws -> Reply {
@@ -74,6 +82,16 @@ public final class OCRWorker: @unchecked Sendable {
                 return reply
             } catch WorkerError.message(let message) {
                 throw WorkerError.message(message)
+            } catch WorkerError.launchFailed {
+                // 일꾼을 띄울 수 없으면 앱 안에서 인식한다 (부르는 쪽). 일꾼이 인식 중에 죽은 경우는 여기로 오지 않는다 —
+                // 같은 이미지를 앱 안에서 다시 읽다가 앱까지 죽지 않게.
+                Self.logger.error("ocr worker could not start — recognizing in-process")
+                throw WorkerError.launchFailed
+            } catch WorkerError.timedOut {
+                // 같은 이미지를 다시 맡기면 또 오래 걸린다 — 일꾼만 끝내고 바로 실패로 돌린다
+                Self.logger.error("ocr worker timed out after \(Int(Self.timeoutSeconds)) s")
+                stop()
+                throw WorkerError.timedOut
             } catch {
                 Self.logger.notice("ocr worker attempt \(attempt) failed: \(String(describing: error), privacy: .public)")
                 stop()
@@ -94,7 +112,7 @@ public final class OCRWorker: @unchecked Sendable {
         process.standardInput = toWorker
         process.standardOutput = fromWorker
         process.standardError = FileHandle.nullDevice
-        try process.run()
+        do { try process.run() } catch { throw WorkerError.launchFailed }
         Self.logger.info("ocr worker started pid=\(process.processIdentifier)")
         self.process = process
         input = toWorker.fileHandleForWriting
@@ -199,11 +217,12 @@ public final class OCRWorker: @unchecked Sendable {
     }
 
     enum WorkerError: Error, CustomStringConvertible {
-        case closed, timedOut
+        case closed, timedOut, launchFailed
         case message(String)
         var description: String {
             switch self {
             case .closed: "worker closed"
+            case .launchFailed: "worker could not start"
             case .timedOut: "worker timed out"
             case .message(let message): message
             }
@@ -236,7 +255,8 @@ enum Frame {
         let fd = handle.fileDescriptor
         if let timeout {
             var poll = pollfd(fd: fd, events: Int16(POLLIN), revents: 0)
-            let ready = Darwin.poll(&poll, 1, Int32(timeout * 1000))
+            var ready: Int32
+            repeat { ready = Darwin.poll(&poll, 1, Int32(timeout * 1000)) } while ready < 0 && errno == EINTR
             if ready == 0 { throw OCRWorker.WorkerError.timedOut }
         }
         guard let head = try readExactly(4, fd) else { return nil }
