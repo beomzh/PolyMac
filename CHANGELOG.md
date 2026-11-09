@@ -2,6 +2,9 @@
 
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
+[2026-11-09 21:40]
+- [Changed] - CHANGELOG.md: record the PR #40 (fix/license-build-number) push
+
 [2026-11-09 21:39]
 - [Fixed] - scripts/build-app.sh: ship `LICENSE.txt` and `THIRD_PARTY_NOTICES.md` in `Contents/Resources`; release zips had no license text although Sparkle (MIT) and its bsdiff code (BSD) require the notice with binary copies
 - [Added] - scripts/package-release.sh: refuse to package an app without the two license files
