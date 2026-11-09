@@ -1,76 +1,78 @@
-# 로드맵
+# Roadmap
 
-각 단계 끝에 "기존 앱 하나를 지울 수 있는가"를 완료 기준으로 삼는다.
-버전 번호 규칙은 [RELEASING.md](RELEASING.md) 참고 — 아래 각 단계가 MINOR 버전 하나에 대응한다.
+**English** · [한국어](ROADMAP.ko.md)
 
-## 0.1.0 — 뼈대 + 창 분할 (Spectacle 졸업)
-- [x] 메뉴바 앱(SwiftPM), 환경설정 창(기능·언어·단축키·권한), 로그인 시 실행
-- [x] PolyMacCore: ModuleRegistry, HotkeyCenter(충돌 감지), 권한 안내
-- [x] WindowModule: ½·⅓·⅔, 최대화, 가운데, 다음 디스플레이, 되돌리기
-- [x] 가장자리 끌기 배치: ½·최대화·¼ (기본 꺼짐 — macOS 창 타일링과 겹침)
-- [x] Spectacle 기본 단축키 프리셋 (이주 비용 0)
-- [x] ¼ 배치 단축키 (기본 없음 — 환경 설정에서 지정)
+A stage is done when it lets you uninstall one of the apps it replaces.
+For version numbering see [RELEASING.md](RELEASING.md) — each stage below maps to one MINOR version.
 
-## 0.2.0 — 캡처·핀·마크업 (Snipaste 졸업)
-- [x] 영역 선택 오버레이, 창 자동 감지, 돋보기, 색상 추출
-- [x] 핀: 확대/축소, 투명도, 모든 Space 표시
-- [x] 마크업: 사각형·화살표·펜·텍스트·모자이크·번호 스탬프, **벡터 레이어로 재편집**
-- [x] 저장/복사
-- [x] 핀 클릭 통과, 드래그로 내보내기, 최근 캡처 기록
+## 0.1.0 — Skeleton + window layout (replaces Spectacle)
+- [x] Menu bar app (SwiftPM), Settings window (features, language, shortcuts, permissions), launch at login
+- [x] PolyMacCore: ModuleRegistry, HotkeyCenter (conflict detection), permission guidance
+- [x] WindowModule: ½ · ⅓ · ⅔, maximize, center, next display, undo
+- [x] Edge-drag snapping: ½ · maximize · ¼ (off by default — overlaps with macOS window tiling)
+- [x] Spectacle default shortcut preset (zero migration cost)
+- [x] ¼ layout shortcuts (none by default — set them in Settings)
 
-## 0.3.0 — OCR 자동화 (TRex 졸업)
-- [x] 캡처 → OCR → 클립보드 단축키, 결과 토스트
-- [x] 줄바꿈 정리 (그대로 / 문단으로 잇기 / 한 줄로)
-- [x] 작은 글씨 보정(2배 확대)·기호 정리 — 측정으로 결정 (docs/OCR-BENCH.md)
-- [x] 공백 보존: 줄 앞 들여쓰기 (코드·YAML·목록, 측정 docs/OCR-BENCH.md) — 언어 우선순위·사용자 단어장은 측정 결과 효과가 없거나 나빠서 하지 않음
-- [x] QR·바코드
-- [x] URL 감지(알림의 열기 단추, 누를 때만), 핀 위 라이브 텍스트 선택
-- [x] macOS 26+: 표 인식 → TSV/Markdown
-- [x] `polymac://ocr`·`ocr-table` URL 스킴 (단축어 X-Callback, 허용해야 동작)
-- [x] Shortcuts 앱 목록에 뜨는 동작 (App Intents — 이미지·화면 텍스트, 표, 한글 붙이기. Xcode 빌드에만)
-- [x] 한글 OCR 정확도 샘플셋 + 측정 스크립트 (`scripts/ocr-bench.sh`)
+## 0.2.0 — Capture · pin · markup (replaces Snipaste)
+- [x] Area selection overlay, automatic window detection, magnifier, color picker
+- [x] Pins: zoom, opacity, show on all Spaces
+- [x] Markup: rectangle, arrow, pen, text, mosaic, number stamp, **re-editable as vector layers**
+- [x] Save/copy
+- [x] Click-through pins, drag to export, recent capture history
 
-## 0.4.0 — 클립보드 히스토리 (Maccy 졸업)
-- [x] changeCount 감시 + 저장(JSON, 이미지·큰 텍스트는 별도 파일), 텍스트·이미지·파일
-- [x] 팝업, 검색, 고정
-- [x] Concealed/Transient 타입 무시, 앱별 제외, 일시정지
-- [x] 출처 앱 표시
-- [x] 저장 암호화 (AES-GCM, 키는 키체인)
-- [x] RTF, 서식 없이 붙여넣기, 출처 태그(OCR·캡처·경로 복사·색상)
-- [x] 캡처 핀으로 이동
+## 0.3.0 — OCR automation (replaces TRex)
+- [x] Capture → OCR → clipboard shortcut, result toast
+- [x] Line break cleanup (keep / join into paragraphs / one line)
+- [x] Small text boost (2x upscale) and symbol cleanup — decided by measurement (docs/OCR-BENCH.md)
+- [x] Whitespace preservation: leading indentation (code, YAML, lists, measured in docs/OCR-BENCH.md) — language priority and a custom word list were measured to have no effect or make things worse, so they are not done
+- [x] QR codes and barcodes
+- [x] URL detection (open button in the notification, only on click), live text selection on pins
+- [x] macOS 26+: table recognition → TSV/Markdown
+- [x] `polymac://ocr` · `ocr-table` URL scheme (Shortcuts X-Callback, works only when allowed)
+- [x] Actions listed in the Shortcuts app (App Intents — image and screen text, tables, Korean joining. Xcode builds only)
+- [x] Korean OCR accuracy sample set + measurement script (`scripts/ocr-bench.sh`)
 
-## 0.5.0 — Finder 도구 + 자소분리 해결
-- [x] `⌘X` / `⌘V` 잘라내기 (Finder 안에서만)
-- [x] 지정 폴더로 보내기 (이동/복사)
-- [x] 우클릭(서비스 메뉴): 터미널 열기(Terminal/iTerm2/Ghostty/Warp), 경로 복사
-- [x] 에디터로 열기 (`⌃⌥E`, 우클릭, 에디터 앱 선택)
-- [x] 잘라내기 대기 표시 (개수, 취소 버튼, Finder가 앞에 있을 때만)
-- [x] 감시 폴더 NFD → NFC 자동 변환 (iCloud 제외)
-- [x] 우클릭 "한글 파일명 정리"(확인 후 하위 폴더까지, 번들·.git 제외), "Windows용으로 압축"
-- [x] 복사한 글자의 풀어진 한글 붙이기 (한글 낱자만, 비밀번호·파일 복사 제외)
+## 0.4.0 — Clipboard history (replaces Maccy)
+- [x] changeCount polling + storage (JSON, images and large text in separate files), text, images, files
+- [x] Popup, search, pinning
+- [x] Ignore Concealed/Transient types, per-app exclusions, pause
+- [x] Show source app
+- [x] Encryption at rest (AES-GCM, key in the keychain)
+- [x] RTF, paste without formatting, source tags (OCR, capture, path copy, color)
+- [x] Jump to the capture pin
 
-## 0.6.0 — 다운로드 폴더 자동 정리 (Hazel 졸업)
-- [x] 규칙 엔진: 조건(확장자·종류·이름 패턴·사이트·크기·기간·미열람·중복·NOT) × AND/OR × 동작(이동·복사·이름변경·태그·휴지통·알림)
-- [x] 모듈 / 감시 폴더 / 규칙별 on/off
-- [x] 규칙 편집 화면 (순서 바꾸기, 조건·동작 추가/삭제, 폴더 고르기)
-- [x] 순서 드래그
-- [x] 템플릿 토큰 자동완성 (예시 미리보기, 오타 표시)
-- [x] 미리보기 모드(dry-run), 다운로드 완료 대기, 이름 충돌 처리
-- [x] 처리 기록 + 되돌리기, 처리 알림
-- [x] 프리셋 5종
-- [x] 규칙 JSON 내보내기/가져오기 (가져온 규칙은 꺼진 상태, 새 버전 파일 거부)
+## 0.5.0 — Finder tools + Korean filename fix
+- [x] `⌘X` / `⌘V` cut (inside Finder only)
+- [x] Send to a chosen folder (move/copy)
+- [x] Right-click (Services menu): open terminal (Terminal/iTerm2/Ghostty/Warp), copy path
+- [x] Open in editor (`⌃⌥E`, right-click, editor app choice)
+- [x] Cut pending indicator (count, cancel button, only while Finder is in front)
+- [x] Automatic NFD → NFC conversion in watched folders (iCloud excluded)
+- [x] Right-click "Fix Korean Filenames" (after confirmation, including subfolders, bundles and .git excluded), "Compress for Windows"
+- [x] Joining decomposed Korean in copied text (Korean letters only, passwords and file copies excluded)
 
-## 0.7.0 — Uninstaller (AppCleaner 졸업)
-- [x] UninstallerCore 스캐너 + 확신도 규칙 + 단위 테스트(가짜 Library 트리)
-- [x] 삭제 창(열 때만 생성): 종류별 그룹·용량·설명, 앱 드래그 앤 드롭
-- [x] Finder 휴지통 이동(되돌려 놓기·관리자 암호는 Finder가), 실행 중 앱 종료, 백그라운드 항목 내리기
-- [x] 이미 지운 앱의 흔적 스캔 (실행 파일 존재·사용 중 도우미 제외)
-- [x] 설치 기록 정리(`pkgutil --forget`), 삭제 전 목록 내보내기
+## 0.6.0 — Downloads auto-organize (replaces Hazel)
+- [x] Rule engine: conditions (extension, kind, name pattern, website, size, age, unopened, duplicate, NOT) × AND/OR × actions (move, copy, rename, tag, trash, notify)
+- [x] On/off per module / watched folder / rule
+- [x] Rule editor (reorder, add/remove conditions and actions, pick folders)
+- [x] Drag to reorder
+- [x] Template token autocomplete (example preview, typo marking)
+- [x] Preview mode (dry-run), wait for downloads to finish, name conflict handling
+- [x] History + undo, notifications
+- [x] 5 presets
+- [x] Rule JSON export/import (imported rules start off, files from newer versions rejected)
 
-## 1.0.0 — 배포
-- [x] Sparkle 자동 업데이트(EdDSA 서명, 공증 없이 동작, 기본 꺼짐) + 개인 Homebrew tap (0.2.0에 앞당김)
-- [x] 권한 대시보드(상태 4종·다시 실행·권한 기록 지우기·풀린 권한 알림), 시작 안내
-- [ ] 자원 예산 회귀 테스트(CI)
+## 0.7.0 — Uninstaller (replaces AppCleaner)
+- [x] UninstallerCore scanner + confidence rules + unit tests (fake Library tree)
+- [x] Uninstall window (created only when opened): grouped by kind, sizes, descriptions, drag and drop apps
+- [x] Move to Trash through Finder (Put Back and administrator password handled by Finder), quit running apps, unload background items
+- [x] Scan for leftovers of apps already deleted (excluding existing executables and helpers in use)
+- [x] Clean up install receipts (`pkgutil --forget`), export the list before deleting
 
-## 이후 후보
-잠자기 방지 · 스크롤 캡처 · GIF 녹화 · Space 이동(비공개 API, 옵트인)
+## 1.0.0 — Release
+- [x] Sparkle automatic updates (EdDSA signatures, works without notarization, off by default) + personal Homebrew tap (moved up to 0.2.0)
+- [x] Permission dashboard (4 states, relaunch, clear permission records, alert when a permission is revoked), welcome guide
+- [ ] Resource budget regression tests (CI)
+
+## Later candidates
+Keep awake · scrolling capture · GIF recording · moving between Spaces (private API, opt-in)

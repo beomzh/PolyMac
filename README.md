@@ -471,7 +471,7 @@ Matches Spectacle's default shortcuts, so moving over feels the same.
   - Table format (menu › Text Recognition (OCR) › Table format): **Excel / Numbers** (default, tab-separated text — pasting into Excel, Numbers or Google Sheets splits it into cells; Pages and Notes get a table) / **Markdown table** (first row is the header)
   - Merged cells put the text only in the top-left cell and leave the rest empty. Line breaks inside a cell become a space.
   - If no table is found, it copies plain text. On macOS 14–15 it always copies plain text.
-  - Measured: on 6 synthetic tables, rows and columns 6/6, cells 95.8% match ([measurements](docs/OCR-BENCH.md#표-인식)). Key symbols such as `⌃⇧` are read poorly.
+  - Measured: on 6 synthetic tables, rows and columns 6/6, cells 95.8% match ([measurements](docs/OCR-BENCH.md#table-recognition)). Key symbols such as `⌃⇧` are read poorly.
 - **Call it from Shortcuts** — off by default. Turn on menu › Text Recognition (OCR) › **Allow Shortcuts & URLs** for it to work (because a web page link could also call it).
   - `polymac://ocr`: clipboard image → text on the clipboard
   - `polymac://ocr-table`: clipboard image → table on the clipboard (choose the format with `?format=markdown` or `?format=tsv`; without it, the menu setting is used)

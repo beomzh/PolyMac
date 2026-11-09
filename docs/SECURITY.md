@@ -1,91 +1,93 @@
-# 보안 원칙
+# Security principles
 
-이 앱은 **내 Mac 안에서만 동작**하는 것을 전제로 한다. 접근성·화면 기록·클립보드·파일 이동처럼 권한이 큰 기능을 모아둔 앱이라, 한 곳이 뚫리면 피해도 크다. 아래 원칙은 기능보다 우선한다.
+**English** · [한국어](SECURITY.ko.md)
 
-## 1. 네트워크: 기본적으로 없음
-- OCR(Vision), 번역(Translation), 파일 정리, 클립보드 — **모두 온디바이스**, 외부 서버 호출 없음.
-- 번역할 글은 기기 밖으로 나가지 않는다. 처음 쓸 때 언어 모델이 없으면 macOS가 내려받을지 묻고, 받는 일은 시스템 서비스가 한다 (PolyMac이 직접 연결하지 않음). 로그에는 언어·글자 수·걸린 시간만 남기고 글 내용은 남기지 않는다.
-- 텔레메트리·분석·크래시 업로드 **없음**.
-- 예외: 자동 업데이트(Sparkle 2.10.0) — **기본 꺼짐.** 메뉴의 "업데이트 확인…"을 누르거나 환경 설정에서 자동 확인(하루 한 번)을 켰을 때만
-  `https://github.com/beomzh/PolyMac/releases/latest/download/appcast.xml`을 읽는다.
-  - 기기 정보 보내기(`SUEnableSystemProfiling`) 꺼짐, 자동 설치(`SUAutomaticallyUpdate`) 꺼짐 — 설치 전에 항상 묻는다.
-  - 받은 zip은 EdDSA 서명이 Info.plist의 `SUPublicEDKey`와 맞아야만 푼다(`SUVerifyUpdateBeforeExtraction`). 비밀 키는 배포자 키체인에만 있다.
-  - 공개 키(`App/sparkle-public-key.txt`)가 없는 빌드(직접 빌드)는 업데이트 기능을 시작하지 않는다.
-- 검증: 릴리스 전 `nettop`/Little Snitch로 유휴·기능 사용 중 외부 연결 0건 확인.
+PolyMac is built to **work entirely on your own Mac**. It bundles powerful capabilities — Accessibility, Screen Recording, the clipboard, moving files — so a single weak spot could do a lot of harm. The principles below come before any feature.
 
-## 2. 입력 감시 (이벤트 탭)
-- 키 입력은 **단축키 판정에만 메모리에서 사용**, 디스크·로그에 절대 기록하지 않음 (키 로거가 되지 않게).
-- Finder `⌘X` 리매핑 외에는 수정 권한 없는 **listen-only 탭** 사용.
-- 이벤트 탭은 Finder가 최전면일 때만 의미 있는 처리를 하고, 나머지는 즉시 통과.
-- **활성 이벤트 탭은 Mac 전체 키 입력의 경로**이므로 콜백이 막히면 시스템 키 입력이 멈춘다. 그래서
-  - 탭은 메인 스레드가 아닌 **전용 스레드**에서 돌린다 (메인 스레드는 AppleScript·메뉴·모달로 잠깐씩 막힐 수 있음).
-  - 콜백 안에서 다른 앱에 묻는 손쉬운 사용 API에는 **0.1초 타임아웃** (기본 6초). 확인이 안 되면 건드리지 않고 통과.
-  - 콜백 안에서 메인 스레드를 기다리지 않는다 (앞에 있는 앱은 전환 알림으로 미리 받아 둔다).
-  - PolyMac이 직접 보내는 키 이벤트에는 표식을 달아 자기 탭이 다시 가로채지 않게 한다.
+## 1. Network: none by default
+- OCR (Vision), translation (Translation), file organizing and the clipboard are **all on-device**, with no calls to outside servers.
+- Text to translate never leaves the device. The first time, if the language model is missing, macOS asks whether to download it, and a system service does the download (PolyMac does not connect itself). Logs keep only the languages, character count and time taken, never the text.
+- **No** telemetry, analytics or crash uploads.
+- Exception: automatic updates (Sparkle 2.10.0) — **off by default.** Only when you click "Check for Updates…" in the menu or turn on automatic checks (once a day) in Settings does it read
+  `https://github.com/beomzh/PolyMac/releases/latest/download/appcast.xml`.
+  - Sending device info (`SUEnableSystemProfiling`) is off, automatic install (`SUAutomaticallyUpdate`) is off — it always asks before installing.
+  - A downloaded zip is extracted only if its EdDSA signature matches `SUPublicEDKey` in Info.plist (`SUVerifyUpdateBeforeExtraction`). The private key exists only in the publisher's keychain.
+  - Builds without the public key (`App/sparkle-public-key.txt`), i.e. your own builds, don't start the update feature.
+- Verification: before each release, confirm with `nettop` or Little Snitch that there are no outbound connections, both idle and while using features.
 
-- 전역 키 감시(`Esc`로 캡처 취소·핀 닫기)는 **캡처 중이거나 핀이 떠 있을 때만** 설치하고, `Esc` 외의 키는 보지 않고 버린다.
+## 2. Input monitoring (event taps)
+- Key presses are **used in memory only to match shortcuts** and are never written to disk or logs (so it can't become a key logger).
+- Except for the Finder `⌘X` remapping, it uses **listen-only taps** that can't modify events.
+- The event tap only does real work when Finder is frontmost and lets everything else through immediately.
+- **An active event tap sits in the path of every key press on the Mac**, so if its callback blocks, system typing stops. Therefore
+  - the tap runs on a **dedicated thread**, not the main thread (the main thread can briefly block on AppleScript, menus and modals).
+  - Accessibility calls inside the callback that ask another app get a **0.1-second timeout** (default 6 seconds). If it can't confirm, it passes the event through untouched.
+  - the callback never waits on the main thread (the frontmost app is tracked in advance from activation notifications).
+  - key events PolyMac sends itself are marked so its own tap doesn't intercept them again.
 
-## 2-1. 화면을 덮는 창
-- 캡처 영역 선택처럼 **전체 화면을 덮는 창은 어떤 상황에서도 빠져나올 수 있어야** 한다: 포커스와 무관한 `Esc`, 우클릭, 화면 구성 변경 시 자동 취소, 60초 자동 취소.
-- 다른 앱이나 Finder에 동기로 묻는 작업(AppleScript 등)은 메인 스레드에서 하지 않는다.
+- The global key monitor (`Esc` to cancel a capture or close a pin) is installed **only while capturing or while a pin is open**, and ignores every key except `Esc`.
 
-## 3. 클립보드 히스토리
-- `ConcealedType`/`TransientType` 항목, 비밀번호 관리자 앱은 기록하지 않음 (기본값).
-- 저장 위치 `~/Library/Application Support/PolyMac/` — 디렉터리 `0700`, 파일 `0600`. 이미지는 `clipboard-images/`에 PNG로 따로 (`0600`).
-- **저장 암호화**: 목록(`clipboard.json`)·이미지·긴 텍스트 파일을 AES-GCM(256비트)으로 봉인한다 (`SealedFiles`, 파일 머리 `PMS1`). 파일 권한만으로는 같은 사용자 권한으로 도는 프로그램을 막지 못하므로, 키를 **키체인**(일반 암호 항목, `dev.polymac` / `clipboard-history`, 이 기기에서만)에 두고 디스크에는 평문 키를 두지 않는다. 키체인 항목은 만든 앱과 같은 서명만 묻지 않고 읽는다.
-  - 키를 못 읽으면(키체인 잠김·거절) **새 키를 만들지 않는다** — 만들면 예전 기록을 영영 못 연다. 그 실행 동안은 디스크에 쓰지 않고 메모리에만 (평문으로도 쓰지 않음).
-  - 키는 백그라운드에서 읽는다. 키체인이 허용 창을 띄우고 답을 기다려도 앱 시작과 다른 기능은 멈추지 않는다. 답을 기다리는 동안 복사한 것은 메모리에만 두고(디스크 쓰기 없음 — 저장된 기록을 짧은 목록으로 덮어쓰지 않게), 키가 오면 저장된 기록을 열어 그 위에 얹는다.
-  - 열 수 없는 목록은 지우지 않고 `clipboard.unreadable-<시각>.json`으로 옮긴다.
-  - 암호화 이전 평문 파일은 처음 한 번 봉인해 다시 쓴다. APFS/SSD에서는 예전 블록이 남을 수 있으므로 디스크 수준 보호는 FileVault에 맡긴다.
-- **보관 기간 기본 7일** + 보관 개수 제한 (고정 항목 제외). 지우면 따로 저장한 이미지·텍스트 파일도 즉시 삭제.
-- 한 항목 크기 제한: 텍스트 20 MB (64 KB 넘으면 별도 파일), 이미지 30 MB.
-- "기록 일시정지", "기록 지우기(고정 제외)" 메뉴 제공.
-- **클립보드를 다시 쓰는 곳은 한 군데** — 한글 자소분리 정리(Normalize)가 풀어진 한글 낱자를 완성형으로 붙일 때뿐이다. 낱자 조합만 바꾸고(전체 NFC가 아님), 감춘·잠깐 쓰는 항목과 Finder 파일 복사는 건드리지 않는다. 읽는 사이 다른 앱이 새로 복사했으면 덮어쓰지 않는다. 내용은 저장하거나 기록하지 않는다.
-- Finder 잘라내기 대기 표시는 클립보드 번호와 파일 **개수**만 본다 (이름은 읽지 않음).
+## 2-1. Full-screen overlays
+- **Any window that covers the whole screen, such as capture area selection, must always offer a way out**: `Esc` regardless of focus, right-click, automatic cancel when the screen layout changes, and automatic cancel after 60 seconds.
+- Work that synchronously asks other apps or Finder (AppleScript and the like) is never done on the main thread.
 
-## 4. 파일 조작 (자소분리 · 자동 정리 · 잘라내기 · 앱 삭제)
-- **영구 삭제 없음** — 삭제는 전부 휴지통(`FileManager.trashItem`).
-- **덮어쓰기 없음** — 이름 충돌 시 `이름 (2)`.
-- 템플릿에 들어가는 파일 이름·도메인 값은 `/`, `:`, `..`를 치환해 **경로 탈출 불가** (RuleEngine.render).
-- 이름 변경 동작의 결과는 반드시 **한 단계 파일 이름**이어야 하고, 실행기는 이동 대상 경로를 `realpath`로 해석한 뒤 사용자 홈 아래인지 검증.
-- 감시 폴더 밖을 가리키는 **심볼릭 링크는 따라가지 않음**.
-- 모든 처리는 기록(로그 + 되돌리기 목록)을 남김.
+## 3. Clipboard history
+- `ConcealedType`/`TransientType` items and password manager apps are not recorded (default).
+- Stored in `~/Library/Application Support/PolyMac/` — directory `0700`, files `0600`. Images are stored separately as PNG in `clipboard-images/` (`0600`).
+- **Encryption at rest**: the list (`clipboard.json`), images and long text files are sealed with AES-GCM (256-bit) (`SealedFiles`, file header `PMS1`). File permissions alone don't stop programs running as the same user, so the key lives in the **keychain** (generic password item, `dev.polymac` / `clipboard-history`, this device only) and no plaintext key is kept on disk. Only an app with the same signature as the one that created the item can read it without asking.
+  - If the key can't be read (keychain locked or access denied), it **does not create a new key** — that would make the old history unreadable forever. For that run nothing is written to disk; history stays in memory only (never written in plaintext either).
+  - The key is read in the background. Even while the keychain shows its prompt and waits for an answer, app launch and other features don't stall. Anything copied while waiting stays in memory only (no disk writes — so the saved history isn't overwritten by a short list), and once the key arrives the saved history is opened and the new items are added on top.
+  - A list that can't be opened is not deleted but moved to `clipboard.unreadable-<time>.json`.
+  - Plaintext files from before encryption are sealed and rewritten once on first run. On APFS/SSD old blocks may remain, so disk-level protection is left to FileVault.
+- **Kept for 7 days by default** plus a limit on the number of items (pinned items excluded). When an item is deleted, its separately stored image or text file is deleted right away too.
+- Size limit per item: text 20 MB (over 64 KB goes to a separate file), images 30 MB.
+- "Pause Recording" and "Clear History (keeps pinned)" menu items are provided.
+- **The clipboard is rewritten in only one place** — when Korean filename fix (Normalize) joins decomposed Korean letters back into composed syllables. It only changes how letters are combined (not a full NFC pass), and leaves concealed or transient items and Finder file copies alone. If another app copied something new in the meantime, it doesn't overwrite it. The contents are never stored or logged.
+- The Finder cut pending indicator only looks at the clipboard change count and the **number** of files (it doesn't read names).
 
-## 5. 관리자 권한 (Uninstaller)
-- **상주하는 권한 상승 헬퍼(PrivilegedHelperTool / SMJobBless) 설치하지 않음.** 전체 디스크 접근 권한도 요구하지 않음.
-- 삭제는 PolyMac이 직접 하지 않고 **Finder에게 휴지통으로 옮기게** 한다 — "되돌려 놓기"가 되고, `/Library` 아래 항목은 Finder가 그때만 관리자 암호를 묻는다.
-- 경로는 AppleScript 문자열에 끼워 넣지 않고 **인수로 넘긴다** (따옴표·`&` 등이 든 파일 이름으로 스크립트가 조작되지 않음 — 실제로 확인).
-- 탐색 위치는 정해진 Library 폴더들뿐이고, macOS 기본 앱(`com.apple.*`, `/System`)과 PolyMac 자신은 대상에서 제외.
-- "이미 지운 앱의 흔적"은 실행 파일이 남아 있는 백그라운드 서비스와 등록된 서비스가 쓰는 파일을 제외해, 앱 없이 설치되는 보안 프로그램 등을 깨뜨리지 않는다.
+## 4. File operations (Korean filename fix · auto-organize · cut · app uninstall)
+- **No permanent deletion** — every delete goes to the Trash (`FileManager.trashItem`).
+- **No overwriting** — on a name conflict, `name (2)`.
+- File name and domain values inserted into templates have `/`, `:` and `..` replaced, so **paths can't escape** (RuleEngine.render).
+- The result of a rename action must be a **single-level file name**, and the executor resolves the move destination with `realpath` and checks that it is under the user's home.
+- **Symbolic links pointing outside the watched folder are not followed**.
+- Every operation leaves a record (log + undo list).
 
-## 6. 비공개 API · 다른 프로세스
-- **SIP 해제를 요구하는 기능은 만들지 않음** (yabai의 scripting addition 같은 다른 프로세스 코드 주입 금지).
-- 비공개 API는 `dlsym` 읽기 위주 호출만, 실패 시 기능 비활성.
-- 다른 앱에 코드 주입·`DYLD_INSERT_LIBRARIES`·디버거 attach 없음.
+## 5. Administrator privileges (Uninstaller)
+- **No resident privilege escalation helper (PrivilegedHelperTool / SMJobBless) is installed.** Full Disk Access is not required either.
+- PolyMac doesn't delete files itself; it **asks Finder to move them to the Trash** — so "Put Back" works, and for items under `/Library` Finder asks for the administrator password only then.
+- Paths are **passed as arguments**, not spliced into AppleScript strings (so file names containing quotes, `&` and the like can't tamper with the script — verified).
+- It only searches a fixed set of Library folders, and excludes macOS's own apps (`com.apple.*`, `/System`) and PolyMac itself.
+- "Leftovers of apps already deleted" excludes background services whose executables still exist and files used by registered services, so things like security software installed without an app aren't broken.
 
-## 7. 외부에서 앱을 부르는 경로
-- URL 스킴(`<앱>://`)과 단축어(Shortcuts) 액션은 **읽기/생성 계열만** 노출 (예: OCR 실행, 캡처 시작).
-  - 단축어 앱 동작(App Intents)은 사용자가 만든 단축어·Spotlight에서만 불리고 웹 페이지가 부를 수 없어 따로 허용하지 않는다. 결과는 단축어로만 돌려주고 클립보드를 건드리지 않으며, 해당 기능을 꺼 두면 거절한다.
-  파일 이동·삭제·설정 변경은 외부 호출로 실행할 수 없음 — 웹페이지가 링크로 앱을 조작하는 것을 막기 위함.
-- 설정·규칙 JSON 가져오기는 검증 후 **미리보기 모드로만** 적용.
-- 인식한 글(OCR·QR) 속 웹 주소는 **저절로 열지 않는다.** 알림에 실제로 열릴 호스트를 보여 주는 단추만 띄우고, 사용자가 눌러야 연다 (http·https만, 최대 3개).
+## 6. Private APIs · other processes
+- **No feature requires disabling SIP** (no code injection into other processes like yabai's scripting addition).
+- Private APIs are called through `dlsym`, mostly read-only; on failure the feature is disabled.
+- No code injection into other apps, no `DYLD_INSERT_LIBRARIES`, no debugger attach.
 
-## 8. 빌드 · 서명
-- Hardened Runtime 켬, 불필요한 entitlement 없음.
-- `com.apple.security.cs.disable-library-validation` — 0.2.0부터 켬 (2026-11-02 결정). 앱 안의 Sparkle.framework를 불러오려면 필요하다:
-  라이브러리 검증은 "같은 팀 ID로 서명된 것만" 불러오는데 자체 서명 인증서에는 팀 ID가 없어, 같은 인증서로 서명해도 막힌다.
-  - 영향: 앱 번들 안(관리자만 쓸 수 있는 `/Applications`)의 라이브러리를 팀 ID 확인 없이 불러온다.
-  - 그대로인 것: `DYLD_INSERT_LIBRARIES` 등 환경 변수 주입 차단(`allow-dyld-environment-variables` 없음), 실행 중 코드 수정 차단, 앱·프레임워크 서명 검사.
-  - Apple 개발자 프로그램에 가입해 팀 ID로 서명하게 되면 이 항목을 뺀다.
-- 다른 Mac에서의 첫 실행: 자체 서명 인증서는 받는 Mac이 믿지 않아 Gatekeeper가 "손상됨"으로 막는다 (서명 자체는 유효 — `codesign --verify`).
-  - 받은 zip: 사용자가 sha256을 확인한 뒤 `xattr -dr com.apple.quarantine`으로 직접 연다.
-  - Homebrew cask: 설치 후 단계(`postflight_steps`)에서 다운로드 표시를 지운다 (2026-11-02 결정). `brew trust`로 이 cask를 믿은 사람에게만 해당되고, Homebrew가 cask의 sha256을 확인한 zip에서 설치된 앱만 대상이다. 그만큼 macOS의 첫 실행 검사를 건너뛴다.
-  - Sparkle 업데이트: EdDSA 서명을 확인한 뒤 Sparkle이 표시를 지운다.
-- 배포 빌드에는 앱 밖을 가리키는 rpath(빌드한 Mac의 Xcode 툴체인 경로)를 남기지 않는다 — `build-app.sh`가 지운다.
-- 내 PC 전용 빌드는 **고정된 자체 서명 인증서**로 서명 — ad-hoc 서명은 빌드마다 서명이 바뀌어 TCC 권한(접근성 등)이 매번 초기화되고, 권한 재부여를 습관화시키는 것 자체가 위험.
-- 외부 의존성 최소화 (현재 1개: Sparkle). 버전·체크섬 고정(`scripts/fetch-sparkle.sh`) + `dependency-audit`.
-- 커밋 전 `secret-scan`.
+## 7. Calling the app from outside
+- The URL scheme (`<app>://`) and Shortcuts actions expose **only read/create operations** (e.g. run OCR, start a capture).
+  - Shortcuts app actions (App Intents) can only be called from shortcuts the user made or from Spotlight, not from web pages, so they don't need a separate opt-in. Results are returned only to the shortcut, the clipboard is left alone, and they refuse if the feature is turned off.
+  Moving or deleting files and changing settings can't be done through outside calls — this stops web pages from driving the app through links.
+- Imported settings or rule JSON is validated and applied **only in preview mode**.
+- Web addresses found in recognized text (OCR, QR) are **never opened automatically.** The notification only shows a button with the host that would actually open, and it opens only when the user clicks (http and https only, up to 3).
 
-## 9. 권한은 필요한 만큼만
-- 모듈을 처음 켤 때 그 모듈에 필요한 권한만 요청. 모듈을 끄면 권한 해제 방법을 안내.
-- 전체 디스크 접근은 Uninstaller 별도 앱에만 — 메인 앱에는 요청하지 않음.
+## 8. Build · signing
+- Hardened Runtime on, no unnecessary entitlements.
+- `com.apple.security.cs.disable-library-validation` — on since 0.2.0 (decided 2026-11-02). It's needed to load the Sparkle.framework inside the app:
+  library validation only loads code "signed with the same team ID", and a self-signed certificate has no team ID, so it's blocked even when signed with the same certificate.
+  - Effect: libraries inside the app bundle (in `/Applications`, writable only by administrators) are loaded without a team ID check.
+  - Unchanged: injection through environment variables like `DYLD_INSERT_LIBRARIES` is still blocked (no `allow-dyld-environment-variables`), runtime code modification is blocked, and app and framework signatures are checked.
+  - If the project joins the Apple Developer Program and signs with a team ID, this entitlement will be removed.
+- First launch on another Mac: the receiving Mac doesn't trust a self-signed certificate, so Gatekeeper blocks the app as "damaged" (the signature itself is valid — `codesign --verify`).
+  - Downloaded zip: the user checks the sha256 and opens it themselves with `xattr -dr com.apple.quarantine`.
+  - Homebrew cask: the post-install step (`postflight_steps`) removes the download flag (decided 2026-11-02). This applies only to people who trusted this cask with `brew trust`, and only to the app installed from the zip whose sha256 Homebrew checked against the cask. It skips macOS's first-launch check to that extent.
+  - Sparkle updates: Sparkle removes the flag after checking the EdDSA signature.
+- Release builds don't keep rpaths pointing outside the app (the Xcode toolchain path of the build Mac) — `build-app.sh` removes them.
+- Local builds are signed with a **fixed self-signed certificate** — ad-hoc signatures change with every build, which resets TCC permissions (Accessibility and others) every time, and training people to re-grant permissions is itself a risk.
+- Keep external dependencies to a minimum (currently 1: Sparkle). Version and checksum pinned (`scripts/fetch-sparkle.sh`) plus `dependency-audit`.
+- `secret-scan` before committing.
+
+## 9. Only the permissions needed
+- When a module is turned on for the first time, request only the permissions that module needs. When a module is turned off, explain how to revoke its permissions.
+- Full Disk Access only for the separate Uninstaller app — never requested by the main app.

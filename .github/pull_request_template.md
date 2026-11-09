@@ -10,4 +10,4 @@
 - [ ] Settings format change: none / yes (migration: )
 - [ ] THIRD_PARTY_NOTICES.md updated if third-party code was added
 - [ ] CHANGELOG.md entry added
-- [ ] README.md and README.ko.md updated together (if README changed)
+- [ ] English and Korean versions updated together (NAME.md and NAME.ko.md, if a document changed)

@@ -1,45 +1,47 @@
-# OCR 정확도 측정
+# OCR accuracy measurements
 
-텍스트 추출(OCR) 설정을 바꿀 때 근거로 삼는 측정 방법과 결과입니다. 모두 이 Mac 안에서 Apple Vision으로 돌고, 인터넷을 쓰지 않습니다.
+**English** · [한국어](OCR-BENCH.ko.md)
 
-## 실행
+How OCR accuracy is measured, and the results that OCR setting changes are based on. Everything runs on this Mac with Apple Vision, without the internet.
+
+## Running
 
 ```bash
 scripts/ocr-bench.sh
 ```
 
-- `-v`를 붙이면 틀린 샘플의 정답과 인식 결과를 함께 보여 줍니다.
-- 다른 폴더를 재려면 `scripts/ocr-bench.sh <폴더>`.
-- 샘플 다시 만들기: `swift scripts/make-ocr-samples.swift`
-- 다른 설정을 시험하려면 `Sources/OCRBench/main.swift`의 `configs`에 더합니다.
-- 표 인식: `scripts/ocr-bench.sh --tables` (아래 [표 인식](#표-인식))
+- Add `-v` to show the expected text and the recognized text for samples with errors.
+- To measure another folder: `scripts/ocr-bench.sh <folder>`.
+- Regenerate the samples: `swift scripts/make-ocr-samples.swift`
+- To try other settings, add them to `configs` in `Sources/OCRBench/main.swift`.
+- Tables: `scripts/ocr-bench.sh --tables` (see [Table recognition](#table-recognition) below)
 
-## 샘플
+## Samples
 
-`Tests/OCRSamples/`에 `<이름>.png`(화면 캡처처럼 그린 이미지)와 `<이름>.txt`(정답)가 짝으로 있습니다.
+`Tests/OCRSamples/` holds pairs of `<name>.png` (an image drawn like a screen capture) and `<name>.txt` (the expected text).
 
-| 샘플 | 내용 |
+| Sample | Content |
 |---|---|
-| ko-body, ko-paragraph, ko-long | 한글 본문, 여러 줄 문단, 큰 캡처(2000 px 폭) |
-| ko-small-1x | 11pt 글자를 1배율로 (외장 모니터 등에서 작은 글씨 캡처) |
-| mixed-ko-en, english | 한영 혼합, 영어 |
-| numbers, address, url-email | 숫자·날짜·전화번호, 주소, URL·이메일 |
-| code-mono | 고정폭 글꼴 코드 |
-| dark-mode, low-contrast, system-ui | 어두운 배경, 흐린 회색 글자, 시스템 UI 글꼴 |
-| symbols | 괄호·낫표·줄표·가운뎃점·말줄임 |
-| code-indent, yaml-indent | 들여쓴 코드·YAML (고정폭 글꼴) — 공백 보존 측정 |
-| ko-list | 들여쓴 한글 목록 (보통 글꼴) |
+| ko-body, ko-paragraph, ko-long | Korean body text, a multi-line paragraph, a large capture (2000 px wide) |
+| ko-small-1x | 11 pt text at 1x scale (small text captured on an external monitor, etc.) |
+| mixed-ko-en, english | Mixed Korean and English, English |
+| numbers, address, url-email | Numbers, dates, phone numbers, an address, URLs and email |
+| code-mono | Code in a monospaced font |
+| dark-mode, low-contrast, system-ui | Dark background, faint gray text, the system UI font |
+| symbols | Brackets, corner brackets, dashes, middle dots, ellipses |
+| code-indent, yaml-indent | Indented code and YAML (monospaced font) — measures whitespace preservation |
+| ko-list | An indented Korean list (proportional font) |
 
-실제 캡처로 재고 싶으면 같은 폴더에 PNG와 정답 TXT를 같은 이름으로 넣으면 됩니다. 개인 정보가 담긴 캡처는 저장소에 올리지 말고 다른 폴더에 두고 재세요.
+To measure real captures, put a PNG and an expected-text TXT with the same name in the same folder. Don't commit captures containing personal information; keep them in another folder and measure there.
 
-## 지표
+## Metrics
 
-- **글자 오류율(CER)** = 편집 거리 / 정답 글자 수. 비교 전에 한글을 NFC로 맞추고 공백·줄바꿈은 한 칸으로 봅니다 (줄바꿈 정리 방식과 무관하게 글자만 비교).
-- **exact**: 오류가 하나도 없는 샘플 수
-- **layout CER**: 같은 편집 거리를 공백까지 그대로 두고 잰 값 (줄 끝 공백과 빈 줄만 뺌). 줄 앞 들여쓰기를 살렸는지 봅니다.
-- **avg ms**: 샘플당 평균 시간 (측정 전에 모든 설정을 한 번씩 돌려 모델 준비 시간은 빼고 잼)
+- **Character error rate (CER)** = edit distance / number of expected characters. Before comparing, Korean is normalized to NFC and whitespace and line breaks count as one space (only characters are compared, regardless of line break cleanup).
+- **exact**: number of samples with no errors at all
+- **layout CER**: the same edit distance measured with whitespace kept as is (only trailing spaces and blank lines removed). Shows whether leading indentation survived.
+- **avg ms**: average time per sample (every setting is run once before measuring, so model warm-up time is excluded)
 
-## 결과 (2026-11-02, macOS 26.6.2, Apple Silicon)
+## Results (2026-11-02, macOS 26.6.2, Apple Silicon)
 
 ```
 sample          app            0.1.0          no-upscale     no-cleanup     no-indent
@@ -65,7 +67,7 @@ total CER        1.73%          2.33%          2.03%          2.10%          1.7
 exact           12/17          10/17          10/17          11/17          12/17
 avg ms          136            118            117            133            133
 
-layout (공백·들여쓰기까지 비교)
+layout (compared including spaces and indentation)
 address           0.0%           0.0%           0.0%           0.0%           0.0%
 code-indent       8.3%           4.8%           4.8%           8.3%          22.1%
 code-mono         5.5%           3.6%           3.6%           5.5%           5.5%
@@ -87,45 +89,45 @@ layout CER       2.60%          2.89%          2.60%          2.96%          5.8
 layout exact    10/17          8/17           8/17           9/17           10/17
 ```
 
-- `app`: 지금 앱 설정 (한국어 → 영어, 2배 확대, 기호 정리)
-- `0.1.0`: 이전 설정 (확대·정리 없음)
-- `no-indent`: 들여쓰기를 살리지 않는 설정 (0.2.1까지의 앱)
+- `app`: the current app settings (Korean → English, 2x upscale, symbol cleanup)
+- `0.1.0`: the previous settings (no upscale or cleanup)
+- `no-indent`: settings that don't preserve indentation (the app up to 0.2.1)
 
-## 알게 된 것
+## What we learned
 
-| 시도 | 결과 | 결정 |
+| Attempt | Result | Decision |
 |---|---|---|
-| 2배 확대 후 인식 | 줄 첫 글자 빠짐("로그인"→"그인")·가운뎃점 누락이 줄어듦. 코드 샘플은 `}`를 `y`로 읽어 조금 나빠짐 | 채택. 2 MP를 넘는 캡처는 확대하지 않음 (큰 글자엔 효과가 없고 2000×1870에서 +0.24초) |
-| 기호 정리 | 한글 사이 `•`→`·`, `•·•`→`…` | 채택 (줄 맨 앞 `•`와 마침표 `...`는 그대로) |
-| 영어를 먼저 | 한글을 거의 못 읽음 (오류율 62%) | 언어 순서 바꾸기는 넣지 않음 |
-| 사용자 단어장 (customWords) | 한국어 인식에서는 효과 없음 | 넣지 않음 |
-| 영어로 한 번 더 읽어 대소문자 되살리기 | `macOS`는 못 고치고 `the`→`The` 같은 새 오류 | 넣지 않음 |
-| 언어 교정 끄기 | 기호 일부가 나아지나 확대+정리보다 못함 | 켜 둠 |
-| 들여쓰기 살리기 ("보이는 줄 그대로") | 줄 상자 왼쪽 위치 ÷ 글자 한 칸 폭으로 줄 앞 공백을 되살림. layout CER 5.84% → 2.60% (code-indent 22.1→8.3%, yaml-indent 26.7→5.0%, ko-list 13.6→9.1%), 들여쓰기 없는 샘플은 그대로 | 채택 (기본). 두 칸 미만 차이는 버리고, 줄이 옆으로 나란하면(여러 단·표) 하지 않음. 보통 글꼴에서는 공백이 좁아 칸 수가 정확하지 않음 |
+| Recognize after a 2x upscale | Fewer dropped first characters ("로그인" → "그인") and missing middle dots. Code samples got slightly worse by reading `}` as `y` | Adopted. Captures over 2 MP are not upscaled (no effect on large text, and +0.24 s at 2000×1870) |
+| Symbol cleanup | `•` → `·` between Korean text, `•·•` → `…` | Adopted (a `•` at the start of a line and a period `...` are left alone) |
+| English first | Almost no Korean is read (62% error rate) | Language order is not changed |
+| Custom word list (customWords) | No effect on Korean recognition | Not added |
+| Reading again in English to restore letter case | Doesn't fix `macOS` and adds new errors like `the` → `The` | Not added |
+| Turning off language correction | Some symbols improve, but less than upscale + cleanup | Kept on |
+| Preserving indentation ("keep lines as shown") | Rebuilds leading spaces from the line box's left edge ÷ the width of one character. layout CER 5.84% → 2.60% (code-indent 22.1→8.3%, yaml-indent 26.7→5.0%, ko-list 13.6→9.1%), samples without indentation unchanged | Adopted (default). Differences under two spaces are dropped, and it is skipped when lines sit side by side (multiple columns, tables). With proportional fonts spaces are narrow, so the count isn't exact |
 
-남은 오류: 한국어 모델이 영어 낱말의 대소문자를 잃음 (`macOS`→`macos`, `isPinned`→`ispinned`), 코드의 `$0`→`$o`, 줄표 `—`→`-`, 2배 확대에서 `}`만 있는 줄을 놓침(code-indent), `services:`→`services :`처럼 쌍점 앞 공백.
+Remaining errors: the Korean model loses the case of English words (`macOS` → `macos`, `isPinned` → `ispinned`), `$0` → `$o` in code, the dash `—` → `-`, the 2x upscale misses lines that contain only `}` (code-indent), and a space before colons like `services:` → `services :`.
 
-## 표 인식
+## Table recognition
 
-macOS 26의 Vision 문서 인식(`RecognizeDocumentsRequest`)으로 표를 찾아 칸 단위로 비교합니다.
+Finds tables with macOS 26 Vision document recognition (`RecognizeDocumentsRequest`) and compares them cell by cell.
 
 ```bash
-scripts/ocr-bench.sh --tables      # -v: 틀린 표 전체
-swift scripts/make-table-samples.swift   # 샘플 다시 만들기
+scripts/ocr-bench.sh --tables      # -v: every wrong table in full
+swift scripts/make-table-samples.swift   # regenerate the samples
 ```
 
-샘플은 `Tests/OCRSamples/tables/`에 `<이름>.png`와 `<이름>.tsv`(정답, 탭으로 나눈 칸)가 짝으로 있습니다.
+`Tests/OCRSamples/tables/` holds pairs of `<name>.png` and `<name>.tsv` (expected cells, tab-separated).
 
-| 샘플 | 내용 |
+| Sample | Content |
 |---|---|
-| ko-grid, dark-grid | 칸마다 선이 있는 한글 표, 어두운 배경 |
-| mixed-numbers | 한영·숫자·쉼표·따옴표, 빈 칸 |
-| sheet-light, stripes-en | 옅은 가로선만 (스프레드시트), 줄무늬 (선 없음) |
-| ko-small-1x | 11pt 글자를 1배율로 |
+| ko-grid, dark-grid | A Korean table with lines around every cell, a dark background |
+| mixed-numbers | Korean and English, numbers, commas, quotes, empty cells |
+| sheet-light, stripes-en | Only faint horizontal lines (spreadsheet), stripes (no lines) |
+| ko-small-1x | 11 pt text at 1x scale |
 
-지표: **cells right** = 정답과 같은 칸 / 전체 칸, **cell CER** = 칸 글자 오류율, **shape** = 행·열 수가 맞은 표
+Metrics: **cells right** = cells matching the expected text / all cells, **cell CER** = character error rate per cell, **shape** = tables with the right number of rows and columns
 
-### 결과 (2026-10-29, macOS 26.6, Apple Silicon)
+### Results (2026-10-29, macOS 26.6, Apple Silicon)
 
 ```
 sample          app                   upscale-2x            no-cleanup
@@ -142,6 +144,6 @@ shape           6/6                   6/6                   6/6
 avg ms          221                   266                   216
 ```
 
-- 선이 없는 표(줄무늬·옅은 가로선)도 행·열을 모두 맞혔습니다.
-- 2배 확대는 표에서는 나아지는 게 없고 45 ms 더 걸려 **표는 확대하지 않습니다** (`TableRecognizer.defaultOptions`).
-- 틀린 칸: `⌃⇧1` 같은 키 기호(dark-grid 3칸), 작은 글씨의 쉼표를 마침표로 읽음(ko-small-1x `6,108`→`6.108`, 확대해도 같음).
+- Tables without lines (stripes, faint horizontal lines) got every row and column right too.
+- A 2x upscale doesn't help tables and takes 45 ms longer, so **tables are not upscaled** (`TableRecognizer.defaultOptions`).
+- Wrong cells: key symbols like `⌃⇧1` (3 cells in dark-grid), and a comma in small text read as a period (ko-small-1x `6,108` → `6.108`, same with upscaling).

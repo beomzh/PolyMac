@@ -1,151 +1,153 @@
-# 앱 완전 삭제 — 판단 기준
+# Complete app uninstall — decision rules
 
-이 문서는 PolyMac이 어떤 파일을 "이 앱의 것"으로 보고, 무엇을 절대 건드리지 않는지를 코드와 같은 수준으로 적는다.
-규칙의 실제 구현은 `Sources/UninstallerCore/LeftoverScanner.swift`, 테스트는 `Tests/UninstallerCoreTests/`.
+**English** · [한국어](UNINSTALLER.ko.md)
 
-## 1. 원칙
+This document spells out, as precisely as the code does, which files PolyMac treats as "belonging to this app" and what it never touches.
+The rules are implemented in `Sources/UninstallerCore/LeftoverScanner.swift`, with tests in `Tests/UninstallerCoreTests/`.
 
-1. **지우는 것보다 남기는 쪽이 안전하다.** 애매하면 "추정"으로 표시하고 미리 선택하지 않는다.
-2. **영구 삭제는 하지 않는다.** 모든 삭제는 휴지통으로 가며, Finder의 "되돌려 놓기"로 복구할 수 있다.
-3. **실행 중인 것은 건드리지 않는다.** 실행 파일이 그 안에 있거나 파일을 열어 둔 프로그램이 있으면 선택할 수 없다.
-4. **macOS 자체는 대상이 아니다.** `com.apple.*`, `/System` 아래, macOS가 만드는 폴더는 제외한다.
-5. **판단 근거를 항목마다 보여 준다.** 사용자가 이유를 보고 결정할 수 있어야 한다.
+## 1. Principles
 
-## 2. 찾는 위치
+1. **Leaving something behind is safer than deleting it.** When in doubt, mark it "Possible" and don't preselect it.
+2. **No permanent deletion.** Everything goes to the Trash and can be restored with Finder's "Put Back".
+3. **Nothing in use is touched.** An item can't be selected if a running program's executable is inside it or a program has a file in it open.
+4. **macOS itself is not a target.** `com.apple.*`, anything under `/System` and folders macOS creates are excluded.
+5. **Show the reason for every item.** The user must be able to see why and decide.
 
-| 종류 | 사용자 (`~/Library/…`) | 시스템 (`/Library/…`, 암호 필요) |
+## 2. Where it looks
+
+| Kind | User (`~/Library/…`) | System (`/Library/…`, needs password) |
 |---|---|---|
-| 앱 데이터 | `Application Support` | `Application Support` |
-| 캐시 | `Caches`, `/var/folders/…/C` | `Caches` |
-| 임시 파일 | `/var/folders/…/T` | |
-| 설정 | `Preferences`, `Preferences/ByHost` | `Preferences` |
-| 샌드박스 데이터 | `Containers` | |
-| 공유 데이터 | `Group Containers` | |
-| 창 상태 | `Saved Application State` | |
-| 웹 데이터 | `HTTPStorages`, `WebKit`, `Cookies` | |
-| 로그 | `Logs` | `Logs` |
-| 충돌 기록 | `Logs/DiagnosticReports`, `Application Support/CrashReporter` | `Logs/DiagnosticReports` |
-| 기타 | `Application Scripts` | |
-| 백그라운드 항목 | `LaunchAgents` | `LaunchAgents`, `LaunchDaemons`, `PrivilegedHelperTools` |
-| 플러그인·확장 | `Internet Plug-Ins`, `PreferencePanes`, `Services`, `QuickLook`, `Spotlight`, `Screen Savers`, `Input Methods`, `Audio/Plug-Ins/{Components,VST,VST3,HAL}` | 같은 폴더들 |
-| 공유 폴더 | `/Users/Shared` | |
-| 설치 기록 | | `/var/db/receipts` (pkg) — 휴지통 대신 `pkgutil --forget <id>`(관리자 암호), ID는 영문·숫자·`.-_`만 받음 |
-| 앱이 든 폴더 | `/Applications/<폴더>/`, `~/Applications/<폴더>/` | |
+| App data | `Application Support` | `Application Support` |
+| Caches | `Caches`, `/var/folders/…/C` | `Caches` |
+| Temporary files | `/var/folders/…/T` | |
+| Preferences | `Preferences`, `Preferences/ByHost` | `Preferences` |
+| Sandbox data | `Containers` | |
+| Shared data | `Group Containers` | |
+| Window state | `Saved Application State` | |
+| Web data | `HTTPStorages`, `WebKit`, `Cookies` | |
+| Logs | `Logs` | `Logs` |
+| Crash reports | `Logs/DiagnosticReports`, `Application Support/CrashReporter` | `Logs/DiagnosticReports` |
+| Other | `Application Scripts` | |
+| Background items | `LaunchAgents` | `LaunchAgents`, `LaunchDaemons`, `PrivilegedHelperTools` |
+| Plug-ins and extensions | `Internet Plug-Ins`, `PreferencePanes`, `Services`, `QuickLook`, `Spotlight`, `Screen Savers`, `Input Methods`, `Audio/Plug-Ins/{Components,VST,VST3,HAL}` | The same folders |
+| Shared folder | `/Users/Shared` | |
+| Install receipts | | `/var/db/receipts` (pkg) — `pkgutil --forget <id>` instead of the Trash (administrator password); IDs may only contain letters, digits and `.-_` |
+| Folder containing the app | `/Applications/<folder>/`, `~/Applications/<folder>/` | |
 
-각 위치는 **바로 아래 항목만** 본다 (하위 폴더를 재귀로 뒤지지 않는다). 찾은 항목은 폴더째 지운다.
+Only the **items directly inside** each location are checked (subfolders are not searched recursively). A found item is deleted as a whole folder.
 
-## 3. 설치된 앱의 잔여물 — 등급
+## 3. Leftovers of an installed app — grades
 
-이름 비교 전에 확장자(`.plist`, `.savedState`, `.binarycookies`, `.lockfile`)를 떼고, 이름 비교는 대소문자를 무시한다.
+Before comparing names, extensions (`.plist`, `.savedState`, `.binarycookies`, `.lockfile`) are removed, and names are compared case-insensitively.
 
-| 등급 | 조건 | 기본 선택 |
+| Grade | Condition | Preselected |
 |---|---|---|
-| 확실 | 이름이 앱 ID와 같거나 `앱ID.`으로 시작 (`com.foo.App`, `com.foo.App.helper.plist`) | 예 |
-| 확실 | `팀ID.앱ID` 형태 — 팀 ID는 대문자·숫자 10자리 (`ABCDE12345.com.foo.App`) | 예 |
-| 확실 | 플러그인 번들의 ID가 앱 ID와 같거나 `앱ID.`으로 시작 | 예 |
-| 유력 | 이름이 `앱의 팀ID.`으로 시작 (같은 개발사 데이터) | 예 |
-| 유력 | 백그라운드 항목 plist의 실행 경로가 앱 번들 안을 가리킴 | 예 |
-| 유력 | 충돌 기록 파일 이름의 앞부분(`-`·`_` 앞)이 앱 실행 파일 이름과 같음 | 예 |
-| 유력 | 정규화한 이름이 정규화한 앱 이름과 같음 (3자 이상) | 예 |
-| 유력 | pkg 설치 기록 ID가 앱 ID와 같거나 그 하위 | 예 |
-| 유력 | 앱이 든 폴더 — 앱이 `/Applications` 바로 아래가 아니고, 그 폴더(두 단계까지)에 다른 `.app`이 없음 | 예 |
-| 추정 | 정규화한 이름에 앱 이름이 들어 있음 (앱 이름 5자 이상) | 아니요 |
-| 추정 | 플러그인 번들의 회사(앱 ID 앞 두 부분)가 앱과 같음 | 아니요 |
+| Certain | The name equals the app ID or starts with `appID.` (`com.foo.App`, `com.foo.App.helper.plist`) | Yes |
+| Certain | `teamID.appID` form — the team ID is 10 uppercase letters and digits (`ABCDE12345.com.foo.App`) | Yes |
+| Certain | A plug-in bundle's ID equals the app ID or starts with `appID.` | Yes |
+| Likely | The name starts with `the app's teamID.` (data from the same developer) | Yes |
+| Likely | A background item plist's program path points inside the app bundle | Yes |
+| Likely | The first part of a crash report file name (before `-` or `_`) equals the app's executable name | Yes |
+| Likely | The normalized name equals the normalized app name (3 or more characters) | Yes |
+| Likely | A pkg receipt ID equals the app ID or is under it | Yes |
+| Likely | The folder containing the app — the app is not directly in `/Applications`, and that folder (up to two levels) has no other `.app` | Yes |
+| Possible | The normalized name contains the app name (app name 5 or more characters) | No |
+| Possible | A plug-in bundle's company (the first two parts of the app ID) matches the app's | No |
 
-**정규화**: 한글 자모 합치기(NFC) → 소문자 → 글자·숫자만 남김. 예: `Riot Client` → `riotclient`, `riot-client-ux` → `riotclientux`.
+**Normalization**: compose Korean letters (NFC) → lowercase → keep only letters and digits. Example: `Riot Client` → `riotclient`, `riot-client-ux` → `riotclientux`.
 
-## 4. 이미 지운 앱의 흔적 — 등급
+## 4. Leftovers of apps already deleted — grades
 
-### 4-0. "설치된 앱"의 범위
+### 4-0. What counts as "installed apps"
 
-흔적 판단의 기준이 되는 "설치된 앱"은 다음을 모두 합친 것이다. **이 목록을 다 읽기 전에는 흔적 찾기를 시작하지 않고, 읽지 못하면 멈춘다** (빈 목록으로 판단하면 쓰고 있는 앱의 데이터를 흔적으로 잘못 고른다).
+The "installed apps" used to judge leftovers are all of the following combined. **Leftover search doesn't start until this whole list has been read, and stops if it can't be read** (judging against an empty list would pick data of apps in use as leftovers).
 
-- `/Applications`, `~/Applications` (두 단계 아래 폴더까지)
-- Spotlight가 아는 이 Mac의 모든 앱 (`kMDItemContentType == com.apple.application-bundle`, 휴지통·`/System` 제외) — 다운로드 폴더 등 다른 위치의 앱, 앱 안에 숨은 앱(예: `~/Library/Application Support/discord/…/Discord.app`)까지
-- 지금 실행 중인 앱
+- `/Applications`, `~/Applications` (down to folders two levels deep)
+- Every app on this Mac that Spotlight knows (`kMDItemContentType == com.apple.application-bundle`, excluding the Trash and `/System`) — including apps in other places like Downloads, and apps hidden inside apps (e.g. `~/Library/Application Support/discord/…/Discord.app`)
+- Apps running right now
 
-### 4-1. 앱 ID 형태 이름
+### 4-1. Names shaped like app IDs
 
-이름이 앱 ID처럼 생긴 항목만 후보로 본다.
+Only items whose names look like app IDs are candidates.
 
-- 점으로 나눈 부분이 3~6개이고, 각 부분이 글자·숫자·`-`·`_`로만 되어 있으며
-- 첫 부분이 `com, org, net, io, dev, app, co, de, jp, kr, us, me` 중 하나
-- 끝의 컴퓨터 UUID(ByHost 설정)는 떼고 본다
+- 3 to 6 dot-separated parts, each made only of letters, digits, `-` and `_`
+- The first part is one of `com, org, net, io, dev, app, co, de, jp, kr, us, me`
+- A trailing computer UUID (ByHost preferences) is removed first
 
-다음 중 하나라도 해당하면 **제외**한다.
+Anything matching one of these is **excluded**.
 
-| 제외 조건 | 이유 |
+| Excluded when | Why |
 |---|---|
-| `com.apple.`, `org.cups.`, `org.swift.`으로 시작 | macOS 자체 (프린터 시스템, Swift 도구 포함) |
-| `org.sparkle-project.`, `org.jcef.`, `org.chromium.`, `com.github.electron`으로 시작 | 여러 앱이 함께 쓰는 구성요소 (자동 업데이트, 앱 안의 웹 화면) |
-| ID 속 이름(4-2의 이름 열쇠)이 설치된 앱의 이름·ID와 관계있음 | ID가 달라도 그 앱의 것일 수 있음 — 예: Discord는 앱이 `com.hnc.Discord`, 업데이터가 `com.discord.discord.ShipIt` |
-| 설치된 앱의 ID이거나 그 하위 (`com.foo.App.ShipIt`) | 설치된 앱의 업데이터·도우미 |
-| 상위 ID(`com.foo.App`)의 앱이 이 Mac에 있음 (LaunchServices 기준, 휴지통 제외) | 같음 |
-| 백그라운드 항목인데 실행할 프로그램이 아직 있음 | 앱 없이 설치되는 서비스(보안 프로그램 등) |
-| 지금 등록된 백그라운드 항목이 실행하는 파일 | 관리자 도우미처럼 쓰이는 중 |
+| Starts with `com.apple.`, `org.cups.`, `org.swift.` | macOS itself (including the printing system and Swift tools) |
+| Starts with `org.sparkle-project.`, `org.jcef.`, `org.chromium.`, `com.github.electron` | Components shared by many apps (automatic updates, web views inside apps) |
+| The name inside the ID (the name keys in 4-2) relates to an installed app's name or ID | It may belong to that app even with a different ID — e.g. Discord's app is `com.hnc.Discord` and its updater `com.discord.discord.ShipIt` |
+| It is an installed app's ID or under it (`com.foo.App.ShipIt`) | An installed app's updater or helper |
+| The app of the parent ID (`com.foo.App`) is on this Mac (per LaunchServices, excluding the Trash) | Same |
+| A background item whose program still exists | Services installed without an app (security software and the like) |
+| A file run by a currently registered background item | In use, like an administrator helper |
 
-남은 것의 등급:
+Grades of what remains:
 
-| 등급 | 조건 |
+| Grade | Condition |
 |---|---|
-| 유력 | 그 회사(ID 앞 두 부분)의 앱이 하나도 설치돼 있지 않음 |
-| 유력 | 백그라운드 항목이고 실행할 프로그램이 지워졌음 |
-| 추정 | 같은 회사의 다른 앱이 설치돼 있음 — 공용 구성요소일 수 있음 |
+| Likely | No app from that company (first two parts of the ID) is installed |
+| Likely | A background item whose program has been deleted |
+| Possible | Another app from the same company is installed — it may be a shared component |
 
-### 4-2. 사람이 읽는 이름의 폴더 ("Riot Games")
+### 4-2. Folders with human-readable names ("Riot Games")
 
-**이름 열쇠**: 지운 앱 ID에서 첫 부분을 빼고 나머지 부분을 정규화한 것 중 4자 이상이고 흔한 단어가 아닌 것.
-예: `com.riotgames.RiotGames.RiotClient` → `riotgames`, `riotclient`.
+**Name keys**: from a deleted app's ID, drop the first part, normalize the remaining parts, and keep those that are 4 or more characters and not common words.
+Example: `com.riotgames.RiotGames.RiotClient` → `riotgames`, `riotclient`.
 
-흔한 단어(열쇠로 쓰지 않음): `app, apps, mac, macos, osx, desktop, helper, agent, service, launcher, updater, shipit, plugin, plugins, client, studio, pro`
+Common words (never used as keys): `app, apps, mac, macos, osx, desktop, helper, agent, service, launcher, updater, shipit, plugin, plugins, client, studio, pro`
 
-**비슷함**: 두 정규화 이름 `a`, `b`가 같거나, 한쪽이 5자 이상인 다른 쪽으로 시작하면 비슷하다고 본다.
-예: `riotclientux` ~ `riotclient`, `blizzardentertainment` ~ `blizzard`.
+**Similar**: two normalized names `a` and `b` are similar if they are equal, or if one starts with the other and the other is 5 or more characters.
+Example: `riotclientux` ~ `riotclient`, `blizzardentertainment` ~ `blizzard`.
 
-| 위치 | 규칙 | 등급 |
+| Location | Rule | Grade |
 |---|---|---|
-| `/Users/Shared`, `Application Support`, `Caches`, `Logs` | 지운 앱의 이름 열쇠와 비슷 → 그 앱 묶음에 넣음 | 유력 |
-| `/Users/Shared` | 어느 열쇠와도 안 맞고 설치된 앱과도 관계없음 → 그 폴더 이름으로 새 묶음 | 추정 |
-| `Application Support`, `Caches`, `Logs` | 위 `/Users/Shared` 묶음과 비슷 → 그 묶음에 넣음 (새 묶음은 만들지 않음) | 추정 |
-| `/Users/Shared`의 `Relocated Items`, `Previously Relocated Items*` | macOS 업데이트가 옮겨 둔 예전 설정 | 추정 |
+| `/Users/Shared`, `Application Support`, `Caches`, `Logs` | Similar to a deleted app's name key → added to that app's group | Likely |
+| `/Users/Shared` | Matches no key and relates to no installed app → a new group named after the folder | Possible |
+| `Application Support`, `Caches`, `Logs` | Similar to one of the `/Users/Shared` groups above → added to that group (no new groups made) | Possible |
+| `Relocated Items`, `Previously Relocated Items*` in `/Users/Shared` | Old settings moved aside by a macOS update | Possible |
 
-**설치된 앱과 관계있으면 항상 제외** (흔적 쪽보다 넓게 본다): 폴더 이름이 설치된 앱 이름이나 설치된 앱 ID의 각 부분(4자 이상)과 같거나, 한쪽이 다른 쪽으로 시작하면 제외.
-예: 설치된 `zoom.us`(ID `us.zoom.xos`) → `Zoom Data` 제외.
+**Always excluded if related to an installed app** (judged more broadly than leftovers): excluded if the folder name equals an installed app's name or any part (4 or more characters) of an installed app's ID, or if one starts with the other.
+Example: installed `zoom.us` (ID `us.zoom.xos`) → `Zoom Data` excluded.
 
-`/Users/Shared`에 원래 있는 `SC Info`, `adi`, `Library`, `Shared Items`는 제외.
+`SC Info`, `adi`, `Library` and `Shared Items`, which normally exist in `/Users/Shared`, are excluded.
 
-## 4-3. 화면에서 묶는 방식
+## 4-3. How results are grouped on screen
 
-"남은 흔적"은 앱 단위(앱 ID 앞 세 부분, 예: `com.ameba.TRex`)로 한 묶음에 보여 준다. 같은 앱의 도우미·위젯 ID(`com.alanyan.BatteryMac.BigSurWidget`)도 그 앱 묶음에 들어가고, 한 회사의 서로 다른 앱(`com.riotgames.RiotGames`, `com.riotgames.LeagueofLegends`)은 따로 묶는다. 이름으로 찾은 묶음과 업데이트 잔여물은 따로 묶는다.
+"Leftovers" are shown in one group per app (the first three parts of the app ID, e.g. `com.ameba.TRex`). Helper and widget IDs of the same app (`com.alanyan.BatteryMac.BigSurWidget`) go into that app's group, while different apps from one company (`com.riotgames.RiotGames`, `com.riotgames.LeagueofLegends`) get separate groups. Groups found by name and update leftovers are grouped separately.
 
-묶음 제목은 앱 이름이다. 앱이 이미 지워져 진짜 이름을 물어볼 곳이 없으므로 다음 순서로 정한다. 회사 이름과 앱 ID는 제목 아래 설명 줄에 보여 준다.
+The group title is the app name. Since the app is already gone and there is nothing to ask for its real name, it is chosen in this order. The company name and app ID are shown on the description line under the title.
 
-1. 남은 폴더 중 사람이 지은 이름이 앱 ID의 앱 부분과 같으면 그 이름 (`com.nexon.maplestory` → `Application Support/MapleStory` → "MapleStory")
-2. 아니면 앱 ID의 앱 부분 (`com.ameba.TRex` → "TRex"). 소문자뿐이면 첫 글자만 대문자로
-3. 앱 부분이 `app`·`cli`처럼 일반적이거나 3자 이하면 회사 이름을 앞에 붙인다 (`net.battle.app` → "Battle App")
+1. If a human-named folder among the leftovers matches the app part of the app ID, that name (`com.nexon.maplestory` → `Application Support/MapleStory` → "MapleStory")
+2. Otherwise the app part of the app ID (`com.ameba.TRex` → "TRex"). If it's all lowercase, only the first letter is capitalized
+3. If the app part is generic like `app` or `cli`, or 3 characters or fewer, the company name is put in front (`net.battle.app` → "Battle App")
 
-## 5. 지울 때
+## 5. When deleting
 
-1. 실행 중인 앱이면 정상 종료를 요청하고 5초까지 기다린다. 끝나지 않으면 지우지 않는다.
-2. **사용 중 확인** — 지울 항목 안에
-   - 실행 파일이 있는 프로그램 (`proc_pidpath`), 또는
-   - 파일을 열어 둔 프로그램 (`lsof`, 내 계정 프로세스)
-   이 있으면 그 항목은 선택할 수 없고 "사용 중 (프로그램 이름)"으로 표시한다. 지우려는 앱 자신의 프로그램은 1번에서 종료하므로 제외한다.
-3. 사용자 백그라운드 항목은 `launchctl bootout`으로 먼저 내린다.
-4. 폴더와 그 안의 항목을 함께 골랐으면 폴더만 넘긴다.
-5. **Finder에게 휴지통으로 옮기게** 한다 (AppleScript, 경로는 인수로 — 파일 이름으로 스크립트가 조작되지 않게). `/Library` 아래 항목은 Finder가 관리자 암호를 묻는다.
-6. Finder가 못 옮긴 항목(다른 앱의 샌드박스 데이터 등 macOS 보호 항목)은 `NSWorkspace.recycle`로 다시 시도한다. 이때 macOS가 "다른 앱의 데이터 접근" 허용을 물을 수 있다.
-7. 그래도 남은 항목은 이유와 함께 보여 주고, 기록을 `~/Library/Application Support/PolyMac/uninstall-log.txt`에 남긴다.
+1. If the app is running, ask it to quit normally and wait up to 5 seconds. If it doesn't quit, nothing is deleted.
+2. **In-use check** — if an item to delete contains
+   - the executable of a running program (`proc_pidpath`), or
+   - a file a program has open (`lsof`, processes of the current user)
+   that item can't be selected and is shown as "In use (program name)". Programs of the app being deleted are excluded, since step 1 quits them.
+3. User background items are unloaded first with `launchctl bootout`.
+4. If a folder and items inside it are both selected, only the folder is passed on.
+5. **Finder is asked to move items to the Trash** (AppleScript, with paths passed as arguments — so file names can't tamper with the script). For items under `/Library`, Finder asks for the administrator password.
+6. Items Finder couldn't move (macOS-protected items such as another app's sandbox data) are retried with `NSWorkspace.recycle`. macOS may then ask to allow "access to data from other apps".
+7. Anything still left is shown with the reason, and a record is written to `~/Library/Application Support/PolyMac/uninstall-log.txt`.
 
-## 6. 화면에 보여 주는 정보
+## 6. Information shown on screen
 
-- 항목마다: 경로, 판단 근거, 등급, 크기, **안쪽 파일까지 포함한 마지막 수정일**, 암호 필요 여부, 사용 중 여부
-- 앱: **마지막 사용일** (Spotlight 기록 `kMDItemLastUsedDate`, 없으면 "기록 없음")
+- For each item: path, reason, grade, size, **last modified date including the files inside**, whether a password is needed, whether it's in use
+- For the app: **last used date** (Spotlight's `kMDItemLastUsedDate`, "unknown" if missing)
 
-## 7. 알려진 한계
+## 7. Known limits
 
-- `lsof`는 내 계정의 프로세스만 본다. 관리자 권한으로 도는 서비스가 연 파일은 "사용 중"으로 잡히지 않을 수 있다 (그런 항목은 대부분 `/Library` 아래라 지울 때 암호를 묻는다).
-- 이름 규칙은 휴리스틱이다. 회사 이름이 아주 짧거나(4자 미만) 흔한 단어면 찾지 못한다.
-- 각 위치의 바로 아래 항목만 본다. `Application Support/회사/앱`처럼 깊이 숨은 것은 회사 폴더 단위로만 찾는다.
+- `lsof` only sees the current user's processes. Files opened by services running as administrator may not show as "in use" (such items are mostly under `/Library`, so deleting them asks for a password).
+- The name rules are heuristics. Very short (under 4 characters) or common company names aren't found.
+- Only items directly inside each location are checked. Something hidden deep, like `Application Support/Company/App`, is found only at the company folder level.
 
-규칙을 바꾸는 PR은 이 문서와 `Tests/UninstallerCoreTests`를 함께 고친다.
+A PR that changes these rules updates this document and `Tests/UninstallerCoreTests` together.

@@ -1,13 +1,15 @@
-# 서드파티 고지 (Third-Party Notices)
+# Third-Party Notices
 
-PolyMac에 포함되거나 함께 배포되는 외부 코드·라이브러리의 저작권과 라이선스를 기록한다.
+**English** · [한국어](THIRD_PARTY_NOTICES.ko.md)
 
-PolyMac은 아래 외부 라이브러리 하나를 앱과 함께 배포한다. 그 밖에는 Apple이 macOS와 함께 제공하는 시스템 프레임워크(AppKit, ScreenCaptureKit, Vision, App Intents 등)만 쓰며, 이들은 재배포하지 않는다.
+Copyright and license information for third-party code and libraries included in or shipped with PolyMac.
+
+PolyMac ships one third-party library, listed below, with the app. Otherwise it only uses system frameworks that Apple ships with macOS (AppKit, ScreenCaptureKit, Vision, App Intents and others), which are not redistributed.
 
 ## Sparkle
-- 출처: https://github.com/sparkle-project/Sparkle (2.10.0, `Sparkle-for-Swift-Package-Manager.zip`, sha256 `17e28312b8e18ab7cdbbe09a6fb28cc55a5479ec6c371dbc07cdecd2a14fd959`)
-- 사용 범위: 의존성 전체 (`PolyMac.app/Contents/Frameworks/Sparkle.framework`, XPC 서비스는 빼고 넣음)
-- 라이선스: MIT (함께 들어 있는 외부 코드는 아래 원문에 각자의 라이선스로 표시됨)
+- Source: https://github.com/sparkle-project/Sparkle (2.10.0, `Sparkle-for-Swift-Package-Manager.zip`, sha256 `17e28312b8e18ab7cdbbe09a6fb28cc55a5479ec6c371dbc07cdecd2a14fd959`)
+- Used: the whole dependency (`PolyMac.app/Contents/Frameworks/Sparkle.framework`, without the XPC services)
+- License: MIT (third-party code bundled with it is marked with its own license in the text below)
 
 ```
 Copyright (c) 2006-2013 Andy Matuschak.
@@ -148,21 +150,21 @@ POSSIBILITY OF SUCH DAMAGE.
 
 ---
 
-## 항목 추가 방법
+## Adding an entry
 
-외부 코드를 의존성으로 추가하거나 일부를 가져오면, 같은 커밋에서 아래 형식으로 추가한다.
+When you add third-party code as a dependency or copy part of it, add an entry in this format in the same commit.
 
 ```
-## <프로젝트 이름>
-- 출처: <저장소 URL> (<버전 또는 커밋 해시>)
-- 사용 범위: <의존성 전체 | 가져온 파일·함수>
-- 라이선스: <SPDX ID>
+## <project name>
+- Source: <repository URL> (<version or commit hash>)
+- Used: <whole dependency | copied files or functions>
+- License: <SPDX ID>
 
-<원본 저작권 표시와 라이선스 전문>
+<original copyright notice and full license text>
 ```
 
-가져온 코드 파일 상단에는 출처 주석도 남긴다:
+Also leave a source comment at the top of each file with copied code:
 
 ```swift
-// Adapted from <프로젝트> (<URL>), <라이선스>. Copyright (c) <연도> <저작자>.
+// Adapted from <project> (<URL>), <license>. Copyright (c) <year> <author>.
 ```
