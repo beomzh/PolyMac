@@ -149,9 +149,9 @@ private struct TranslationTaskView: View {
                     for response in try await session.translations(from: requests) {
                         if let index = response.clientIdentifier.flatMap(Int.init) { translated[index] = response.targetText }
                     }
-                    await done(.success(TranslationText.rebuild(blocks, translated: translated)))
+                    done(.success(TranslationText.rebuild(blocks, translated: translated)))
                 } catch {
-                    await done(.failure(error))
+                    done(.failure(error))
                 }
             }
     }
@@ -161,7 +161,7 @@ extension OCRRunner {
     /// 영역 글을 문단으로 이어 읽은 뒤 번역 — 줄마다 끊긴 채로 옮기면 문장이 깨진다
     public static func recognizeAndTranslate(_ image: CGImage) async {
         do {
-            let text = try await TextRecognizer.recognize(image, lineMode: .paragraphs).precomposedStringWithCanonicalMapping
+            let text = try await OCRWorker.shared.recognizeText(image, lineMode: .paragraphs).precomposedStringWithCanonicalMapping
             guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 Toast.show(L("글자를 찾지 못했습니다", "No text found"))
                 return

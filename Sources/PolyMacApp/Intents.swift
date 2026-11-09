@@ -45,7 +45,7 @@ enum IntentSupport {
     }
 
     static func text(_ image: CGImage) async throws -> String {
-        let text = try await TextRecognizer.recognize(image).precomposedStringWithCanonicalMapping
+        let text = try await OCRWorker.shared.recognizeText(image).precomposedStringWithCanonicalMapping
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw IntentFailure(message: L("글자를 찾지 못했습니다", "No text found"))
         }
@@ -93,7 +93,7 @@ struct ExtractTableIntent: AppIntent {
     func perform() async throws -> some IntentResult & ReturnsValue<String> {
         try IntentSupport.requireModule("ocr", L("텍스트 추출", "Text Recognition"))
         let cg = try IntentSupport.image(image)
-        let tables = TableRecognizer.isAvailable ? try await TableRecognizer.recognize(cg) : []
+        let tables = TableRecognizer.isAvailable ? try await OCRWorker.shared.recognizeTables(cg) : []
         guard !tables.isEmpty else { return .result(value: try await IntentSupport.text(cg)) }
         let tableFormat: TableFormat = format == .tsv ? .tsv : .markdown
         intentLogger.info("extract table: \(tables.count) tables")
