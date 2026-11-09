@@ -3,6 +3,9 @@
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
 [2026-11-09 21:25]
+- [Changed] - CHANGELOG.md: record the PR #38 (fix/ocr-worker-memory) push
+
+[2026-11-09 21:25]
 - [Fixed] - Sources/OCRModule/OCRWorker.swift `recognizeText`/`recognizeTables`: fall back to in-process recognition when the worker cannot be launched, instead of failing OCR
 - [Fixed] - Sources/OCRModule/OCRWorker.swift `exchange`: a 30 s timeout no longer retries the same image (which could take another 30 s); poll retries on EINTR
 - [Added] - Tests/OCRModuleTests/OCRWorkerTests.swift: launch-failure fallback test; POLYMAC_WORKER runs the worker tests against another binary, such as the installed signed app
