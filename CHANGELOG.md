@@ -19,6 +19,16 @@ Development history, one entry per commit. For user-facing summaries see GitHub 
 - [Changed] - CHANGELOG.md: header in English
 - [Changed] - VERSION: 0.2.15
 
+[2026-11-09 17:58]
+- [Changed] - CHANGELOG.md: PR #36 (chore/0.2.13-release) push 기록
+
+[2026-11-09 17:57]
+- [Changed] - packaging/homebrew/polymac.rb: 0.2.13 version·sha256
+- [Changed] - README.md, README.ko.md: 현재 버전 0.2.13
+- [Changed] - CHANGELOG.md: 0.2.13 버전 줄
+- [Changed] - VERSION: 0.2.14
+
+## 0.2.13 (2026-11-09)
 [2026-11-09 17:51]
 - [Changed] - CHANGELOG.md: PR #35 (fix/cask-postflight-steps) push 기록
 
