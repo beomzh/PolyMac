@@ -74,7 +74,7 @@ public enum OCRRunner {
     @discardableResult
     public static func recognizeAndCopy(_ image: CGImage) async -> Bool {
         do {
-            let text = try await TextRecognizer.recognize(image).precomposedStringWithCanonicalMapping
+            let text = try await OCRWorker.shared.recognizeText(image).precomposedStringWithCanonicalMapping
             guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 Toast.show(L("글자를 찾지 못했습니다", "No text found"))
                 return false
@@ -111,7 +111,7 @@ public enum OCRRunner {
             return await recognizeAndCopy(image)
         }
         do {
-            let tables = try await TableRecognizer.recognize(image)
+            let tables = try await OCRWorker.shared.recognizeTables(image)
             guard !tables.isEmpty else {
                 Toast.show(L("표를 찾지 못해 일반 텍스트로 복사합니다", "No table found — copying as plain text"))
                 return await recognizeAndCopy(image)
