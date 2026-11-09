@@ -2,6 +2,18 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-11-09 15:40]
+- [Fixed] - README.md, README.ko.md: 앞 커밋에서 빠진 현재 버전 0.2.11 표기
+
+[2026-11-09 15:40]
+- [Changed] - CHANGELOG.md: PR #34 (chore/0.2.11-release) push 기록
+
+[2026-11-09 15:39]
+- [Changed] - packaging/homebrew/polymac.rb: 0.2.11 version·sha256
+- [Changed] - README.md, README.ko.md: 현재 버전 0.2.11
+- [Changed] - VERSION: 0.2.12
+
+## 0.2.11 (2026-11-09)
 [2026-11-09 15:33]
 - [Changed] - CHANGELOG.md: PR #33 (fix/0.2.11-clipboard-pin) push 기록
 
