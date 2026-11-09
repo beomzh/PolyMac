@@ -23,7 +23,7 @@ pairs=0
 while IFS= read -r ko; do
   en="${ko%.ko.md}.md"
   pairs=$((pairs + 1))
-  if [[ ! -f $en ]]; then report "$ko: 영어판 $en이 없습니다"; continue; fi
+  if [[ ! -f $en ]]; then report "$ko: 영어판 ${en}이 없습니다"; continue; fi
   name="$(basename "$en" .md)"
   diff <(headings "$en") <(headings "$ko") > /dev/null \
     || report "$en ↔ $ko: 제목 구조가 다릅니다 (단계 순서: $(headings "$en" | wc -l | tr -d ' ')개 vs $(headings "$ko" | wc -l | tr -d ' ')개)"
@@ -42,4 +42,4 @@ v_ko="$(grep -oE '현재 버전 [0-9][0-9.]*' README.ko.md | head -1 | awk '{pri
 [[ -n $v_en && $v_en == "$v_ko" ]] || report "README 현재 버전 표기가 다릅니다 (README.md: ${v_en:-없음}, README.ko.md: ${v_ko:-없음})"
 
 if (( fail )); then echo "  영어·한국어 문서를 함께 고치세요 (CONTRIBUTING.md)" >&2; exit 1; fi
-echo "✓ 문서 $pairs쌍 구조 일치 (영어 · 한국어)"
+echo "✓ 문서 ${pairs}쌍 구조 일치 (영어 · 한국어)"

@@ -1,0 +1,52 @@
+# Runs on every pull request and every push to main.
+# Same checks as the PR checklist: scripts/test.sh (docs check + unit tests) and a warning-free release build.
+# Only first-party GitHub actions; Sparkle is fetched with its pinned checksum by scripts/fetch-sparkle.sh.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    # macOS 26 SDK is needed (table recognition uses RecognizeDocumentsRequest)
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select the newest Xcode
+        run: |
+          XCODE="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+          echo "DEVELOPER_DIR=$XCODE/Contents/Developer" >> "$GITHUB_ENV"
+          echo "Using $XCODE"
+
+      - name: Cache SwiftPM build
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.swift', 'Package.resolved') }}-${{ github.sha }}
+          restore-keys: spm-${{ runner.os }}-${{ hashFiles('Package.swift', 'Package.resolved') }}-
+
+      - name: Build
+        # The debug app binary is also used by the OCR worker tests
+        run: scripts/fetch-sparkle.sh && swift build
+
+      - name: Tests (docs check + unit tests)
+        run: scripts/test.sh
+
+      - name: Release build without warnings
+        run: |
+          swift build -c release 2>&1 | tee release-build.log
+          if grep -E "warning:" release-build.log; then
+            echo "::error::The release build has compiler warnings"
+            exit 1
+          fi

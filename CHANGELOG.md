@@ -2,6 +2,28 @@
 
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
+[2026-11-09 21:32]
+- [Changed] - CHANGELOG.md: record the PR #39 (chore/ci) push
+
+[2026-11-09 21:32]
+- [Fixed] - Sources/OCRModule/TextTranslator.swift `TranslationTaskView`: drop `await` on the synchronous `done` calls (compiler warning that failed the CI release-build step); same change as PR #38
+- [Fixed] - Sources/CaptureModule/PinPanel.swift: `case 123...126 where` so the condition covers all four arrow keys, not only the last (compiler warning); same change as PR #38
+
+[2026-11-09 21:25]
+- [Changed] - CHANGELOG.md: record the PR #39 (chore/ci) push
+
+[2026-11-09 21:25]
+- [Fixed] - scripts/check-docs.sh: brace `$pairs` and `$en` before Korean text; bash 3.2 in a UTF-8 locale read the following character as part of the name and CI failed with "unbound variable"
+- [Fixed] - scripts/package-release.sh: same fix for `$VERSION` in the missing-tag message
+
+[2026-11-09 21:18]
+- [Changed] - CHANGELOG.md: record the PR #39 (chore/ci) push
+
+[2026-11-09 21:18]
+- [Added] - .github/workflows/ci.yml: CI on every PR and push to main (macOS 26 runner) — scripts/test.sh (docs check + unit tests) and a release build that fails on compiler warnings
+- [Changed] - CONTRIBUTING.md, CONTRIBUTING.ko.md: describe CI and require its `test` check in branch protection
+- [Changed] - VERSION: 0.2.17
+
 [2026-11-09 21:25]
 - [Changed] - CHANGELOG.md: record the PR #38 (fix/ocr-worker-memory) push
 
