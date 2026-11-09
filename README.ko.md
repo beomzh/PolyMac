@@ -7,7 +7,7 @@
 > 여러 개의 Mac 도구를 하나의 가벼운 메뉴바 앱으로.
 > Spectacle · TRex · Snipaste · AppCleaner · Maccy · Hazel · "터미널에서 열기"를 **가볍게 하나로** 묶는 macOS 오픈소스 유틸리티.
 
-> **현재 버전 0.2.11** — 클립보드 고정 유지·해제 수정, 영어 README. [GitHub Releases](https://github.com/beomzh/PolyMac/releases)에서 받거나 직접 빌드해서 쓸 수 있습니다 → [설치](#설치) · [지금 바로 쓰기](#지금-바로-쓰기-소스-빌드)
+> **현재 버전 0.2.13** — Homebrew 설치·업데이트 때 나던 `postflight` 경고 수정. [GitHub Releases](https://github.com/beomzh/PolyMac/releases)에서 받거나 직접 빌드해서 쓸 수 있습니다 → [설치](#설치) · [지금 바로 쓰기](#지금-바로-쓰기-소스-빌드)
 > Apple 공증을 받지 않은 앱이라 받은 zip은 처음 열 때 macOS가 "손상됨"으로 막습니다 → [처음 열 때 막히면](#처음-열-때-막히면) (Homebrew로 설치하면 이 과정이 없습니다)
 > 아래 "사용 방법"에서 아직 만들지 않은 기능에는 **(예정)** 을 붙였습니다. 모듈별 상태는 [현재 개발 상태](#현재-개발-상태) 표를 보세요.
 

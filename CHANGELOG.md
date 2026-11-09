@@ -2,6 +2,13 @@
 
 개발 이력 (커밋 단위). 사용자용 변경 요약은 GitHub Releases를 본다 — 규칙은 docs/RELEASING.md.
 
+[2026-11-09 17:57]
+- [Changed] - packaging/homebrew/polymac.rb: 0.2.13 version·sha256
+- [Changed] - README.md, README.ko.md: 현재 버전 0.2.13
+- [Changed] - CHANGELOG.md: 0.2.13 버전 줄
+- [Changed] - VERSION: 0.2.14
+
+## 0.2.13 (2026-11-09)
 [2026-11-09 17:51]
 - [Changed] - CHANGELOG.md: PR #35 (fix/cask-postflight-steps) push 기록
 

@@ -2,8 +2,8 @@
 # 릴리즈할 때 version·sha256을 바꿔 tap 저장소에 올린다 — docs/RELEASING.md 4-8.
 #   brew tap beomzh/tap && brew trust --cask beomzh/tap/polymac && brew install --cask beomzh/tap/polymac
 cask "polymac" do
-  version "0.2.11"
-  sha256 "36c3fa2ead8f754be42f334e8fa00784112c42082c9901c30125a3d55f2c1e04"
+  version "0.2.13"
+  sha256 "06230f4c94dc7aa1257e974518f01a9582ca210d69722face694d6a2ab454501"
 
   url "https://github.com/beomzh/PolyMac/releases/download/v#{version}/PolyMac-#{version}.zip"
   name "PolyMac"
