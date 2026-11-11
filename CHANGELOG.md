@@ -2,6 +2,13 @@
 
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
+[2026-11-11 09:45]
+- [Changed] - packaging/homebrew/polymac.rb: version 0.2.18 and its sha256
+- [Changed] - README.md, README.ko.md: current version 0.2.18
+- [Changed] - CHANGELOG.md: add the 0.2.18 version line
+- [Changed] - VERSION: 0.2.19
+
+## 0.2.18 (2026-11-11)
 [2026-11-09 21:40]
 - [Changed] - CHANGELOG.md: record the PR #40 (fix/license-build-number) push
 
