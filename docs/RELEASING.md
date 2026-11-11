@@ -8,7 +8,7 @@ Format: `MAJOR.MINOR.PATCH` (e.g. `0.3.1`), pre-releases `0.3.0-beta.1`
 
 The current version comes from one file, [`VERSION`](../VERSION) at the repository root (single source of truth). Once there is an Xcode project, `MARKETING_VERSION` reads it from this file.
 
-### Before 1.0.0 (now)
+### Before 1.0.0
 
 | Bump | When | Example |
 |---|---|---|
@@ -17,7 +17,7 @@ The current version comes from one file, [`VERSION`](../VERSION) at the reposito
 
 - In 0.x the settings format may change. When it does, **always add an automatic migration** and note it under "Compatibility" in the release notes.
 
-### After 1.0.0
+### From 1.0.0 (now)
 
 | Bump | When |
 |---|---|
@@ -43,7 +43,7 @@ User data (rule JSON, the clipboard store, etc.) carries a `schemaVersion` integ
 | `docs/<description>` | Docs only |
 | tag `vX.Y.Z` | Releases. **Annotated tags** only (`git tag -a`); a published tag is never moved or deleted |
 
-- Urgent fixes branch off `main` as `fix/`, then ship as a PATCH release.
+- Urgent fixes branch off `main` as `fix/` and get a PATCH number like any other PR. They reach users with the next MINOR release, unless the maintainer decides a fix can't wait and releases that PATCH version as an exception.
 - Commit message rules are in [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## 3. Change records — keep two kinds apart
@@ -146,11 +146,13 @@ Put the printed public key in `App/sparkle-public-key.txt` and commit it. The up
 - If the private key is lost, updates can no longer be sent to apps already released — export it with `generate_keys -x <file>` and keep it somewhere safe outside the repository.
 - `package-release.sh` checks that the key in the keychain matches `App/sparkle-public-key.txt` before signing the zip.
 
-### Bumping versions (since 0.2.0)
+### Bumping versions (from 1.0.0)
 
-- Every task (PR) bumps `VERSION` by one PATCH step (0.2.1, 0.2.2, …). No tags are made along the way.
-- A version is tagged and released only when it is shipped to users. Versions without a tag and release get no Sparkle or Homebrew update.
+- Every task (PR) bumps `VERSION` by one PATCH step (1.0.1, 1.0.2, …). No tags are made along the way.
+- Tags and releases happen only at a new MINOR version (1.1.0, 1.2.0, …): the release PR sets `VERSION` to the next MINOR, and that version is tagged and released together. Versions without a tag and release get no Sparkle or Homebrew update.
+- After a release, the follow-up PR moves `VERSION` to the first PATCH of the new line (1.1.0 → 1.1.1).
 - Release notes cover the changes of every version since the last release.
+- From 0.2.0 to 0.2.20 every PR also bumped PATCH, and a version was tagged whenever it was shipped (v0.2.4, v0.2.8, v0.2.11, v0.2.13, v0.2.18).
 
 ## 5. Support policy
 

@@ -2,6 +2,15 @@
 
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
+[2026-11-11 17:48]
+- [Changed] - CHANGELOG.md: record the PR #43 (chore/1.0.0-release-prep) push
+
+[2026-11-11 17:48]
+- [Changed] - VERSION: 1.0.0, the first stable release (every 1.0.0 ROADMAP item is done)
+- [Changed] - docs/RELEASING.md, docs/RELEASING.ko.md: from 1.0.0 every PR bumps PATCH with no tag, and tags and releases happen only at each new MINOR (1.1.0, 1.2.0, ...); urgent fixes wait for the next MINOR unless released as an exception
+- [Changed] - docs/ROADMAP.md, docs/ROADMAP.ko.md: mark the 1.0.0 stage as released
+- [Changed] - README.md, README.ko.md: current version line now 1.0.0
+
 [2026-11-11 10:54]
 - [Changed] - CHANGELOG.md: record the PR #42 (feat/resource-budget-ci) push
 
