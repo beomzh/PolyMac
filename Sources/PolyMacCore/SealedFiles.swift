@@ -59,7 +59,7 @@ public struct SealedFiles: Sendable {
 
 /// 키체인(로그인 키체인)에 둔 256비트 키. 키체인 항목은 만든 앱(같은 서명)만 묻지 않고 읽을 수 있다.
 public enum KeychainKey {
-    private static let service = "dev.polymac"
+    private static var service: String { AppIdentity.keychainService }
     private static let logger = Logger(subsystem: "dev.polymac", category: "keychain")
 
     public enum Failure: Error, CustomStringConvertible {

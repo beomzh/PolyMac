@@ -2,6 +2,20 @@
 
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
+[2026-11-11 10:54]
+- [Changed] - CHANGELOG.md: record the PR #42 (feat/resource-budget-ci) push
+
+[2026-11-11 10:53]
+- [Added] - scripts/resource-budget.sh: launch a copy of the app as dev.polymac.budget and fail if idle memory >= 40 MB, 60 s average idle CPU >= 1%, or the caller grows >= 25 MB after 3 OCRs through the worker; writes a table to the CI run summary and cleans up its settings, data folder and keychain entry
+- [Added] - .github/workflows/ci.yml: run scripts/resource-budget.sh on every PR; job timeout 40 minutes
+- [Added] - Sources/OCRBench/WorkerMemory.swift `runWorkerMemory`: `--worker-memory <PolyMac binary>` measures the calling process's memory around 3 worker OCRs, in its own process so other tests can't skew it
+- [Added] - Sources/PolyMacCore/SystemSupport.swift `AppIdentity`: dev.polymac.* builds other than dev.polymac.app use their own data folder and keychain service, so a measurement copy never touches the installed app's data
+- [Changed] - Sources/PolyMacCore/SealedFiles.swift `KeychainKey`: keychain service from `AppIdentity.keychainService` (unchanged "dev.polymac" for the real app)
+- [Changed] - Sources/OCRModule/OCRWorker.swift: `init(executable:)` is public for the bench tool
+- [Added] - Tests/PolyMacCoreTests/AppPathsTests.swift: only other dev.polymac.* builds get separate data
+- [Changed] - docs/ARCHITECTURE.md, docs/ARCHITECTURE.ko.md, docs/ROADMAP.md, docs/ROADMAP.ko.md, CONTRIBUTING.md, CONTRIBUTING.ko.md: describe the budget check, roadmap item done
+- [Changed] - VERSION: 0.2.20
+
 [2026-11-11 09:46]
 - [Changed] - CHANGELOG.md: record the PR #41 (chore/0.2.18-release) push
 

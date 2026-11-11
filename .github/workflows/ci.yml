@@ -19,7 +19,7 @@ jobs:
   test:
     # macOS 26 SDK is needed (table recognition uses RecognizeDocumentsRequest)
     runs-on: macos-26
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
 
@@ -50,3 +50,7 @@ jobs:
             echo "::error::The release build has compiler warnings"
             exit 1
           fi
+
+      - name: Resource budget (idle memory, idle CPU, OCR worker)
+        # Launches a copy of the app under its own bundle ID and fails if it goes over docs/ARCHITECTURE.md section 3
+        run: scripts/resource-budget.sh

@@ -72,7 +72,7 @@ public protocol PolyMacModule: AnyObject {
 | 파일명 정규화 | 유휴 0% | FSEvents 콜백(지연 1s로 묶어서 처리), 감시 폴더만 |
 | 자동 정리 | 유휴 0% | Normalize와 FSEvents 스트림 공유. 규칙 평가는 파일 메타데이터만 읽음, 중복 검사(해시)는 크기가 같은 파일끼리만 |
 
-측정 계획은 `Instruments`(Allocations, Energy Log)와 CI의 메모리 스냅샷 스크립트로 회귀 감시.
+회귀 검사: CI가 PR마다 `scripts/resource-budget.sh`를 돌린다. 번들 ID만 바꾼 앱 사본(`dev.polymac.budget`, 설정·데이터 폴더·키체인 항목을 따로 써서 로컬에서 돌려도 설치된 앱의 기록을 건드리지 않음)을 띄워 30초 기다린 뒤, 쉬는 동안 메모리가 40 MB 이상이거나 60초 평균 CPU가 1% 이상이면 실패한다. 별도 프로세스에서 일꾼으로 OCR을 세 번 해 그 프로세스 메모리가 25 MB 이상 늘어도 실패한다(일꾼 없이 하면 약 150 MB). 로컬 측정(2026-11-11, 같은 Mac): 15 MB, 0.05%, +5 MB. 한도는 환경 변수(`MEMORY_LIMIT_MB`, `CPU_LIMIT_PERCENT`, `OCR_GROWTH_LIMIT_MB`)로 바꿀 수 있다. 더 깊이 볼 때는 `Instruments`(Allocations, Energy Log)를 쓴다.
 
 ### 실측 (2026-11-04, Apple M3, 16 GB, macOS 26.6.2)
 

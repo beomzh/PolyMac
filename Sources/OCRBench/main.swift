@@ -47,6 +47,14 @@ if args.contains("--translate") {
     try await runTranslate(folder: folder)
     exit(0)
 }
+if let index = args.firstIndex(of: "--worker-memory"), args.index(after: index) < args.endIndex {
+    // ocr-bench --worker-memory <PolyMac 실행 파일> [샘플.png]
+    let worker = URL(fileURLWithPath: args[args.index(after: index)])
+    let rest = args[args.index(index, offsetBy: 2)...]
+    let sample = URL(fileURLWithPath: rest.first { !$0.hasPrefix("-") } ?? "Tests/OCRSamples/ko-long.png")
+    try await runWorkerMemory(worker: worker, sample: sample, rounds: 3)
+    exit(0)
+}
 if args.contains("--budget") {
     try await runBudget(folder: folder)
     exit(0)

@@ -72,7 +72,7 @@ For version numbering see [RELEASING.md](RELEASING.md) — each stage below maps
 ## 1.0.0 — Release
 - [x] Sparkle automatic updates (EdDSA signatures, works without notarization, off by default) + personal Homebrew tap (moved up to 0.2.0)
 - [x] Permission dashboard (4 states, relaunch, clear permission records, alert when a permission is revoked), welcome guide
-- [ ] Resource budget regression tests (CI)
+- [x] Resource budget regression tests (CI): `scripts/resource-budget.sh` (idle memory, idle CPU, OCR worker)
 
 ## Later candidates
 Keep awake · scrolling capture · GIF recording · moving between Spaces (private API, opt-in)

@@ -3,11 +3,29 @@ import ApplicationServices
 import CoreServices
 import os
 
+/// 이 실행본이 쓰는 데이터 이름. 정식 앱(dev.polymac.app)과 swift run은 "PolyMac"·"dev.polymac"를 쓰고,
+/// 번들 ID가 다른 dev.polymac.* 빌드(예: scripts/resource-budget.sh의 dev.polymac.budget)는 데이터 폴더·키체인 항목을 따로 써서
+/// 설치된 앱의 기록을 건드리지 않는다.
+public enum AppIdentity {
+    public static let mainBundleID = "dev.polymac.app"
+
+    /// 정식 앱이 아닌 dev.polymac.* 빌드의 번들 ID (그 밖에는 nil)
+    public static var separateID: String? { separateID(for: Bundle.main.bundleIdentifier) }
+
+    static func separateID(for bundleID: String?) -> String? {
+        guard let bundleID, bundleID.hasPrefix("dev.polymac."), bundleID != mainBundleID else { return nil }
+        return bundleID
+    }
+
+    public static var dataFolderName: String { separateID.map { "PolyMac (\($0))" } ?? "PolyMac" }
+    public static var keychainService: String { separateID ?? "dev.polymac" }
+}
+
 /// 앱 데이터 위치. 다른 사용자가 읽지 못하게 0700으로 만든다 (docs/SECURITY.md 3).
 public enum AppPaths {
     public static var dataDirectory: URL {
         let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("PolyMac", isDirectory: true)
+            .appendingPathComponent(AppIdentity.dataFolderName, isDirectory: true)
         if !FileManager.default.fileExists(atPath: url.path) {
             try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         }

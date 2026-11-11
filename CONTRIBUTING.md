@@ -56,7 +56,7 @@ Never push directly to `main`. Every change is made on a branch and merged throu
 6. **Merge** — squash merge. The squashed commit title is the PR title (`type(scope): title` format)
 7. Delete the branch after merging
 
-CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the first two checklist items on every PR and every push to `main`: `scripts/test.sh` (docs check + unit tests) and a release build that fails on any compiler warning, on a macOS 26 runner.
+CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the first two checklist items on every PR and every push to `main`: `scripts/test.sh` (docs check + unit tests) and a release build that fails on any compiler warning, on a macOS 26 runner. It then runs `scripts/resource-budget.sh`, which fails when the app goes over the idle memory, idle CPU or OCR worker limits in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) section 3; the numbers appear in the run summary.
 
 Repository settings (maintainers): protect the `main` branch — PR required, one approval, no force pushes, and the CI `test` check must pass.
 
