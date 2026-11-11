@@ -43,6 +43,9 @@ trap 'rm -rf "$CHECK"' EXIT
 if unzip -Z1 "$OUT/$NAME.zip" | grep -qE '(^|/)\._'; then echo "✗ zip에 ._ 파일이 들어갔습니다"; exit 1; fi
 unzip -q "$OUT/$NAME.zip" -d "$CHECK" && codesign --verify --strict "$CHECK/PolyMac.app" \
     || { echo "✗ 압축을 푼 앱의 서명이 유효하지 않습니다"; exit 1; }
+for notice in LICENSE.txt THIRD_PARTY_NOTICES.md; do   # 라이선스 고지가 배포본에 있어야 한다 (THIRD_PARTY_NOTICES.md)
+    [[ -s "$CHECK/PolyMac.app/Contents/Resources/$notice" ]] || { echo "✗ 앱에 $notice 가 없습니다"; exit 1; }
+done
 (cd "$OUT" && shasum -a 256 "$NAME.zip" > "$NAME.zip.sha256" && shasum -a 256 -c "$NAME.zip.sha256")
 
 # Sparkle appcast — 앱은 releases/latest/download/appcast.xml을 읽는다. 비밀 키는 키체인에만 있다 (generate_keys)

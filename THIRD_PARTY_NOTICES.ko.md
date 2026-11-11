@@ -4,6 +4,8 @@
 
 PolyMac에 포함되거나 함께 배포되는 외부 코드·라이브러리의 저작권과 라이선스를 기록한다.
 
+아래 라이선스들이 바이너리 배포 때 고지를 함께 넣도록 요구하므로, 앱 번들 안에 이 파일과 PolyMac 자체 라이선스를 넣는다 (`PolyMac.app/Contents/Resources/THIRD_PARTY_NOTICES.md`, `LICENSE.txt`). `scripts/build-app.sh`가 복사하고, 둘이 없으면 `scripts/package-release.sh`가 묶지 않는다.
+
 PolyMac은 아래 외부 라이브러리 하나를 앱과 함께 배포한다. 그 밖에는 Apple이 macOS와 함께 제공하는 시스템 프레임워크(AppKit, ScreenCaptureKit, Vision, App Intents 등)만 쓰며, 이들은 재배포하지 않는다.
 
 ## Sparkle

@@ -26,7 +26,9 @@
 | PATCH | 버그·보안 수정, 문서 |
 
 ### 빌드 번호
-`CURRENT_PROJECT_VERSION` = `git rev-list --count HEAD` (계속 증가하는 정수). macOS는 같은 버전 문자열이라도 빌드 번호로 업데이트 여부를 판단한다.
+`CFBundleVersion`(appcast의 `sparkle:version`)은 `scripts/build-number.sh`가 `VERSION`에서 계산한다: major × 1,000,000 + minor × 1,000 + patch, 예를 들어 0.2.18은 2018이다. 0.3.0-beta.1 같은 사전 배포는 정식판보다 1 작게 해서, 정식판이 나오면 업데이트로 보이게 한다. Sparkle은 버전 문자열이 아니라 이 번호로 더 새로운지 판단한다.
+
+0.2.13까지는 커밋 수(`git rev-list --count HEAD`, 0.2.13에서 43)를 썼다. 이 방식은 두 군데서 깨졌다: 기능 브랜치 빌드는 뒤이어 squash 병합된 릴리스보다 커밋이 많아 Sparkle이 업데이트를 숨겼고, 얕은 클론에서는 1이 된다. 새 방식의 번호는 모두 43보다 커서 기존 설치본도 그대로 업데이트된다. `scripts/test.sh`가 이를 확인한다.
 
 ### 설정 파일 버전
 사용자 데이터(규칙 JSON, 클립보드 DB 등)에는 앱 버전과 별개로 `schemaVersion` 정수를 둔다. 형식이 바뀌면 +1 하고 이전 버전을 읽어 변환하는 코드를 남긴다. 가져오기한 JSON의 `schemaVersion`이 앱보다 높으면 적용하지 않고 업데이트를 안내한다.

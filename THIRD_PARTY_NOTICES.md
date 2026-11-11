@@ -4,6 +4,8 @@
 
 Copyright and license information for third-party code and libraries included in or shipped with PolyMac.
 
+The app carries this file and PolyMac's own license inside the bundle (`PolyMac.app/Contents/Resources/THIRD_PARTY_NOTICES.md` and `LICENSE.txt`), as the licenses below require for binary distribution. `scripts/build-app.sh` copies them and `scripts/package-release.sh` refuses to package an app without them.
+
 PolyMac ships one third-party library, listed below, with the app. Otherwise it only uses system frameworks that Apple ships with macOS (AppKit, ScreenCaptureKit, Vision, App Intents and others), which are not redistributed.
 
 ## Sparkle

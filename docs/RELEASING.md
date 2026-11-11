@@ -26,7 +26,9 @@ The current version comes from one file, [`VERSION`](../VERSION) at the reposito
 | PATCH | Bug and security fixes, docs |
 
 ### Build number
-`CURRENT_PROJECT_VERSION` = `git rev-list --count HEAD` (an ever-increasing integer). macOS uses the build number to decide on updates even when the version string is the same.
+`CFBundleVersion` (and `sparkle:version` in the appcast) is computed from `VERSION` by `scripts/build-number.sh`: major × 1,000,000 + minor × 1,000 + patch, so 0.2.18 is 2018. A pre-release such as 0.3.0-beta.1 gets one less than the final release, so the final release still shows up as an update. Sparkle compares this number, not the version string, to decide whether an update is newer.
+
+Up to 0.2.13 the build number was the commit count (`git rev-list --count HEAD`, 43 at 0.2.13). That broke in two ways: a feature-branch build has more commits than the squash-merged release that follows, so Sparkle hid the update, and a shallow clone gives 1. Every number from the new scheme is larger than 43, so existing installs still update. `scripts/test.sh` checks this.
 
 ### Settings file version
 User data (rule JSON, the clipboard store, etc.) carries a `schemaVersion` integer separate from the app version. When the format changes, add 1 and keep code that reads and converts the previous version. If an imported JSON has a `schemaVersion` higher than the app's, it is not applied and the user is told to update.

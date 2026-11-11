@@ -26,7 +26,7 @@ INTENTS_TOOL="$DEV_DIR/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmet
 
 VERSION="$(tr -d '[:space:]' < VERSION)"
 SHORT_VERSION="${VERSION%%-*}"
-BUILD="$(git rev-list --count HEAD 2>/dev/null || echo 1)"
+BUILD="$(scripts/build-number.sh "$VERSION")"   # 버전에서 계산 — scripts/build-number.sh
 IDENTITIES="$(security find-identity -v -p codesigning 2>/dev/null || true)"
 if [[ -n "${POLYMAC_SIGN_IDENTITY:-}" ]]; then
     IDENTITY="$POLYMAC_SIGN_IDENTITY"
@@ -48,6 +48,9 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APP/Contents/Framewor
 cp "$BIN_DIR/PolyMac" "$APP/Contents/MacOS/PolyMac"
 cp App/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 cp -R App/en.lproj "$APP/Contents/Resources/"   # 영어 시스템에서 권한 안내·단축어 동작 문구   # 아이콘 다시 만들기: swift scripts/make-icon.swift
+# 라이선스 — PolyMac(MIT)과 함께 넣는 Sparkle(MIT, bsdiff 등 BSD 포함)은 배포본에 저작권 고지를 함께 넣어야 한다
+cp LICENSE "$APP/Contents/Resources/LICENSE.txt"
+cp THIRD_PARTY_NOTICES.md "$APP/Contents/Resources/THIRD_PARTY_NOTICES.md"
 # Sparkle 공개 키 (없으면 업데이트 확인을 쓰지 않는 빌드 — docs/RELEASING.md "업데이트 서명 키")
 SPARKLE_KEY="$([[ -f App/sparkle-public-key.txt ]] && tr -d "[:space:]" < App/sparkle-public-key.txt || true)"
 sed -e "s/__VERSION__/$VERSION/" -e "s/__SHORT_VERSION__/$SHORT_VERSION/" -e "s/__BUILD__/$BUILD/" -e "s|__SPARKLE_PUBLIC_KEY__|$SPARKLE_KEY|" \
