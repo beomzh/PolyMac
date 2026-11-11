@@ -69,7 +69,7 @@ For version numbering see [RELEASING.md](RELEASING.md) — each stage below maps
 - [x] Scan for leftovers of apps already deleted (excluding existing executables and helpers in use)
 - [x] Clean up install receipts (`pkgutil --forget`), export the list before deleting
 
-## 1.0.0 — Release
+## 1.0.0 — Release (released 2026-11-11)
 - [x] Sparkle automatic updates (EdDSA signatures, works without notarization, off by default) + personal Homebrew tap (moved up to 0.2.0)
 - [x] Permission dashboard (4 states, relaunch, clear permission records, alert when a permission is revoked), welcome guide
 - [x] Resource budget regression tests (CI): `scripts/resource-budget.sh` (idle memory, idle CPU, OCR worker)
