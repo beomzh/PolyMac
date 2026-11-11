@@ -56,7 +56,7 @@ scripts/build-app.sh --install
 6. **머지** — Squash merge. 합쳐진 커밋 제목은 PR 제목(`type(scope): 제목` 형식)
 7. 머지 후 브랜치 삭제
 
-CI([`.github/workflows/ci.yml`](.github/workflows/ci.yml))가 PR마다, 그리고 `main`에 push될 때마다 체크리스트 앞 두 항목을 macOS 26 환경에서 돌린다: `scripts/test.sh`(문서 검사 + 단위 테스트)와 경고가 하나라도 있으면 실패하는 release 빌드.
+CI([`.github/workflows/ci.yml`](.github/workflows/ci.yml))가 PR마다, 그리고 `main`에 push될 때마다 체크리스트 앞 두 항목을 macOS 26 환경에서 돌린다: `scripts/test.sh`(문서 검사 + 단위 테스트)와 경고가 하나라도 있으면 실패하는 release 빌드. 이어서 `scripts/resource-budget.sh`가 앱이 [docs/ARCHITECTURE.ko.md](docs/ARCHITECTURE.ko.md) 3절의 쉬는 동안 메모리·CPU, OCR 일꾼 한도를 넘으면 실패시키고, 잰 값은 실행 요약에 나온다.
 
 저장소 설정(메인테이너): `main` 브랜치 보호 — PR 필수, 승인 1명, 강제 push 금지, CI `test` 검사 통과 필수.
 

@@ -23,3 +23,10 @@ import Testing
     let mode = try FileManager.default.attributesOfItem(atPath: log.path)[.posixPermissions] as? Int
     #expect(mode == 0o600)
 }
+
+@Test func onlyOtherPolyMacBuildsGetSeparateData() {
+    #expect(AppIdentity.separateID(for: "dev.polymac.app") == nil)
+    #expect(AppIdentity.separateID(for: nil) == nil)                       // swift run
+    #expect(AppIdentity.separateID(for: "com.apple.dt.xctest.tool") == nil)
+    #expect(AppIdentity.separateID(for: "dev.polymac.budget") == "dev.polymac.budget")
+}

@@ -72,7 +72,7 @@ public protocol PolyMacModule: AnyObject {
 | Filename normalization | 0% idle | FSEvents callbacks (batched with a 1s delay), watched folders only |
 | Auto-organize | 0% idle | Shares the FSEvents stream with Normalize. Rule evaluation reads only file metadata; duplicate checks (hashes) only among files of the same size |
 
-Measurement plan: watch for regressions with `Instruments` (Allocations, Energy Log) and a memory snapshot script in CI.
+Regression check: `scripts/resource-budget.sh` runs in CI on every PR. It launches a copy of the app under its own bundle ID (`dev.polymac.budget`, which uses its own settings, data folder and keychain entry, so a local run doesn't touch the installed app's data), waits 30 seconds, then fails if idle memory is 40 MB or more or the 60-second average CPU is 1% or more. It also runs OCR three times through the worker from a separate process and fails if that process grows by 25 MB or more (about 150 MB without the worker). Locally (2026-11-11, same Mac): 15 MB, 0.05%, +5 MB. The limits can be changed with environment variables (`MEMORY_LIMIT_MB`, `CPU_LIMIT_PERCENT`, `OCR_GROWTH_LIMIT_MB`). For deeper digging use `Instruments` (Allocations, Energy Log).
 
 ### Measured (2026-11-04, Apple M3, 16 GB, macOS 26.6.2)
 

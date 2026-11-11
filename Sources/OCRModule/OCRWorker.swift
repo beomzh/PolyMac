@@ -26,7 +26,7 @@ public final class OCRWorker: @unchecked Sendable {
     private var output: FileHandle?
     private static let logger = Logger(subsystem: "dev.polymac", category: "ocr-worker")
 
-    init(executable: URL?) {
+    public init(executable: URL?) {
         self.executable = executable
         signal(SIGPIPE, SIG_IGN) // 일꾼이 막 끝난 파이프에 쓰면 앱이 죽지 않고 오류로 받는다
     }
