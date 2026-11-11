@@ -2,6 +2,9 @@
 
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
+[2026-11-11 10:54]
+- [Changed] - CHANGELOG.md: record the PR #42 (feat/resource-budget-ci) push
+
 [2026-11-11 10:53]
 - [Added] - scripts/resource-budget.sh: launch a copy of the app as dev.polymac.budget and fail if idle memory >= 40 MB, 60 s average idle CPU >= 1%, or the caller grows >= 25 MB after 3 OCRs through the worker; writes a table to the CI run summary and cleans up its settings, data folder and keychain entry
 - [Added] - .github/workflows/ci.yml: run scripts/resource-budget.sh on every PR; job timeout 40 minutes
