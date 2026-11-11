@@ -7,7 +7,7 @@
 > Many Mac tools in one lightweight menu bar app.
 > An open-source macOS utility that combines Spectacle · TRex · Snipaste · AppCleaner · Maccy · Hazel · "Open in Terminal" **into one light app**.
 
-> **Current version 0.2.13** — no more Homebrew `postflight` deprecation warning on install or upgrade. Download it from [GitHub Releases](https://github.com/beomzh/PolyMac/releases) or build it yourself → [Install](#install) · [Try it now](#try-it-now-build-from-source)
+> **Current version 0.2.18** — OCR no longer leaves the menu bar app holding about 150 MB; recognition runs in a short-lived helper process. Download it from [GitHub Releases](https://github.com/beomzh/PolyMac/releases) or build it yourself → [Install](#install) · [Try it now](#try-it-now-build-from-source)
 > The app is not notarized by Apple, so macOS blocks a downloaded zip as "damaged" the first time you open it → [If macOS blocks the first launch](#if-macos-blocks-the-first-launch) (installing with Homebrew skips this step)
 > Features in "Usage" that are not built yet are marked **(planned)**. See the [Development status](#development-status) table for each module.
 > Some features exist for Korean text (Korean filename fix, Korean OCR tuning). They stay out of the way if you don't need them.
