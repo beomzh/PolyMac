@@ -13,6 +13,9 @@ public final class NormalizeModule: PolyMacModule {
     let context: ModuleContext
     private var watcher: FolderWatcher?
     private var observer: NSObjectProtocol?
+    private var defaultsObserver: NSObjectProtocol?
+    /// 환경 설정 › 한글 파일명 탭의 "복사한 글자의 풀어진 한글도 붙이기" (기본 켬)
+    public static let clipboardTextKey = ClipboardHangulFix.defaultsKey
     private lazy var clipboardFix = ClipboardHangulFix { [context] message in context.logger.info("\(message, privacy: .public)") }
 
     /// 감시 폴더 (바로 아래 항목만) — 환경 설정 › 한글 파일명, 또는 NormalizeFolders 설명의 defaults 명령
@@ -28,6 +31,14 @@ public final class NormalizeModule: PolyMacModule {
         observer = NotificationCenter.default.addObserver(forName: NormalizeFolders.didChange, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.startWatching() }
         }
+        // 환경 설정 › 한글 파일명에서 바꿔도 바로 켜고 끈다 (start/stop은 여러 번 불러도 안전)
+        defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.syncClipboardFix() }
+        }
+    }
+
+    private func syncClipboardFix() {
+        if ClipboardHangulFix.isEnabled { clipboardFix.start() } else { clipboardFix.stop() }
     }
 
     private func startWatching() {
@@ -51,6 +62,8 @@ public final class NormalizeModule: PolyMacModule {
         clipboardFix.stop()
         if let observer { NotificationCenter.default.removeObserver(observer) }
         observer = nil
+        if let defaultsObserver { NotificationCenter.default.removeObserver(defaultsObserver) }
+        defaultsObserver = nil
         watcher?.stop()
         watcher = nil
     }
@@ -71,7 +84,7 @@ public final class NormalizeModule: PolyMacModule {
 
     @objc private func toggleClipboardFix() {
         ClipboardHangulFix.isEnabled.toggle()
-        if ClipboardHangulFix.isEnabled { clipboardFix.start() } else { clipboardFix.stop() }
+        syncClipboardFix()
         context.toast(ClipboardHangulFix.isEnabled
             ? L("복사한 글자의 풀어진 한글을 붙입니다", "Copied text: decomposed Korean will be fixed")
             : L("복사한 글자는 그대로 둡니다", "Copied text is left as is"))

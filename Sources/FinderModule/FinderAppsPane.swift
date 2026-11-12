@@ -7,6 +7,8 @@ import SwiftUI
 public struct FinderAppsPane: View {
     @State private var terminalID = TerminalApp.current.bundleID
     @State private var editor = EditorApp.current
+    /// 메뉴의 "잘라낸 동안 화면 아래에 표시"와 같은 값 (기본 켬)
+    @AppStorage(CutHUD.defaultsKey) private var showCutHUD = true
 
     public init() {}
 
@@ -55,6 +57,16 @@ public struct FinderAppsPane: View {
             } footer: {
                 Text(L("폴더는 에디터의 작업 공간으로 열립니다. CotEditor·텍스트 편집기처럼 폴더를 열지 못하는 앱에는 파일만 넘깁니다.",
                        "Folders open as the editor's workspace. Apps that can't open folders (CotEditor, TextEdit) get files only."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section {
+                Toggle(L("잘라낸 동안 화면 아래에 표시", "Show pending cut at the bottom of the screen"), isOn: $showCutHUD)
+            } header: {
+                Text(L("파일 잘라내기 (⌘X)", "Cutting files (⌘X)"))
+            } footer: {
+                Text(L("켜면 ⌘V로 옮길 때까지 무엇을 잘라냈는지 화면 아래에 보이고 거기서 취소할 수 있습니다. 끄면 잘라낼 때 알림만 잠깐 뜹니다.",
+                       "When on, what you cut stays shown at the bottom of the screen until you move it with ⌘V, and you can cancel it there. When off, cutting shows a short notice only."))
                     .font(.caption).foregroundStyle(.secondary)
             }
 

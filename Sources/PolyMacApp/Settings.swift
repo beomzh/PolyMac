@@ -3,10 +3,12 @@ import ClipboardModule
 import Combine
 import FinderModule
 import NormalizeModule
+import OCRModule
 import OrganizeModule
 import PolyMacCore
 import ServiceManagement
 import SwiftUI
+import WindowModule
 
 /// 환경 설정 창이 앱에 부탁하는 일. AppDelegate가 맡는다.
 @MainActor
@@ -27,13 +29,15 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
     private var model: SettingsModel?
 
     enum Tab: String, CaseIterable, Identifiable {
-        case features, language, notifications, clipboard, finder, normalize, organize, shortcuts, permissions
+        case features, language, notifications, window, ocr, clipboard, finder, normalize, organize, shortcuts, permissions
         var id: String { rawValue }
         var title: String {
             switch self {
             case .features: return L("기능", "Features")
             case .language: return L("언어", "Language")
             case .notifications: return L("알림", "Notifications")
+            case .window: return L("창 분할", "Window Layout")
+            case .ocr: return L("텍스트 추출", "Text Recognition")
             case .clipboard: return L("클립보드", "Clipboard")
             case .finder: return L("Finder 도구", "Finder Tools")
             case .normalize: return L("한글 파일명", "Korean Filenames")
@@ -47,6 +51,8 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
             case .features: return "square.grid.2x2"
             case .language: return "globe"
             case .notifications: return "text.bubble"
+            case .window: return "rectangle.split.2x1"
+            case .ocr: return "text.viewfinder"
             case .clipboard: return "doc.on.clipboard"
             case .finder: return "macwindow.on.rectangle"
             case .normalize: return "folder.badge.gearshape"
@@ -272,6 +278,8 @@ struct SettingsView: View {
                 case .features: FeaturesPane(model: model)
                 case .language: LanguagePane(model: model)
                 case .notifications: NotificationsPane()
+                case .window: WindowPane()
+                case .ocr: OCRPane()
                 case .clipboard: ClipboardPane()
                 case .finder: FinderAppsPane()
                 case .normalize: NormalizePane()
@@ -368,6 +376,73 @@ private struct LanguagePane: View {
 }
 
 /// 안내 토스트 켜기·위치·표시 시간·글자색·배경색·글자 크기·알림창 크기. 바꾸면 바로 저장하고 미리보기를 띄운다.
+/// 창 분할 — 메뉴바 › 창 분할 › 가장자리로 끌어 배치와 같은 값. 바꾸면 모듈이 바로 켜고 끈다.
+private struct WindowPane: View {
+    @AppStorage(WindowModule.edgeSnapKey) private var edgeSnap = false
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(L("가장자리로 끌어 배치", "Snap by dragging to edges"), isOn: $edgeSnap)
+                if edgeSnap && !Permissions.accessibility {
+                    Text(L("손쉬운 사용 권한이 필요합니다. 권한 탭에서 허용하세요.", "Needs Accessibility permission. Allow it in the Permissions tab."))
+                        .font(.caption).foregroundStyle(.orange)
+                }
+            } header: {
+                Text(L("창을 끌 때", "When dragging windows"))
+            } footer: {
+                Text(L("창을 화면 왼쪽·오른쪽 끝으로 끌면 절반, 위로 끌면 최대화, 모서리로 끌면 4분의 1로 배치합니다. macOS 15부터 시스템에도 같은 기능이 있어 기본은 꺼져 있습니다. 켤 때는 시스템 설정 › 데스크탑 및 Dock › 창 타일링을 꺼 두세요. 창 배치 단축키는 단축키 탭에서 바꿉니다.",
+                       "Drag a window to the left or right edge for a half, to the top to maximize, or to a corner for a quarter. macOS 15 and later has the same feature, so this is off by default. If you turn it on, turn off System Settings › Desktop & Dock › window tiling. Window shortcuts are in the Shortcuts tab."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+/// 텍스트 추출 — 메뉴바 › 텍스트 추출의 줄바꿈 · 표 형식 · 단축어·URL 허용과 같은 값. 쓸 때마다 읽으므로 바로 맞는다.
+private struct OCRPane: View {
+    @AppStorage(OCRLineMode.defaultsKey) private var lineMode = OCRLineMode.keep.rawValue
+    @AppStorage(TableFormat.defaultsKey) private var tableFormat = TableFormat.tsv.rawValue
+    @AppStorage(URLActions.allowKey) private var allowURLs = false
+
+    var body: some View {
+        Form {
+            Section {
+                Picker(L("줄바꿈", "Line breaks"), selection: $lineMode) {
+                    ForEach(OCRLineMode.allCases, id: \.self) { mode in
+                        Text(OCRModule.title(mode)).tag(mode.rawValue)
+                    }
+                }
+                Picker(L("표 형식", "Table format"), selection: $tableFormat) {
+                    ForEach(TableFormat.allCases, id: \.self) { format in
+                        Text(OCRModule.title(format)).tag(format.rawValue)
+                    }
+                }
+            } header: {
+                Text(L("추출한 글자", "Recognized text"))
+            } footer: {
+                Text(TableRecognizer.isAvailable
+                     ? L("표 형식은 표 추출에 씁니다. 엑셀·Numbers에는 탭으로 나눈 형식이 그대로 칸에 들어갑니다.",
+                         "The table format is used by table extraction. The tab-separated format pastes into Excel and Numbers cells as is.")
+                     : L("표 인식은 macOS 26 이상에서 됩니다. 지금은 표도 일반 텍스트로 복사합니다.",
+                         "Table recognition needs macOS 26. For now tables are copied as plain text."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Section {
+                Toggle(L("단축어·URL로 부르기 허용", "Allow Shortcuts & URLs"), isOn: $allowURLs)
+            } header: {
+                Text(L("다른 앱에서 부르기", "Running from other apps"))
+            } footer: {
+                Text(L("켜면 단축어 앱의 \"X-Callback URL 열기\"로 polymac://ocr 또는 polymac://ocr-table을 불러 클립보드 이미지를 읽고 결과를 클립보드에 넣습니다. 웹 페이지의 링크로도 불릴 수 있어 기본은 꺼져 있습니다.",
+                       "When on, Shortcuts can run polymac://ocr or polymac://ocr-table (Open X-Callback URL) to read the clipboard image into the clipboard. Web links can call these too, so this is off by default."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
 /// 클립보드 히스토리 설정. 메뉴바 › 클립보드 히스토리 메뉴와 같은 값을 쓴다 — 어느 쪽에서 바꿔도 다른 쪽에 맞는다.
 private struct ClipboardPane: View {
     @AppStorage(ClipboardModule.pasteOnChooseKey) private var pasteOnChoose = false
@@ -615,6 +690,8 @@ private struct ColorChoiceRow: View {
 private struct NormalizePane: View {
     @State private var folders = NormalizeFolders.load()
     @State private var message: String?
+    /// 메뉴의 "복사한 글자의 풀어진 한글도 붙이기"와 같은 값 (기본 켬). 바꾸면 모듈이 바로 켜고 끈다.
+    @AppStorage(NormalizeModule.clipboardTextKey) private var fixCopiedText = true
 
     var body: some View {
         Form {
@@ -656,6 +733,15 @@ private struct NormalizePane: View {
             } footer: {
                 Text(L("폴더 바로 아래의 파일·폴더 이름만 고칩니다(하위 폴더는 우클릭 › 한글 파일명 정리). 홈 폴더 안의 폴더만 지정할 수 있고, ~/Library와 iCloud 동기화 폴더는 건드리지 않습니다. 기능이 꺼져 있으면 저장만 됩니다.",
                        "Only names directly inside each folder are fixed (use right-click › Fix Korean Filenames for subfolders). Only folders inside your home folder are allowed; ~/Library and iCloud-synced folders are never touched. If the feature is off, the list is only saved."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Section {
+                Toggle(L("복사한 글자의 풀어진 한글도 붙이기", "Also fix decomposed Korean in copied text"), isOn: $fixCopiedText)
+            } header: {
+                Text(L("복사한 글자", "Copied text"))
+            } footer: {
+                Text(L("Mac에서 만든 파일 이름 등을 복사했을 때 풀어져 있는 한글(ㅎㅏㄴㄱㅡㄹ)을 붙여 클립보드에 다시 넣습니다.",
+                       "When copied text (such as a filename made on a Mac) contains decomposed Korean, it is recomposed and put back on the clipboard."))
                     .font(.caption).foregroundStyle(.secondary)
             }
         }

@@ -22,7 +22,9 @@ public final class WindowModule: PolyMacModule {
     private var snapper: EdgeSnapper?
 
     /// 가장자리 끌기 스냅. macOS 15부터 시스템에도 같은 기능이 있어 겹치지 않게 기본은 끔.
-    private static let edgeSnapKey = "window.edgeSnap"
+    /// 환경 설정 › 창 배치 탭과 메뉴가 같은 값을 쓴다. 바뀌면 syncEdgeSnap()이 켜고 끈다.
+    public static let edgeSnapKey = "window.edgeSnap"
+    private var defaultsObserver: NSObjectProtocol?
     private var edgeSnapOn: Bool { UserDefaults.standard.bool(forKey: Self.edgeSnapKey) }
 
     public init(context: ModuleContext) {
@@ -53,10 +55,25 @@ public final class WindowModule: PolyMacModule {
             context.hotkey(action.rawValue, combo, name) { [weak self] in self?.perform(action) }
         }
         if edgeSnapOn { startSnapper() }
+        defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.syncEdgeSnap() }
+        }
+    }
+
+    /// 환경 설정 창에서 바꿔도 메뉴에서 바꿀 때처럼 바로 켜고 끈다
+    private func syncEdgeSnap() {
+        if edgeSnapOn, snapper == nil {
+            startSnapper()
+        } else if !edgeSnapOn, let snapper {
+            snapper.stop()
+            self.snapper = nil
+        }
     }
 
     public func deactivate() {
         context.unregisterHotkeys()
+        if let defaultsObserver { NotificationCenter.default.removeObserver(defaultsObserver) }
+        defaultsObserver = nil
         snapper?.stop()
         snapper = nil
     }
@@ -73,18 +90,17 @@ public final class WindowModule: PolyMacModule {
     @objc private func toggleEdgeSnap() {
         let on = !edgeSnapOn
         UserDefaults.standard.set(on, forKey: Self.edgeSnapKey)
+        syncEdgeSnap()
         if on {
-            startSnapper()
             context.toast(L("가장자리 끌기 배치를 켰습니다. 시스템의 같은 기능(데스크탑 및 Dock › 창 타일링)은 꺼 두세요.",
                             "Edge snapping is on. Turn off the system's own tiling (Desktop & Dock › Windows) to avoid both reacting."))
         } else {
-            snapper?.stop()
-            snapper = nil
             context.toast(L("가장자리 끌기 배치를 껐습니다", "Edge snapping is off"))
         }
     }
 
     private func startSnapper() {
+        guard snapper == nil else { return }
         if !Permissions.accessibility { Permissions.requestAccessibility() }
         let snapper = EdgeSnapper()
         snapper.onSnap = { [weak self] window, from, _ in self?.undoFrame = (window, from) }

@@ -2,6 +2,14 @@
 
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
+[2026-11-12 14:35]
+- [Added] - Sources/PolyMacApp/Settings.swift `WindowPane`, `OCRPane`: Window Layout tab (snap by dragging to edges) and Text Recognition tab (line breaks, table format, allow Shortcuts & URLs), which before were only in the menu bar menu
+- [Added] - Sources/PolyMacApp/Settings.swift `NormalizePane`: the "Also fix decomposed Korean in copied text" toggle
+- [Added] - Sources/FinderModule/FinderAppsPane.swift: the "Show pending cut at the bottom of the screen" toggle
+- [Changed] - Sources/WindowModule/WindowModule.swift `syncEdgeSnap`, Sources/NormalizeModule/NormalizeModule.swift `syncClipboardFix`, Sources/FinderModule/FinderModule.swift: apply these settings at once when they change in Settings; the menu toggles use the same path
+- [Changed] - Sources/OCRModule, Sources/PolyMacCore/URLActions.swift: setting keys and option titles are public so Settings and the menu share them
+- [Changed] - README.md, README.ko.md: mention the Settings tab for each of these options
+
 [2026-11-12 14:20]
 - [Changed] - CHANGELOG.md: record the PR #46 (feat/clipboard-paste-setting) push
 

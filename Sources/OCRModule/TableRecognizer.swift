@@ -6,7 +6,7 @@ import Vision
 public enum TableFormat: String, CaseIterable, Sendable {
     case tsv, markdown
 
-    static let defaultsKey = "ocr.tableFormat"
+    public static let defaultsKey = "ocr.tableFormat"
 
     public static var current: TableFormat {
         get { UserDefaults.standard.string(forKey: defaultsKey).flatMap(TableFormat.init(rawValue:)) ?? .tsv }
