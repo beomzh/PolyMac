@@ -156,8 +156,8 @@ Right-click › **Select Text** lets you drag over text on the pin to pick part 
 - **Paste the current clipboard as plain text**: no default shortcut (many apps already use `⌥⇧⌘V` for this). Set one in Settings › Shortcuts and it pastes plain text in any app.
 - **Images are recorded too** (captures, copied photos — up to 30 MB each). Identical images are stored once
 - **Paste When Chosen** (off by default): Settings › Clipboard, or Menu bar PolyMac icon › Clipboard History › Paste When Chosen. When on, `↩︎`, double-click and `⌘1–9`/`⌘0` paste the chosen item straight into the app in front, and `⇧↩︎` only copies it. When off, choosing only puts it on the clipboard and `⇧↩︎` pastes. The hint line at the bottom of the window follows the setting. Pasting needs Accessibility permission; without it, the item is only copied
-- **Keep for**: Menu bar PolyMac icon › Clipboard History › Keep for (1 / 3 / **7** / 30 days / no limit). Expired items are checked and removed every hour
-- **Number kept**: same menu › Keep (50 / 100 / **200** / 500 / 1000 items). Over the limit, the oldest go first even within the period
+- **Keep for**: Settings › Clipboard, or Menu bar PolyMac icon › Clipboard History › Keep for (1 / 3 / **7** / 30 days / no limit). Expired items are checked and removed every hour
+- **Number kept**: Settings › Clipboard, or the same menu › Keep (50 / 100 / **200** / 500 / 1000 items). Over the limit, the oldest go first even within the period
 - Pinned items are exempt from both limits, and removing an item also deletes its image or text file
 - **Long text (logs and so on) is kept in full**: over 64 KB, the whole text is stored in a separate file and the list keeps only the beginning. Copying puts the whole text back, and the preview shows up to the first 200 KB. Up to 20 MB per item
 - It doesn't take focus from the app you were using, so choosing with `⇧↩︎` pastes straight into that app
@@ -500,7 +500,7 @@ Matches Spectacle's default shortcuts, so moving over feels the same.
 - What's recorded: text (up to 20 MB, long logs kept in full), images, and **files and folders copied in Finder** (only the paths — choosing one puts it back as a file to paste with `⌘V` in Finder).
 - Each item shows the icon of the app it was copied from; PolyMac's text extraction, capture, copy path and color copy get a source tag, and formatted text gets a formatting icon.
 - **Not recorded**: copies a password manager marks as "concealed", Keychain Access, Passwords, 1Password, Bitwarden, and apps you exclude.
-- **Exclude an app**: with that app in front, menu bar › Clipboard History › **Don't Record From** › "Don't record copies from 'app name'". Click it again in the same menu to record again.
+- **Exclude an app**: with that app in front, menu bar › Clipboard History › **Don't Record From** › "Don't record copies from 'app name'". Click it again in the same menu to record again. Settings › Clipboard › Don't record from also lists them, with **Add App…** to pick any app and a remove button for each.
 - Menu bar › Clipboard History › "Pause Recording" stops it for a while; the number kept and the period (default 200 items, 7 days) are also changed here.
 
 ### Finder tools — Finder (0.5.0)

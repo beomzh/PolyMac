@@ -13,11 +13,14 @@ public final class ClipboardModule: PolyMacModule {
     )
 
     /// 보관 개수 선택지 (고정 항목은 세지 않음)
-    static let capacityChoices = [50, 100, 200, 500, 1000]
-    private static let capacityKey = "clipboard.maxItems"
+    /// 환경 설정 창(클립보드 탭)도 같은 선택지·키를 쓴다. 어느 쪽에서 바꿔도 activate()의 감시가 바로 적용한다.
+    public static let capacityChoices = [50, 100, 200, 500, 1000]
+    public static let defaultCapacity = 200
+    public static let capacityKey = "clipboard.maxItems"
     /// 보관 기간 선택지 (일, 0 = 기간 제한 없음). 기본 7일.
-    static let retentionChoices = [1, 3, 7, 30, 0]
-    private static let retentionKey = "clipboard.retentionDays"
+    public static let retentionChoices = [1, 3, 7, 30, 0]
+    public static let defaultRetentionDays = 7
+    public static let retentionKey = "clipboard.retentionDays"
     /// 켜면 기록 창에서 고른 항목을 앞의 앱에 바로 붙여넣는다 (⇧를 누르면 복사만). 기본 꺼짐 — 복사만
     /// 환경 설정 창(클립보드 탭)과 메뉴가 같은 값을 쓴다 — 고를 때마다 읽으므로 어느 쪽에서 바꿔도 바로 맞는다
     public static let pasteOnChooseKey = "clipboard.pasteOnChoose"
@@ -72,13 +75,16 @@ public final class ClipboardModule: PolyMacModule {
 
     private var capacity: Int {
         let value = UserDefaults.standard.integer(forKey: Self.capacityKey)
-        return value > 0 ? value : 200
+        return value > 0 ? value : Self.defaultCapacity
     }
 
     private var retentionDays: Int {
-        UserDefaults.standard.object(forKey: Self.retentionKey) as? Int ?? 7
+        UserDefaults.standard.object(forKey: Self.retentionKey) as? Int ?? Self.defaultRetentionDays
     }
     private var expiryTimer: Timer?
+    /// 환경 설정 창에서 보관 개수·기간을 바꾸면 바로 정리한다 (메뉴에서 바꿀 때와 같게)
+    private var defaultsObserver: NSObjectProtocol?
+    private var appliedLimits: (capacity: Int, days: Int)?
 
     private var pasteOnChoose: Bool { UserDefaults.standard.bool(forKey: Self.pasteOnChooseKey) }
 
@@ -104,6 +110,10 @@ public final class ClipboardModule: PolyMacModule {
         expiry.tolerance = 600
         RunLoop.main.add(expiry, forMode: .common)
         expiryTimer = expiry
+        appliedLimits = (capacity, retentionDays)
+        defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.limitsMayHaveChanged() }
+        }
         didChange()
 
         context.hotkey("showHistory", KeyCombo(kVK_ANSI_V, [.shift, .command]), L("클립보드 히스토리 열기", "Open clipboard history")) { [weak self] in
@@ -128,6 +138,8 @@ public final class ClipboardModule: PolyMacModule {
         timer = nil
         expiryTimer?.invalidate()
         expiryTimer = nil
+        if let defaultsObserver { NotificationCenter.default.removeObserver(defaultsObserver) }
+        defaultsObserver = nil
         panel.tearDown()
         context.unregisterHotkeys()
         saveNow()
@@ -365,6 +377,14 @@ public final class ClipboardModule: PolyMacModule {
         }
     }
 
+    /// 설정이 바뀔 때마다 불린다 — 보관 개수·기간이 실제로 바뀌었을 때만 정리한다
+    private func limitsMayHaveChanged() {
+        let limits = (capacity, retentionDays)
+        guard let applied = appliedLimits, applied != limits else { return }
+        appliedLimits = limits
+        didChange()
+    }
+
     private func didChange() {
         trim()
         scheduleSave()
@@ -547,7 +567,7 @@ public final class ClipboardModule: PolyMacModule {
 
     // MARK: - 기록하지 않을 앱
 
-    private static let excludedAppsKey = "clipboard.excludedApps"
+    public static let excludedAppsKey = "clipboard.excludedApps"
 
     private var excludedApps: Set<String> {
         Set(UserDefaults.standard.stringArray(forKey: Self.excludedAppsKey) ?? [])
@@ -632,7 +652,7 @@ public final class ClipboardModule: PolyMacModule {
         context.toast(L("클립보드 보관 개수: \(sender.tag)개", "Clipboard keeps \(sender.tag) items"))
     }
 
-    private static func retentionTitle(_ days: Int) -> String {
+    public static func retentionTitle(_ days: Int) -> String {
         days == 0 ? L("제한 없음", "No limit") : L("\(days)일", "\(days) days")
     }
 

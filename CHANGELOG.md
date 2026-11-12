@@ -2,6 +2,12 @@
 
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
+[2026-11-12 14:20]
+- [Added] - Sources/PolyMacApp/Settings.swift `ClipboardPane`: items kept, keep period and the apps not to record from are in Settings › Clipboard too (Add App… picks any app, each can be removed), not only in the menu bar menu
+- [Changed] - Sources/ClipboardModule/ClipboardModule.swift `limitsMayHaveChanged`: when the items kept or the keep period change in Settings, old items are removed right away, as when changed from the menu; the keys, choices and `retentionTitle` are public so both places share them
+- [Changed] - Sources/ClipboardModule/ClipboardPanel.swift `AppInfo`: public so Settings shows app names and icons
+- [Changed] - README.md, README.ko.md: these clipboard options are also in Settings › Clipboard
+
 [2026-11-12 13:57]
 - [Changed] - CHANGELOG.md: record the PR #46 (feat/clipboard-paste-setting) push
 

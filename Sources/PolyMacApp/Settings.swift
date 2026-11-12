@@ -368,9 +368,17 @@ private struct LanguagePane: View {
 }
 
 /// 안내 토스트 켜기·위치·표시 시간·글자색·배경색·글자 크기·알림창 크기. 바꾸면 바로 저장하고 미리보기를 띄운다.
-/// 클립보드 히스토리 창에서 항목을 골랐을 때의 동작. 메뉴바 › 클립보드 히스토리 › 고르면 바로 붙여넣기와 같은 값이다.
+/// 클립보드 히스토리 설정. 메뉴바 › 클립보드 히스토리 메뉴와 같은 값을 쓴다 — 어느 쪽에서 바꿔도 다른 쪽에 맞는다.
 private struct ClipboardPane: View {
     @AppStorage(ClipboardModule.pasteOnChooseKey) private var pasteOnChoose = false
+    @AppStorage(ClipboardModule.capacityKey) private var capacity = ClipboardModule.defaultCapacity
+    @AppStorage(ClipboardModule.retentionKey) private var retentionDays = ClipboardModule.defaultRetentionDays
+    @State private var excludedApps = Self.loadExcluded()
+
+    private static func loadExcluded() -> [String] {
+        (UserDefaults.standard.stringArray(forKey: ClipboardModule.excludedAppsKey) ?? [])
+            .sorted { AppInfo.name(for: $0).localizedStandardCompare(AppInfo.name(for: $1)) == .orderedAscending }
+    }
 
     var body: some View {
         Form {
@@ -393,13 +401,73 @@ private struct ClipboardPane: View {
                 }
             } header: {
                 Text(L("히스토리에서 고를 때", "When choosing from the history"))
+            }
+
+            Section {
+                Picker(L("보관 개수", "Items kept"), selection: $capacity) {
+                    ForEach(ClipboardModule.capacityChoices, id: \.self) { n in
+                        Text(L("\(n)개", "\(n) items")).tag(n)
+                    }
+                }
+                Picker(L("보관 기간", "Keep for"), selection: $retentionDays) {
+                    ForEach(ClipboardModule.retentionChoices, id: \.self) { days in
+                        Text(ClipboardModule.retentionTitle(days)).tag(days)
+                    }
+                }
+            } header: {
+                Text(L("보관", "History"))
             } footer: {
-                Text(L("메뉴바 PolyMac 아이콘 › 클립보드 히스토리 › 고르면 바로 붙여넣기와 같은 설정입니다. 보관 개수·기간도 그 메뉴에서 바꿉니다.",
-                       "Same setting as Menu bar PolyMac icon › Clipboard History › Paste When Chosen. The number of items kept and how long are set in that menu too."))
+                Text(L("기간이 지나거나 개수를 넘으면 오래된 것부터 바로 지웁니다. 고정한 항목은 둘 다에 포함되지 않습니다.",
+                       "Past the period or the number, the oldest items are removed right away. Pinned items don't count toward either."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section {
+                if excludedApps.isEmpty {
+                    Text(L("직접 제외한 앱 없음", "No apps excluded yet")).foregroundStyle(.secondary)
+                }
+                ForEach(excludedApps, id: \.self) { id in
+                    HStack {
+                        Image(nsImage: AppInfo.icon(for: id)).resizable().frame(width: 16, height: 16)
+                        Text(AppInfo.name(for: id))
+                        Spacer()
+                        Button { setExcluded(excludedApps.filter { $0 != id }) } label: { Image(systemName: "minus.circle") }
+                            .buttonStyle(.borderless)
+                            .help(L("다시 기록", "Record again"))
+                    }
+                }
+                Button(L("앱 추가…", "Add App…")) { chooseApp() }
+            } header: {
+                Text(L("기록하지 않을 앱", "Don't record from"))
+            } footer: {
+                Text(L("항상 제외: 키체인 접근, 암호, 1Password, Bitwarden, 암호로 표시된 복사. 기록 일시정지와 기록 지우기는 메뉴바 PolyMac 아이콘 › 클립보드 히스토리에 있습니다.",
+                       "Always excluded: Keychain Access, Passwords, 1Password, Bitwarden, copies marked as concealed. Pause Recording and Clear History are in Menu bar PolyMac icon › Clipboard History."))
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
+        // 메뉴에서 제외 앱을 바꾼 뒤 이 탭으로 돌아와도 맞게
+        .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
+            let current = Self.loadExcluded()
+            if current != excludedApps { excludedApps = current }
+        }
+    }
+
+    private func setExcluded(_ apps: [String]) {
+        UserDefaults.standard.set(apps.sorted(), forKey: ClipboardModule.excludedAppsKey)
+        excludedApps = Self.loadExcluded()
+    }
+
+    private func chooseApp() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.application]
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        panel.allowsMultipleSelection = true
+        panel.prompt = L("제외", "Exclude")
+        guard panel.runModal() == .OK else { return }
+        let ids = panel.urls.compactMap { Bundle(url: $0)?.bundleIdentifier }
+            .filter { $0 != Bundle.main.bundleIdentifier && !ClipboardPrivacy.defaultIgnoredApps.contains($0) }
+        setExcluded(Array(Set(excludedApps + ids)))
     }
 }
 
