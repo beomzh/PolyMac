@@ -149,12 +149,13 @@ Right-click › **Select Text** lets you drag over text on the pin to pick part 
 - Normally a **compact list**: app icon + one-line summary (line breaks shown as ⏎) or an **image thumbnail**, with `⌘1`–`⌘0` on the right (top 10)
 - The button at the top right or `⌘→` **slides a preview panel open beside it** (`⌘←` to close, remembers the last state): full text (partly selectable) or a large image, with the source app, time, and character count or resolution below
 - Search: content, app name and source tag; several words separated by spaces; "image" for images only, "rich" for formatted text only. Matches are highlighted in yellow in the list (shown from near the match) and in the preview, and the preview scrolls to the first match. Long text is searched only in its first 4,000 characters
-- `↑↓` move · `↩︎`, double-click, `⌘1–9`, `⌘0` **copy to clipboard** · `⇧↩︎` copy and paste into the app in front · `⌥↩︎`/`⌥⇧↩︎` copy/paste **as plain text** · `⌘↩︎` pin an image on screen · `⌘P` pin/unpin · `⌘⌫` delete · `Esc` close · clicking elsewhere closes it
+- `↑↓` move · `↩︎`, double-click, `⌘1–9`, `⌘0` **copy to clipboard** · `⇧↩︎` copy and paste into the app in front (swapped when **Paste When Chosen** is on) · `⌥↩︎`/`⌥⇧↩︎` copy/paste **as plain text** · `⌘↩︎` pin an image on screen · `⌘P` pin/unpin · `⌘⌫` delete · `Esc` close · clicking elsewhere closes it
 - **Formatting is kept too**: when formatting such as bold, color or links (RTF, and the HTML that Chrome and others add) is copied along, it is stored with the text, so formatting and links survive when you copy it again (formatting icon in the list, up to 5 MB combined). PolyMac doesn't interpret the formatting; it only stores it and puts it back.
 - Copies that contain only a URL, such as Safari's right-click › Copy Link, are recorded as text.
 - **Source tags**: things PolyMac copied show an icon for the feature they came from (text extraction · capture · copy path · color).
 - **Paste the current clipboard as plain text**: no default shortcut (many apps already use `⌥⇧⌘V` for this). Set one in Settings › Shortcuts and it pastes plain text in any app.
 - **Images are recorded too** (captures, copied photos — up to 30 MB each). Identical images are stored once
+- **Paste When Chosen** (off by default): Menu bar PolyMac icon › Clipboard History › Paste When Chosen. When on, `↩︎`, double-click and `⌘1–9`/`⌘0` paste the chosen item straight into the app in front, and `⇧↩︎` only copies it. When off, choosing only puts it on the clipboard and `⇧↩︎` pastes. The hint line at the bottom of the window follows the setting. Pasting needs Accessibility permission; without it, the item is only copied
 - **Keep for**: Menu bar PolyMac icon › Clipboard History › Keep for (1 / 3 / **7** / 30 days / no limit). Expired items are checked and removed every hour
 - **Number kept**: same menu › Keep (50 / 100 / **200** / 500 / 1000 items). Over the limit, the oldest go first even within the period
 - Pinned items are exempt from both limits, and removing an item also deletes its image or text file
@@ -487,7 +488,7 @@ Matches Spectacle's default shortcuts, so moving over feels the same.
 | Action | Shortcut |
 |---|---|
 | Open history | `⇧⌘V` |
-| Copy the selected item / paste right away | `↩` / `⇧↩` (pasting needs Accessibility permission) |
+| Copy the selected item / paste right away | `↩` / `⇧↩`, swapped when Paste When Chosen is on (pasting needs Accessibility permission) |
 | Copy / paste as plain text | `⌥↩` / `⌥⇧↩` |
 | Pick the 1st–10th item from the top | `⌘1` – `⌘0` |
 | Pin / unpin | `⌘P` |

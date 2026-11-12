@@ -2,6 +2,16 @@
 
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
+[2026-11-12 13:44]
+- [Changed] - CHANGELOG.md: record the PR #45 (feat/clipboard-paste-on-choose) push
+
+[2026-11-12 13:43]
+- [Added] - Sources/ClipboardModule/ClipboardModule.swift `togglePasteOnChoose`: menu item Clipboard History › Paste When Chosen (`clipboard.pasteOnChoose`, off by default) so choosing an item can paste it straight into the app in front instead of only copying it
+- [Added] - Sources/ClipboardModule/ClipboardPanel.swift `ChooseAction`: ↩︎, double-click and ⌘1–9 follow the setting and ⇧ does the opposite; the hint line at the bottom of the window shows the current meaning of ↩︎ and ⇧↩︎
+- [Added] - Tests/ClipboardModuleTests/ChooseActionTests.swift: copy or paste for both setting values, with and without ⇧
+- [Changed] - README.md, README.ko.md: document Paste When Chosen
+- [Changed] - VERSION: 1.0.2
+
 [2026-11-11 17:54]
 - [Changed] - CHANGELOG.md: record the PR #44 (chore/1.0.0-release) push
 
