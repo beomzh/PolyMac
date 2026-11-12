@@ -18,6 +18,8 @@ public final class ClipboardModule: PolyMacModule {
     /// 보관 기간 선택지 (일, 0 = 기간 제한 없음). 기본 7일.
     static let retentionChoices = [1, 3, 7, 30, 0]
     private static let retentionKey = "clipboard.retentionDays"
+    /// 켜면 기록 창에서 고른 항목을 앞의 앱에 바로 붙여넣는다 (⇧를 누르면 복사만). 기본 꺼짐 — 복사만
+    static let pasteOnChooseKey = "clipboard.pasteOnChoose"
 
     private let context: ModuleContext
     private var items: [ClipboardItem] = []
@@ -77,6 +79,8 @@ public final class ClipboardModule: PolyMacModule {
     }
     private var expiryTimer: Timer?
 
+    private var pasteOnChoose: Bool { UserDefaults.standard.bool(forKey: Self.pasteOnChooseKey) }
+
     public init(context: ModuleContext) {
         self.context = context
     }
@@ -132,6 +136,10 @@ public final class ClipboardModule: PolyMacModule {
         let open = NSMenuItem(title: L("히스토리 열기", "Open History"), action: #selector(openFromMenu), keyEquivalent: "")
         let pause = NSMenuItem(title: L("기록 일시정지", "Pause Recording"), action: #selector(togglePause), keyEquivalent: "")
         pause.state = isPaused ? .on : .off
+        let pasteMode = NSMenuItem(title: L("고르면 바로 붙여넣기", "Paste When Chosen"), action: #selector(togglePasteOnChoose), keyEquivalent: "")
+        pasteMode.state = pasteOnChoose ? .on : .off
+        pasteMode.toolTip = L("켜면 기록 창에서 고른 항목을 앞의 앱에 바로 붙여넣습니다 (⇧↩︎는 복사만). 끄면 클립보드에 넣기만 합니다 (⇧↩︎는 붙여넣기). 붙여넣기는 손쉬운 사용 권한이 필요합니다.",
+                               "When on, the item you choose in the history is pasted into the app in front (⇧↩︎ copies only). When off, it is only put on the clipboard (⇧↩︎ pastes). Pasting needs Accessibility permission.")
 
         let capacityItem = NSMenuItem(title: L("보관 개수: \(capacity)개", "Keep: \(capacity) items"), action: nil, keyEquivalent: "")
         let sub = NSMenu()
@@ -170,7 +178,7 @@ public final class ClipboardModule: PolyMacModule {
         let stats = NSMenuItem(title: L("기록 \(items.count)개 (이미지 \(imageCount)개)", "\(items.count) items (\(imageCount) images)"), action: nil, keyEquivalent: "")
         stats.isEnabled = false
         let clear = NSMenuItem(title: L("기록 지우기 (고정 항목 제외)", "Clear History (keeps pinned)"), action: #selector(clearUnpinned), keyEquivalent: "")
-        return [open, pause, capacityItem, retentionItem, excludeItem, stats, clear].map { $0.target = $0.target ?? self; return $0 }
+        return [open, pause, pasteMode, capacityItem, retentionItem, excludeItem, stats, clear].map { $0.target = $0.target ?? self; return $0 }
     }
 
     // MARK: - 기록
@@ -391,11 +399,12 @@ public final class ClipboardModule: PolyMacModule {
 
     private func showPopup() {
         if !panel.isPrepared { panel.prepare(items: items, imageDirectory: imageDirectory, textDirectory: textDirectory, store: store) }
+        let pasteOnChoose = self.pasteOnChoose
         panel.show(callbacks: .init(
-            choose: { [weak self] item, pasteNow, plain in
+            choose: { [weak self] item, alternate, plain in
                 guard let self else { return }
                 self.copyToPasteboard(item, plain: plain)
-                if pasteNow {
+                if ChooseAction.pastes(alternate: alternate, pasteOnChoose: pasteOnChoose) {
                     self.pasteIntoFrontApp()
                 } else if plain && item.isRich {
                     self.context.toast(L("서식 없이 글자만 복사했습니다", "Copied as plain text"))
@@ -414,7 +423,7 @@ public final class ClipboardModule: PolyMacModule {
             togglePin: { [weak self] id in self?.togglePin(id) },
             delete: { [weak self] id in self?.delete(id) },
             pin: { [weak self] item in self?.pinOnScreen(item) }
-        ))
+        ), pasteOnChoose: pasteOnChoose)
     }
 
     /// 캡처 · 핀 모듈의 핀으로 띄운다 (모듈끼리는 PolyMacCore의 PinService로만 잇는다)
@@ -501,7 +510,7 @@ public final class ClipboardModule: PolyMacModule {
         pasteIntoFrontApp()
     }
 
-    /// 앞의 앱에 바로 ⌘V (⇧↩︎)
+    /// 앞의 앱에 바로 ⌘V (⇧↩︎, "고르면 바로 붙여넣기"를 켜면 ↩︎)
     private func pasteIntoFrontApp() {
         guard Permissions.accessibility else {
             context.toast(L("복사했습니다 — ⌘V로 붙여넣으세요\n(자동 붙여넣기는 손쉬운 사용 권한이 필요합니다)", "Copied — press ⌘V to paste\n(auto-paste needs Accessibility permission)"))
@@ -603,6 +612,17 @@ public final class ClipboardModule: PolyMacModule {
     @objc private func togglePause() {
         isPaused.toggle()
         context.toast(isPaused ? L("클립보드 기록을 일시정지했습니다", "Clipboard recording paused") : L("클립보드 기록을 다시 시작합니다", "Clipboard recording resumed"))
+    }
+
+    @objc private func togglePasteOnChoose() {
+        let on = !pasteOnChoose
+        UserDefaults.standard.set(on, forKey: Self.pasteOnChooseKey)
+        if on && !Permissions.accessibility {
+            context.toast(L("고르면 바로 붙여넣기: 켬\n손쉬운 사용 권한이 없으면 복사만 됩니다", "Paste when chosen: on\nWithout Accessibility permission it only copies"))
+        } else {
+            context.toast(on ? L("고르면 바로 붙여넣기: 켬 (⇧↩︎는 복사만)", "Paste when chosen: on (⇧↩︎ copies only)")
+                             : L("고르면 바로 붙여넣기: 끔 — 클립보드에 넣기만 (⇧↩︎는 붙여넣기)", "Paste when chosen: off — copy only (⇧↩︎ pastes)"))
+        }
     }
 
     @objc private func setCapacity(_ sender: NSMenuItem) {

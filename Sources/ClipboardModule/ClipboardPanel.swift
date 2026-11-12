@@ -10,9 +10,10 @@ import os
 @MainActor
 final class ClipboardPanelController {
     struct Callbacks {
-        /// pasteNow == false: 클립보드로 복사만 (기본), true: 복사 후 앞의 앱에 바로 붙여넣기 (⇧↩︎)
+        /// alternate: ⇧를 누르고 골랐는지. 무엇을 할지는 ChooseAction.pastes가 설정과 함께 정한다
+        /// (기본은 ↩︎ 복사만 · ⇧↩︎ 바로 붙여넣기, "고르면 바로 붙여넣기"를 켜면 반대)
         /// plain: 서식 없이 글자만 (⌥)
-        let choose: (ClipboardItem, _ pasteNow: Bool, _ plain: Bool) -> Void
+        let choose: (ClipboardItem, _ alternate: Bool, _ plain: Bool) -> Void
         let togglePin: (UUID) -> Void
         let delete: (UUID) -> Void
         /// 이미지 항목을 화면에 고정 (⌘↩︎)
@@ -42,11 +43,12 @@ final class ClipboardPanelController {
         model.prefetch()
     }
 
-    func show(callbacks: Callbacks) {
+    func show(callbacks: Callbacks, pasteOnChoose: Bool) {
         guard let model else { return }
         if isOpen { close(); return }
         self.callbacks = callbacks
         model.reset()
+        model.pasteOnChoose = pasteOnChoose
         let panel = self.panel ?? makePanel(model)
         self.panel = panel
         var frame = panel.frame
@@ -161,7 +163,7 @@ final class ClipboardPanelController {
             close()
             callbacks.pin(item)
             return true
-        case 36, 76: // ↩︎ 복사 · ⇧↩︎ 바로 붙여넣기 · ⌥를 더하면 서식 없이
+        case 36, 76: // ↩︎ · ⇧↩︎ — 복사만 할지 바로 붙여넣을지는 설정에 따라 (ChooseAction) · ⌥를 더하면 서식 없이
             guard let item = model.selected else { return true }
             close()
             callbacks.choose(item, event.modifierFlags.contains(.shift), event.modifierFlags.contains(.option))
@@ -192,6 +194,12 @@ final class ClipboardPanelController {
     }
 }
 
+/// 기록 창에서 항목을 골랐을 때 클립보드에 넣기만 할지, 앞의 앱에 바로 붙여넣을지.
+/// ↩︎·더블클릭·⌘1~9는 설정을 따르고, ⇧를 누르면 그 반대로 한다.
+enum ChooseAction {
+    static func pastes(alternate: Bool, pasteOnChoose: Bool) -> Bool { alternate != pasteOnChoose }
+}
+
 private final class KeyablePanel: NSPanel {
     override var canBecomeKey: Bool { true }
 }
@@ -211,6 +219,8 @@ final class ClipboardPanelModel: ObservableObject {
     @Published private(set) var filtered: [ClipboardItem] = []
     @Published var selectedID: UUID?
     @Published private(set) var previewOpen: Bool
+    /// "고르면 바로 붙여넣기" 설정 — 아래 안내 줄에 ↩︎·⇧↩︎가 무엇을 하는지 맞게 보여 준다
+    @Published var pasteOnChoose = false
     /// 백그라운드에서 읽어 온 썸네일 — 들어오면 해당 행만 다시 그려진다
     @Published private var thumbnails: [String: NSImage] = [:]
     var onTogglePreview: (() -> Void)?
@@ -501,7 +511,9 @@ struct ClipboardPanelView: View {
         VStack(spacing: 0) {
             Divider()
             HStack {
-                Text(L("↩ 복사 · ⇧↩ 붙여넣기 · ⌥ 서식 없이 · ⌘↩ 화면에 · ⌘P 고정 · ⌘⌫ 삭제", "↩ copy · ⇧↩ paste · ⌥ plain · ⌘↩ on screen · ⌘P keep · ⌘⌫ delete"))
+                Text(model.pasteOnChoose
+                     ? L("↩ 붙여넣기 · ⇧↩ 복사만 · ⌥ 서식 없이 · ⌘↩ 화면에 · ⌘P 고정 · ⌘⌫ 삭제", "↩ paste · ⇧↩ copy only · ⌥ plain · ⌘↩ on screen · ⌘P keep · ⌘⌫ delete")
+                     : L("↩ 복사 · ⇧↩ 붙여넣기 · ⌥ 서식 없이 · ⌘↩ 화면에 · ⌘P 고정 · ⌘⌫ 삭제", "↩ copy · ⇧↩ paste · ⌥ plain · ⌘↩ on screen · ⌘P keep · ⌘⌫ delete"))
                 Spacer()
                 Text(L("\(model.filtered.count)개", "\(model.filtered.count) items"))
             }

@@ -64,7 +64,7 @@ import Testing
         let controller = ClipboardPanelController()
         let directory = FileManager.default.temporaryDirectory
         controller.prepare(items: [], imageDirectory: directory, textDirectory: directory, store: nil)
-        controller.show(callbacks: .init(choose: { _, _, _ in }, togglePin: { _ in }, delete: { _ in }, pin: { _ in }))
+        controller.show(callbacks: .init(choose: { _, _, _ in }, togglePin: { _ in }, delete: { _ in }, pin: { _ in }), pasteOnChoose: false)
         defer { controller.tearDown() }
         controller.panel?.contentView?.layoutSubtreeIfNeeded()
         RunLoop.main.run(until: Date().addingTimeInterval(0.2))
