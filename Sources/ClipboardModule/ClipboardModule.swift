@@ -19,7 +19,8 @@ public final class ClipboardModule: PolyMacModule {
     static let retentionChoices = [1, 3, 7, 30, 0]
     private static let retentionKey = "clipboard.retentionDays"
     /// 켜면 기록 창에서 고른 항목을 앞의 앱에 바로 붙여넣는다 (⇧를 누르면 복사만). 기본 꺼짐 — 복사만
-    static let pasteOnChooseKey = "clipboard.pasteOnChoose"
+    /// 환경 설정 창(클립보드 탭)과 메뉴가 같은 값을 쓴다 — 고를 때마다 읽으므로 어느 쪽에서 바꿔도 바로 맞는다
+    public static let pasteOnChooseKey = "clipboard.pasteOnChoose"
 
     private let context: ModuleContext
     private var items: [ClipboardItem] = []

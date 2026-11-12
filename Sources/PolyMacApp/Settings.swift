@@ -1,4 +1,5 @@
 import AppKit
+import ClipboardModule
 import Combine
 import FinderModule
 import NormalizeModule
@@ -26,13 +27,14 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
     private var model: SettingsModel?
 
     enum Tab: String, CaseIterable, Identifiable {
-        case features, language, notifications, finder, normalize, organize, shortcuts, permissions
+        case features, language, notifications, clipboard, finder, normalize, organize, shortcuts, permissions
         var id: String { rawValue }
         var title: String {
             switch self {
             case .features: return L("기능", "Features")
             case .language: return L("언어", "Language")
             case .notifications: return L("알림", "Notifications")
+            case .clipboard: return L("클립보드", "Clipboard")
             case .finder: return L("Finder 도구", "Finder Tools")
             case .normalize: return L("한글 파일명", "Korean Filenames")
             case .organize: return L("자동 정리", "Auto-Organize")
@@ -45,6 +47,7 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
             case .features: return "square.grid.2x2"
             case .language: return "globe"
             case .notifications: return "text.bubble"
+            case .clipboard: return "doc.on.clipboard"
             case .finder: return "macwindow.on.rectangle"
             case .normalize: return "folder.badge.gearshape"
             case .organize: return "tray.full"
@@ -269,6 +272,7 @@ struct SettingsView: View {
                 case .features: FeaturesPane(model: model)
                 case .language: LanguagePane(model: model)
                 case .notifications: NotificationsPane()
+                case .clipboard: ClipboardPane()
                 case .finder: FinderAppsPane()
                 case .normalize: NormalizePane()
                 case .organize: OrganizeRulesPane()
@@ -364,6 +368,41 @@ private struct LanguagePane: View {
 }
 
 /// 안내 토스트 켜기·위치·표시 시간·글자색·배경색·글자 크기·알림창 크기. 바꾸면 바로 저장하고 미리보기를 띄운다.
+/// 클립보드 히스토리 창에서 항목을 골랐을 때의 동작. 메뉴바 › 클립보드 히스토리 › 고르면 바로 붙여넣기와 같은 값이다.
+private struct ClipboardPane: View {
+    @AppStorage(ClipboardModule.pasteOnChooseKey) private var pasteOnChoose = false
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $pasteOnChoose) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(L("고르면 바로 붙여넣기", "Paste when chosen"))
+                        Text(pasteOnChoose
+                             ? L("↩︎·더블클릭·⌘1~9로 고르면 앞의 앱에 바로 붙여넣습니다. ⇧↩︎는 클립보드에 넣기만 합니다.",
+                                 "↩︎, double-click and ⌘1–9 paste the item into the app in front. ⇧↩︎ only puts it on the clipboard.")
+                             : L("↩︎·더블클릭·⌘1~9로 고르면 클립보드에 넣기만 합니다. ⇧↩︎는 앞의 앱에 바로 붙여넣습니다.",
+                                 "↩︎, double-click and ⌘1–9 only put the item on the clipboard. ⇧↩︎ pastes it into the app in front."))
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                if pasteOnChoose && !Permissions.accessibility {
+                    Text(L("손쉬운 사용 권한이 없어 지금은 복사만 됩니다. 권한 탭에서 허용하세요.",
+                           "Without Accessibility permission it only copies for now. Allow it in the Permissions tab."))
+                        .font(.caption).foregroundStyle(.orange)
+                }
+            } header: {
+                Text(L("히스토리에서 고를 때", "When choosing from the history"))
+            } footer: {
+                Text(L("메뉴바 PolyMac 아이콘 › 클립보드 히스토리 › 고르면 바로 붙여넣기와 같은 설정입니다. 보관 개수·기간도 그 메뉴에서 바꿉니다.",
+                       "Same setting as Menu bar PolyMac icon › Clipboard History › Paste When Chosen. The number of items kept and how long are set in that menu too."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
 private struct NotificationsPane: View {
     @State private var style = ToastStyle.current
 
