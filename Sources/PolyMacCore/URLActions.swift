@@ -12,7 +12,7 @@ public enum URLActions {
     public typealias Handler = (_ query: [String: String]) async -> Bool
 
     nonisolated public static let scheme = "polymac"
-    static let allowKey = "url.allowActions"
+    public static let allowKey = "url.allowActions"
     private static var handlers: [String: Handler] = [:]
     private static let logger = Logger(subsystem: "dev.polymac", category: "url")
 

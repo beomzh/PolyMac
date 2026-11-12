@@ -20,6 +20,7 @@ public final class FinderModule: PolyMacModule {
     private var cutCombo: KeyCombo?
     private let cutHUD = CutHUD()
     private var pasteCombo: KeyCombo?
+    private var defaultsObserver: NSObjectProtocol?
 
     public init(context: ModuleContext) {
         self.context = context
@@ -37,6 +38,10 @@ public final class FinderModule: PolyMacModule {
             self?.keyTap?.setShortcuts(cut: self?.cutCombo, paste: combo)
         }
         startKeyTap()
+        // 환경 설정 › Finder 도구에서 표시를 꺼도 떠 있던 표시를 바로 내린다
+        defaultsObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { if !CutHUD.isEnabled { self?.cutHUD.end() } }
+        }
         context.hotkey("openTerminal", KeyCombo(kVK_ANSI_T, [.control, .option]), L("Finder 현재 폴더에서 터미널 열기", "Open Terminal in current Finder folder")) { [weak self] in
             self?.openTerminal()
         }
@@ -55,6 +60,8 @@ public final class FinderModule: PolyMacModule {
         activationObserver = nil
         keyTap?.stop()
         keyTap = nil
+        if let defaultsObserver { NotificationCenter.default.removeObserver(defaultsObserver) }
+        defaultsObserver = nil
         cutHUD.end()
         context.unregisterHotkeys()
     }

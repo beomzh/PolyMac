@@ -97,7 +97,7 @@ public final class OCRModule: PolyMacModule {
         return items + [lines, tableFormat, allow]
     }
 
-    private static func title(_ format: TableFormat) -> String {
+    public static func title(_ format: TableFormat) -> String {
         switch format {
         case .tsv: return L("엑셀·Numbers (탭으로 나눔)", "Excel / Numbers (tab-separated)")
         case .markdown: return L("Markdown 표", "Markdown table")
@@ -144,7 +144,7 @@ public final class OCRModule: PolyMacModule {
         return cg
     }
 
-    private static func title(_ mode: OCRLineMode) -> String {
+    public static func title(_ mode: OCRLineMode) -> String {
         switch mode {
         case .keep: return L("보이는 줄 그대로", "Keep lines as shown")
         case .paragraphs: return L("문단으로 잇기", "Join into paragraphs")

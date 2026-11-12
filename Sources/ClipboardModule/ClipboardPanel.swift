@@ -390,11 +390,11 @@ final class ClipboardPanelModel: ObservableObject {
 
 /// 번들 ID → 앱 이름·아이콘 (한 번 찾으면 기억)
 @MainActor
-enum AppInfo {
+public enum AppInfo {
     private static var names: [String: String] = [:]
     private static var icons: [String: NSImage] = [:]
 
-    static func name(for bundleID: String?) -> String {
+    public static func name(for bundleID: String?) -> String {
         guard let bundleID else { return L("알 수 없음", "Unknown") }
         if let cached = names[bundleID] { return cached }
         var name = bundleID
@@ -407,7 +407,7 @@ enum AppInfo {
         return name
     }
 
-    static func icon(for bundleID: String?) -> NSImage {
+    public static func icon(for bundleID: String?) -> NSImage {
         let key = bundleID ?? ""
         if let cached = icons[key] { return cached }
         var image = NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: nil) ?? NSImage()

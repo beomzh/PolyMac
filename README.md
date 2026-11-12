@@ -155,9 +155,9 @@ Right-click › **Select Text** lets you drag over text on the pin to pick part 
 - **Source tags**: things PolyMac copied show an icon for the feature they came from (text extraction · capture · copy path · color).
 - **Paste the current clipboard as plain text**: no default shortcut (many apps already use `⌥⇧⌘V` for this). Set one in Settings › Shortcuts and it pastes plain text in any app.
 - **Images are recorded too** (captures, copied photos — up to 30 MB each). Identical images are stored once
-- **Paste When Chosen** (off by default): Menu bar PolyMac icon › Clipboard History › Paste When Chosen. When on, `↩︎`, double-click and `⌘1–9`/`⌘0` paste the chosen item straight into the app in front, and `⇧↩︎` only copies it. When off, choosing only puts it on the clipboard and `⇧↩︎` pastes. The hint line at the bottom of the window follows the setting. Pasting needs Accessibility permission; without it, the item is only copied
-- **Keep for**: Menu bar PolyMac icon › Clipboard History › Keep for (1 / 3 / **7** / 30 days / no limit). Expired items are checked and removed every hour
-- **Number kept**: same menu › Keep (50 / 100 / **200** / 500 / 1000 items). Over the limit, the oldest go first even within the period
+- **Paste When Chosen** (off by default): Settings › Clipboard, or Menu bar PolyMac icon › Clipboard History › Paste When Chosen. When on, `↩︎`, double-click and `⌘1–9`/`⌘0` paste the chosen item straight into the app in front, and `⇧↩︎` only copies it. When off, choosing only puts it on the clipboard and `⇧↩︎` pastes. The hint line at the bottom of the window follows the setting. Pasting needs Accessibility permission; without it, the item is only copied
+- **Keep for**: Settings › Clipboard, or Menu bar PolyMac icon › Clipboard History › Keep for (1 / 3 / **7** / 30 days / no limit). Expired items are checked and removed every hour
+- **Number kept**: Settings › Clipboard, or the same menu › Keep (50 / 100 / **200** / 500 / 1000 items). Over the limit, the oldest go first even within the period
 - Pinned items are exempt from both limits, and removing an item also deletes its image or text file
 - **Long text (logs and so on) is kept in full**: over 64 KB, the whole text is stored in a separate file and the list keeps only the beginning. Copying puts the whole text back, and the preview shows up to the first 200 KB. Up to 20 MB per item
 - It doesn't take focus from the app you were using, so choosing with `⇧↩︎` pastes straight into that app
@@ -425,7 +425,7 @@ Matches Spectacle's default shortcuts, so moving over feels the same.
 
 - Repeating the same shortcut cycles the size ½ → ⅓ → ⅔.
 - `⌥⌘C` (center) overlaps Finder's built-in "Copy path" shortcut. It matches Spectacle, but change it in settings if you copy paths in Finder often.
-- Snap by dragging to edges (menu › Window Layout › Snap by Dragging to Edges, off by default): drag a window to the left or right edge of the screen for a half, the top edge to maximize, or a corner for a quarter; a preview appears and the window snaps when you let go. `⌥⌘Z` undoes it. macOS 15 and later have the same feature (System Settings › Desktop & Dock › Windows), so turn the system one off to use this.
+- Snap by dragging to edges (Settings › Window Layout, or menu › Window Layout › Snap by Dragging to Edges, off by default): drag a window to the left or right edge of the screen for a half, the top edge to maximize, or a corner for a quarter; a preview appears and the window snaps when you let go. `⌥⌘Z` undoes it. macOS 15 and later have the same feature (System Settings › Desktop & Dock › Windows), so turn the system one off to use this.
 
 ### Capture · pin · markup — Capture (0.2.0)
 
@@ -465,15 +465,15 @@ Matches Spectacle's default shortcuts, so moving over feels the same.
 - Settings
   - Languages: recognized in the order Korean → English (putting English first makes it miss almost all Korean, so this isn't changed — [measurements](docs/OCR-BENCH.md))
   - Small-text boost: captures of 2 MP or less are read at 2× size, and `•` between Korean text becomes `·`, `•·•` becomes `…`
-  - Line breaks (menu › Text Recognition (OCR) › Line breaks): Keep lines as shown (default) / Join into paragraphs (joins lines broken mid-sentence, as in PDFs and web pages, and breaks only between paragraphs) / Single line (for search boxes and translators). English end-of-line hyphens (`recog-` + `nition`) are joined.
+  - Line breaks (Settings › Text Recognition, or menu › Text Recognition (OCR) › Line breaks): Keep lines as shown (default) / Join into paragraphs (joins lines broken mid-sentence, as in PDFs and web pages, and breaks only between paragraphs) / Single line (for search boxes and translators). English end-of-line hyphens (`recog-` + `nition`) are joined.
   - Indentation kept: with "Keep lines as shown", leading spaces in code, YAML and lists are kept (most accurate with monospaced fonts. Differences under two spaces and text in several side-by-side columns are left as is — [measurements](docs/OCR-BENCH.md))
 - **Translation** (macOS 15 or later, `⌃⇧7` or menu › Text Recognition (OCR) › Translate Clipboard Text) — Apple's on-device translation. Text not in your language is translated into your language, and text in your language into English, then shown in a result window. Compare the translation with the original; the clipboard changes only when you click **Copy Translation** (`↩`) or **Copy Original**. Select part and press `⌘C` to copy only that part. `Esc` closes it. Line breaks, indentation and list markers are kept and each line is translated; sentences broken by the screen width are joined before translating. Code doesn't translate well. The first time, macOS asks whether to download the languages (the system does the download; the text you translate never leaves the device).
 - **Table extraction** (macOS 26 or later, `⌃⇧6`, the table button (`G`) on the capture toolbar, or menu › Text Recognition (OCR) › Extract Table from Clipboard Image)
-  - Table format (menu › Text Recognition (OCR) › Table format): **Excel / Numbers** (default, tab-separated text — pasting into Excel, Numbers or Google Sheets splits it into cells; Pages and Notes get a table) / **Markdown table** (first row is the header)
+  - Table format (Settings › Text Recognition, or menu › Text Recognition (OCR) › Table format): **Excel / Numbers** (default, tab-separated text — pasting into Excel, Numbers or Google Sheets splits it into cells; Pages and Notes get a table) / **Markdown table** (first row is the header)
   - Merged cells put the text only in the top-left cell and leave the rest empty. Line breaks inside a cell become a space.
   - If no table is found, it copies plain text. On macOS 14–15 it always copies plain text.
   - Measured: on 6 synthetic tables, rows and columns 6/6, cells 95.8% match ([measurements](docs/OCR-BENCH.md#table-recognition)). Key symbols such as `⌃⇧` are read poorly.
-- **Call it from Shortcuts** — off by default. Turn on menu › Text Recognition (OCR) › **Allow Shortcuts & URLs** for it to work (because a web page link could also call it).
+- **Call it from Shortcuts** — off by default. Turn on **Allow Shortcuts & URLs** in Settings › Text Recognition or menu › Text Recognition (OCR) for it to work (because a web page link could also call it).
   - `polymac://ocr`: clipboard image → text on the clipboard
   - `polymac://ocr-table`: clipboard image → table on the clipboard (choose the format with `?format=markdown` or `?format=tsv`; without it, the menu setting is used)
   - Shortcut example: "Take Screenshot" (or the clipboard image) → **Open X-Callback URL** `polymac://x-callback-url/ocr` → "Get Clipboard". Called through X-Callback, it returns to Shortcuts when recognition finishes.
@@ -500,7 +500,7 @@ Matches Spectacle's default shortcuts, so moving over feels the same.
 - What's recorded: text (up to 20 MB, long logs kept in full), images, and **files and folders copied in Finder** (only the paths — choosing one puts it back as a file to paste with `⌘V` in Finder).
 - Each item shows the icon of the app it was copied from; PolyMac's text extraction, capture, copy path and color copy get a source tag, and formatted text gets a formatting icon.
 - **Not recorded**: copies a password manager marks as "concealed", Keychain Access, Passwords, 1Password, Bitwarden, and apps you exclude.
-- **Exclude an app**: with that app in front, menu bar › Clipboard History › **Don't Record From** › "Don't record copies from 'app name'". Click it again in the same menu to record again.
+- **Exclude an app**: with that app in front, menu bar › Clipboard History › **Don't Record From** › "Don't record copies from 'app name'". Click it again in the same menu to record again. Settings › Clipboard › Don't record from also lists them, with **Add App…** to pick any app and a remove button for each.
 - Menu bar › Clipboard History › "Pause Recording" stops it for a while; the number kept and the period (default 200 items, 7 days) are also changed here.
 
 ### Finder tools — Finder (0.5.0)
@@ -516,7 +516,7 @@ Matches Spectacle's default shortcuts, so moving over feels the same.
 
 - After `⌘X`, **"✂️ n item(s) cut — press ⌘V in the destination folder"** stays at the bottom of the screen until you move them (shown only while Finder is in front). It disappears after the move.
   - Cancel: the ⓧ button on the indicator, copying something else, or just `⌘C`. The files stay put and `⌘V` makes a copy.
-  - If the indicator bothers you, turn off menu › Finder Tools › **Show Pending Cut at Bottom of Screen** to get only a brief notice as before.
+  - If the indicator bothers you, turn off **Show Pending Cut at Bottom of Screen** in Settings › Finder Tools or menu › Finder Tools to get only a brief notice as before.
   - From the clipboard, it reads only the number of files, never their names.
 - Finder does the actual move, so **`⌘Z` undo**, the name conflict dialog and the progress display all work as usual.
 - `⌘X` while editing a file name cuts text as usual.
@@ -538,7 +538,7 @@ Prevents Korean filenames made on a Mac from breaking into `ㅎㅏㄴㄱㅡㄹ` 
 - **Copied text**: decomposed Korean (`ㅎㅏㄴㄱㅡㄹ`) copied from Finder filenames and elsewhere is composed and put back on the clipboard. Copy path (`⌃⌥C`) puts composed Korean from the start.
   - Only Korean jamo sequences are changed; other characters (such as CJK compatibility ideographs) are left as is. Formatting (RTF, HTML) is fixed too.
   - Concealed items like passwords, and files copied in Finder (the `⌘X` cut needs to recognize that copy), are not touched.
-  - Turn off: menu › Korean Filename Fix › **Also Fix Decomposed Korean in Copied Text**. Works only while this feature is on.
+  - Turn off: Settings › Korean Filenames, or menu › Korean Filename Fix › **Also Fix Decomposed Korean in Copied Text**. Works only while this feature is on.
 - These places are **left alone** by default: git repositories, iCloud Drive and Dropbox folders, inside app bundles, `~/Library`, external disks in the old format (HFS+).
 
 ### Downloads auto-organize — Organize (0.6.0)

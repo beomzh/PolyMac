@@ -2,6 +2,35 @@
 
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
+[2026-11-12 14:35]
+- [Changed] - CHANGELOG.md: record the PR #46 (feat/clipboard-paste-setting) push
+
+[2026-11-12 14:35]
+- [Added] - Sources/PolyMacApp/Settings.swift `WindowPane`, `OCRPane`: Window Layout tab (snap by dragging to edges) and Text Recognition tab (line breaks, table format, allow Shortcuts & URLs), which before were only in the menu bar menu
+- [Added] - Sources/PolyMacApp/Settings.swift `NormalizePane`: the "Also fix decomposed Korean in copied text" toggle
+- [Added] - Sources/FinderModule/FinderAppsPane.swift: the "Show pending cut at the bottom of the screen" toggle
+- [Changed] - Sources/WindowModule/WindowModule.swift `syncEdgeSnap`, Sources/NormalizeModule/NormalizeModule.swift `syncClipboardFix`, Sources/FinderModule/FinderModule.swift: apply these settings at once when they change in Settings; the menu toggles use the same path
+- [Changed] - Sources/OCRModule, Sources/PolyMacCore/URLActions.swift: setting keys and option titles are public so Settings and the menu share them
+- [Changed] - README.md, README.ko.md: mention the Settings tab for each of these options
+
+[2026-11-12 14:20]
+- [Changed] - CHANGELOG.md: record the PR #46 (feat/clipboard-paste-setting) push
+
+[2026-11-12 14:20]
+- [Added] - Sources/PolyMacApp/Settings.swift `ClipboardPane`: items kept, keep period and the apps not to record from are in Settings › Clipboard too (Add App… picks any app, each can be removed), not only in the menu bar menu
+- [Changed] - Sources/ClipboardModule/ClipboardModule.swift `limitsMayHaveChanged`: when the items kept or the keep period change in Settings, old items are removed right away, as when changed from the menu; the keys, choices and `retentionTitle` are public so both places share them
+- [Changed] - Sources/ClipboardModule/ClipboardPanel.swift `AppInfo`: public so Settings shows app names and icons
+- [Changed] - README.md, README.ko.md: these clipboard options are also in Settings › Clipboard
+
+[2026-11-12 13:57]
+- [Changed] - CHANGELOG.md: record the PR #46 (feat/clipboard-paste-setting) push
+
+[2026-11-12 13:57]
+- [Added] - Sources/PolyMacApp/Settings.swift `ClipboardPane`: a Clipboard tab in Settings with the Paste When Chosen toggle, which before was only in the menu bar menu; it explains what ↩︎ and ⇧↩︎ do and warns when Accessibility permission is missing
+- [Changed] - Sources/ClipboardModule/ClipboardModule.swift `pasteOnChooseKey`: now public so Settings and the menu share one value
+- [Changed] - README.md, README.ko.md: Paste When Chosen is also in Settings › Clipboard
+- [Changed] - VERSION: 1.0.3
+
 [2026-11-12 13:44]
 - [Changed] - CHANGELOG.md: record the PR #45 (feat/clipboard-paste-on-choose) push
 
