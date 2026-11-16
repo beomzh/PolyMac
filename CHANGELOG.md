@@ -3,6 +3,9 @@
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
 [2026-11-16 17:16]
+- [Changed] - CHANGELOG.md: record the PR #47 (chore/maintenance-1.0.4) push
+
+[2026-11-16 17:16]
 - [Changed] - scripts/fetch-sparkle.sh: Sparkle 2.10.1 (bug fixes only, including an update installing too early from an NFC path) with the checksum from its Package.swift; license text unchanged
 - [Changed] - THIRD_PARTY_NOTICES.md, THIRD_PARTY_NOTICES.ko.md, docs/SECURITY.md, docs/SECURITY.ko.md: Sparkle version and checksum 2.10.1
 - [Added] - Tests/UninstallerModuleTests/UninstallerModelTests.swift: app search with decomposed Korean, group selection, Spotlight line parsing, size and newest modification, reading app info; first tests for UninstallerModule
