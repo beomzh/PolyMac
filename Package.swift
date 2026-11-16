@@ -25,6 +25,8 @@ let package = Package(
         .testTarget(name: "FinderModuleTests", dependencies: ["FinderModule"]),
         .testTarget(name: "CaptureModuleTests", dependencies: ["CaptureModule"]),
         .testTarget(name: "UninstallerCoreTests", dependencies: ["UninstallerCore", "PolyMacL10n"]),
+        .testTarget(name: "UninstallerModuleTests", dependencies: ["UninstallerModule", "UninstallerCore"]),
+        .testTarget(name: "PolyMacAppTests", dependencies: ["PolyMacApp", "PolyMacCore"]),
         .target(name: "CaptureModule", dependencies: ["PolyMacCore", "OCRModule"]),
         .target(name: "UninstallerModule", dependencies: ["PolyMacCore", "UninstallerCore"]),
         // 개발용 OCR 정확도 측정 (scripts/ocr-bench.sh) — 앱 번들에는 들어가지 않는다

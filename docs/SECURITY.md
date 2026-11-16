@@ -9,7 +9,7 @@ PolyMac is built to **work entirely on your own Mac**. It bundles powerful capab
 - Text to translate never leaves the device. The first time, if the language model is missing, macOS asks whether to download it, and a system service does the download (PolyMac does not connect itself). Logs keep only the languages, character count and time taken, never the text.
 - OCR text and table recognition run in a short-lived child process started from the same signed app executable (`--ocr-worker`). The image goes over a pipe and is never written to disk, and the worker logs only timings, never the text.
 - **No** telemetry, analytics or crash uploads.
-- Exception: automatic updates (Sparkle 2.10.0) — **off by default.** Only when you click "Check for Updates…" in the menu or turn on automatic checks (once a day) in Settings does it read
+- Exception: automatic updates (Sparkle 2.10.1) — **off by default.** Only when you click "Check for Updates…" in the menu or turn on automatic checks (once a day) in Settings does it read
   `https://github.com/beomzh/PolyMac/releases/latest/download/appcast.xml`.
   - Sending device info (`SUEnableSystemProfiling`) is off, automatic install (`SUAutomaticallyUpdate`) is off — it always asks before installing.
   - A downloaded zip is extracted only if its EdDSA signature matches `SUPublicEDKey` in Info.plist (`SUVerifyUpdateBeforeExtraction`). The private key exists only in the publisher's keychain.

@@ -9,7 +9,7 @@ PolyMac에 포함되거나 함께 배포되는 외부 코드·라이브러리의
 PolyMac은 아래 외부 라이브러리 하나를 앱과 함께 배포한다. 그 밖에는 Apple이 macOS와 함께 제공하는 시스템 프레임워크(AppKit, ScreenCaptureKit, Vision, App Intents 등)만 쓰며, 이들은 재배포하지 않는다.
 
 ## Sparkle
-- 출처: https://github.com/sparkle-project/Sparkle (2.10.0, `Sparkle-for-Swift-Package-Manager.zip`, sha256 `17e28312b8e18ab7cdbbe09a6fb28cc55a5479ec6c371dbc07cdecd2a14fd959`)
+- 출처: https://github.com/sparkle-project/Sparkle (2.10.1, `Sparkle-for-Swift-Package-Manager.zip`, sha256 `4c2e48a3e50ebcc2c88a58a4c7264a1a99c3c31857ce754357afb9cdb323022a`)
 - 사용 범위: 의존성 전체 (`PolyMac.app/Contents/Frameworks/Sparkle.framework`, XPC 서비스는 빼고 넣음)
 - 라이선스: MIT (함께 들어 있는 외부 코드는 아래 원문에 각자의 라이선스로 표시됨)
 

@@ -9,7 +9,7 @@
 - 번역할 글은 기기 밖으로 나가지 않는다. 처음 쓸 때 언어 모델이 없으면 macOS가 내려받을지 묻고, 받는 일은 시스템 서비스가 한다 (PolyMac이 직접 연결하지 않음). 로그에는 언어·글자 수·걸린 시간만 남기고 글 내용은 남기지 않는다.
 - OCR 글자·표 인식은 같은 서명의 앱 실행 파일로 띄운 잠깐 쓰는 자식 프로세스(`--ocr-worker`)에서 돈다. 이미지는 파이프로 넘기고 디스크에 쓰지 않으며, 일꾼 로그에는 걸린 시간만 남고 글은 남지 않는다.
 - 텔레메트리·분석·크래시 업로드 **없음**.
-- 예외: 자동 업데이트(Sparkle 2.10.0) — **기본 꺼짐.** 메뉴의 "업데이트 확인…"을 누르거나 환경 설정에서 자동 확인(하루 한 번)을 켰을 때만
+- 예외: 자동 업데이트(Sparkle 2.10.1) — **기본 꺼짐.** 메뉴의 "업데이트 확인…"을 누르거나 환경 설정에서 자동 확인(하루 한 번)을 켰을 때만
   `https://github.com/beomzh/PolyMac/releases/latest/download/appcast.xml`을 읽는다.
   - 기기 정보 보내기(`SUEnableSystemProfiling`) 꺼짐, 자동 설치(`SUAutomaticallyUpdate`) 꺼짐 — 설치 전에 항상 묻는다.
   - 받은 zip은 EdDSA 서명이 Info.plist의 `SUPublicEDKey`와 맞아야만 푼다(`SUVerifyUpdateBeforeExtraction`). 비밀 키는 배포자 키체인에만 있다.
