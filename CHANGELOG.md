@@ -2,6 +2,10 @@
 
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
+[2026-11-16 17:33]
+- [Changed] - VERSION: 1.1.0, the first MINOR release under the new rule (tag and release at each MINOR)
+- [Changed] - README.md, README.ko.md: current version line now 1.1.0
+
 [2026-11-16 17:16]
 - [Changed] - CHANGELOG.md: record the PR #47 (chore/maintenance-1.0.4) push
 
