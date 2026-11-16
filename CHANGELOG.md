@@ -2,6 +2,11 @@
 
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
+[2026-11-16 17:39]
+- [Changed] - packaging/homebrew/polymac.rb: version 1.1.0 and the sha256 of PolyMac-1.1.0.zip (pushed to beomzh/homebrew-tap)
+- [Changed] - VERSION: 1.1.1, the first PATCH after the 1.1.0 release; the next tag is 1.2.0
+
+## 1.1.0 (2026-11-16)
 [2026-11-16 17:33]
 - [Changed] - CHANGELOG.md: record the PR #48 (chore/1.1.0-release-prep) push
 
