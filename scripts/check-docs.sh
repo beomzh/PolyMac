@@ -41,5 +41,18 @@ v_en="$(grep -oE 'Current version [0-9][0-9.]*' README.md | head -1 | awk '{prin
 v_ko="$(grep -oE '현재 버전 [0-9][0-9.]*' README.ko.md | head -1 | awk '{print $3}')"
 [[ -n $v_en && $v_en == "$v_ko" ]] || report "README 현재 버전 표기가 다릅니다 (README.md: ${v_en:-없음}, README.ko.md: ${v_ko:-없음})"
 
+# 일본어·중국어 README는 요약판 — 버전 번호와 다른 언어판으로 가는 링크만 맞춘다
+summaries=0
+for f in README.ja.md README.zh-Hans.md README.zh-Hant.md; do
+  [[ -f $f ]] || { report "$f이 없습니다"; continue; }
+  summaries=$((summaries + 1))
+  grep -q "$v_en" "$f" || report "$f: 버전 ${v_en}이 README.md와 다릅니다"
+  for other in README.md README.ko.md README.ja.md README.zh-Hans.md README.zh-Hant.md; do
+    [[ $other == "$f" ]] && continue
+    grep -q "href=\"$other\"" "$f" || report "$f: $other 링크가 없습니다"
+    grep -q "href=\"$f\"" "$other" || report "$other: $f 링크가 없습니다"
+  done
+done
+
 if (( fail )); then echo "  영어·한국어 문서를 함께 고치세요 (CONTRIBUTING.md)" >&2; exit 1; fi
-echo "✓ 문서 ${pairs}쌍 구조 일치 (영어 · 한국어)"
+echo "✓ 문서 ${pairs}쌍 구조 일치 (영어 · 한국어), README 요약판 ${summaries}개 (日本語 · 简体中文 · 繁體中文)"

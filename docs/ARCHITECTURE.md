@@ -150,7 +150,7 @@ No external libraries are used for features (Sparkle is the only dependency, for
 polymac/
 ├─ Package.swift              # module core (SwiftPM) — swift build / swift test
 ├─ Sources/
-│  ├─ PolyMacL10n/            # picks the UI language L("한국어", "English") — no dependencies
+│  ├─ PolyMacL10n/            # picks the UI language L("한국어", "English"); Japanese and Chinese from catalogs keyed by the English text — no dependencies
 │  ├─ PolyMacCore/              # module contract, registry, shared services
 │  ├─ WindowModule/
 │  ├─ CaptureModule/

@@ -31,6 +31,7 @@ scripts/ocr-bench.sh
 | symbols | Brackets, corner brackets, dashes, middle dots, ellipses |
 | code-indent, yaml-indent | Indented code and YAML (monospaced font) — measures whitespace preservation |
 | ko-list | An indented Korean list (proportional font) |
+| ja-body, zh-hans-body, zh-hant-body | Japanese, Simplified Chinese and Traditional Chinese body text |
 
 To measure real captures, put a PNG and an expected-text TXT with the same name in the same folder. Don't commit captures containing personal information; keep them in another folder and measure there.
 
@@ -102,6 +103,7 @@ layout exact    10/17          8/17           8/17           9/17           10/1
 | English first | Almost no Korean is read (62% error rate) | Language order is not changed |
 | Custom word list (customWords) | No effect on Korean recognition | Not added |
 | Reading again in English to restore letter case | Doesn't fix `macOS` and adds new errors like `the` → `The` | Not added |
+| Adding Japanese and Chinese to the language list | Vision reads with the first language's model: with Korean first, Japanese and Chinese return nothing (100% error); with Japanese first or automatic detection, Korean mixed with English breaks (mixed-ko-en) | Two passes: Korean → English first, and only when no Hangul is found, again with Japanese and Chinese (Simplified, Traditional) detected automatically, used only if kana or Han characters come out. ja, zh-hans and zh-hant 100% → 0%, Korean and English samples unchanged, average 80 → about 100 ms (English-only images read twice). The second pass uses a new request handler: reusing the first one once hung inside Vision |
 | Turning off language correction | Some symbols improve, but less than upscale + cleanup | Kept on |
 | Preserving indentation ("keep lines as shown") | Rebuilds leading spaces from the line box's left edge ÷ the width of one character. layout CER 5.84% → 2.60% (code-indent 22.1→8.3%, yaml-indent 26.7→5.0%, ko-list 13.6→9.1%), samples without indentation unchanged | Adopted (default). Differences under two spaces are dropped, and it is skipped when lines sit side by side (multiple columns, tables). With proportional fonts spaces are narrow, so the count isn't exact |
 

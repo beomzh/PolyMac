@@ -47,7 +47,7 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APP/Contents/Frameworks"
 cp "$BIN_DIR/PolyMac" "$APP/Contents/MacOS/PolyMac"
 cp App/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
-cp -R App/en.lproj "$APP/Contents/Resources/"   # 영어 시스템에서 권한 안내·단축어 동작 문구   # 아이콘 다시 만들기: swift scripts/make-icon.swift
+cp -R App/*.lproj "$APP/Contents/Resources/"   # 영어·일본어·중국어 시스템에서 권한 안내·단축어 동작·Finder 메뉴 문구   # 아이콘 다시 만들기: swift scripts/make-icon.swift
 # 라이선스 — PolyMac(MIT)과 함께 넣는 Sparkle(MIT, bsdiff 등 BSD 포함)은 배포본에 저작권 고지를 함께 넣어야 한다
 cp LICENSE "$APP/Contents/Resources/LICENSE.txt"
 cp THIRD_PARTY_NOTICES.md "$APP/Contents/Resources/THIRD_PARTY_NOTICES.md"

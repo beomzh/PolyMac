@@ -214,7 +214,7 @@ final class PinPanel: NSPanel {
         let image = image
         Task { @MainActor [weak self] in
             var configuration = ImageAnalyzer.Configuration([.text, .machineReadableCode])
-            configuration.locales = ["ko-KR", "en-US"]
+            configuration.locales = ["ko-KR", "en-US", "ja-JP", "zh-Hans", "zh-Hant"]
             let analysis: ImageAnalysis
             do {
                 analysis = try await PinPanel.analyzer.analyze(image, orientation: .up, configuration: configuration)

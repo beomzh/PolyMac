@@ -94,9 +94,16 @@ Date: YYYY-MM-DD HH:MM
 
 - 모든 Markdown 문서는 두 파일로 둔다: `NAME.md`는 영어(기본), `NAME.ko.md`는 한국어. 내용은 같고 언어만 다르다. `README`, `CONTRIBUTING`, `THIRD_PARTY_NOTICES`, `App/README`, `docs/` 전체가 해당한다.
 - 예외: `CHANGELOG.md`(한 파일, 0.2.15부터 영어)와 PR 템플릿(영어만).
+- `README.ja.md`, `README.zh-Hans.md`, `README.zh-Hant.md`는 일본어·중국어 요약판이다(전체 번역 아님). 현재 버전과 기능 목록은 `README.md`와 맞춘다.
 - 한쪽을 고치면 **같은 PR에서 다른 쪽도** 고친다. 기능·단축키·메뉴 이름·버전 표기·링크 모두 해당한다.
 - 각 파일은 제목 아래에 언어 전환 줄이 있다. 한국어 문서 안의 링크는 다른 문서의 한국어판(`SECURITY.ko.md`)을, 영어 문서 안의 링크는 영어판을 가리킨다.
 - 영어판의 메뉴·버튼 이름은 앱의 영어 표시(`L("한국어", "English")`의 두 번째 값, `App/en.lproj`)와 맞춘다.
+
+## 화면 문구는 다섯 언어로
+
+- 화면 문구는 쓰는 자리에 `L("한국어", "English")`로 적는다. 일본어·중국어 간체·번체는 영어 문구를 키로 `Sources/PolyMacL10n/Catalog+ja.swift`, `Catalog+zhHans.swift`, `Catalog+zhHant.swift`에서 찾는다. 보간 `\(n)`은 키에서 차례대로 `{0}`, `{1}`…이 된다.
+- 문구를 더하거나 고치면 번역도 더한다. `scripts/check-l10n.py`(`scripts/test.sh`가 실행)가 빠지거나 비었거나 안 쓰는 번역이 있으면 실패하고, `scripts/check-l10n.py --missing`이 채울 줄을 보여 준다.
+- macOS가 보여 주는 문구(권한 안내, 단축어 동작, Finder 서비스 이름)는 `App/<언어>.lproj`에 있다.
 - `scripts/check-docs.sh`가 두 파일의 제목 구조, bash 명령, 링크한 파일, 언어 전환 줄이 같은지, 두 README의 현재 버전이 같은지 확인한다. `scripts/test.sh`가 먼저 실행하므로 한쪽만 고치면 테스트가 실패한다. 문장 내용까지는 보지 못하니 고친 문단은 직접 맞춘다.
 
 ## 꼭 지킬 것

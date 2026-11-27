@@ -67,6 +67,7 @@ if args.contains("--tables") {
 // 다른 설정을 시험하려면 여기에 더한다
 let configs: [Config] = [
     Config(name: "app", options: OCROptions()),
+    Config(name: "ko-en-only", options: option { $0.fallbackLanguages = [] }),
     Config(name: "0.1.0", options: option { $0.upscale = 1; $0.cleanup = false }),
     Config(name: "no-upscale", options: option { $0.upscale = 1 }),
     Config(name: "no-cleanup", options: option { $0.cleanup = false }),
@@ -78,9 +79,14 @@ let names = (try FileManager.default.contentsOfDirectory(atPath: folder.path))
     .filter { FileManager.default.fileExists(atPath: folder.appendingPathComponent($0 + ".txt").path) }
 guard !names.isEmpty else { print("샘플이 없습니다: \(folder.path)"); exit(1) }
 
-// Vision 모델을 처음 불러오는 시간이 첫 설정에만 붙지 않게 한 번 먼저 돌린다
-if let first = names.first,
-   let warm = NSImage(contentsOf: folder.appendingPathComponent(first + ".png"))?.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+// Vision 모델을 처음 불러오는 시간이 첫 설정에만 붙지 않게 한 번 먼저 돌린다.
+// 한글 없는 샘플도 하나 — 일본어·중국어 두 번째 읽기 모델까지 미리 불러 둔다
+let noHangul = names.first { name in
+    let text = (try? String(contentsOf: folder.appendingPathComponent(name + ".txt"), encoding: .utf8)) ?? ""
+    return !text.unicodeScalars.contains { (0xAC00...0xD7A3).contains($0.value) }
+}
+for name in [names.first, noHangul].compactMap({ $0 }) {
+    guard let warm = NSImage(contentsOf: folder.appendingPathComponent(name + ".png"))?.cgImage(forProposedRect: nil, context: nil, hints: nil) else { continue }
     for config in configs { _ = try await TextRecognizer.recognize(warm, options: config.options, lineMode: .keep) }
 }
 

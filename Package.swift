@@ -16,6 +16,7 @@ let package = Package(
         .binaryTarget(name: "Sparkle", path: "Vendor/Sparkle/Sparkle.xcframework"),
         .target(name: "PolyMacCore", dependencies: ["PolyMacL10n"]),
         .target(name: "UninstallerCore", dependencies: ["PolyMacL10n"]),
+        .testTarget(name: "PolyMacL10nTests", dependencies: ["PolyMacL10n"]),
         .testTarget(name: "PolyMacCoreTests", dependencies: ["PolyMacCore"]),
         .testTarget(name: "NormalizeModuleTests", dependencies: ["NormalizeModule"]),
         .testTarget(name: "OrganizeModuleTests", dependencies: ["OrganizeModule"]),
