@@ -2,6 +2,9 @@
 
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
+[2026-11-27 13:48]
+- [Changed] - CHANGELOG.md: record the PR #50 (feat/ja-zh-languages) push
+
 [2026-11-27 13:47]
 - [Added] - Sources/PolyMacL10n/L10n.swift `AppLanguage`, `LString`, `L10n.matching`: Japanese, Simplified Chinese and Traditional Chinese display languages; the English literal is the catalog key (interpolations become {0}, {1}), so the 817 L("한국어", "English") call sites stay as they are, and "Use system language" now follows the first macOS language among the five
 - [Added] - Sources/PolyMacL10n/Catalog+ja.swift, Catalog+zhHans.swift, Catalog+zhHant.swift: translations of all 756 on-screen strings
