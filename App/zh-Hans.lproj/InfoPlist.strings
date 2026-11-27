@@ -1,0 +1,5 @@
+/* macOS 请求权限时显示的文字 — 简体中文 */
+"NSAppleEventsUsageDescription" = "读取当前 Finder 文件夹和所选项目，以便在此处打开终端并复制路径。";
+"NSDesktopFolderUsageDescription" = "修复桌面上被拆分的韩文文件名，并应用你的整理规则。";
+"NSDocumentsFolderUsageDescription" = "当整理规则将文件移到“文稿”时使用。";
+"NSDownloadsFolderUsageDescription" = "修复“下载”中被拆分的韩文文件名，并应用你的整理规则。";

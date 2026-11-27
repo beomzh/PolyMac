@@ -7,6 +7,9 @@ cd "$(dirname "$0")/.."
 # 영어·한국어 README가 함께 고쳐졌는지 (빠름, Xcode 불필요)
 scripts/check-docs.sh
 
+# 화면 문구마다 일본어·중국어(간체·번체) 번역이 있는지 (빠름, Xcode 불필요)
+scripts/check-l10n.py
+
 # 빌드 번호는 버전이 오를 때만 커진다 (Sparkle 업데이트 판단) — 0.2.13까지 쓴 커밋 수(43)보다 커야 한다
 for pair in "0.2.18:2018" "1.0.0:1000000" "0.3.0-beta.1:2999" "0.2.14:2014"; do
     [[ "$(scripts/build-number.sh "${pair%%:*}")" == "${pair##*:}" ]] || { echo "✗ build-number.sh ${pair%%:*} ≠ ${pair##*:}" >&2; exit 1; }

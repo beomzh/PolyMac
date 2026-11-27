@@ -31,4 +31,13 @@ import Testing
         #expect(TranslationDirection.target(source: "en", preferred: "en") == "ko")
         #expect(TranslationDirection.target(source: "ko", preferred: "ko-KR") == "en")
     }
+
+    @Test func chineseKeepsItsScript() {
+        #expect(TranslationDirection.language(of: "zh-Hant-TW") == "zh-Hant")
+        #expect(TranslationDirection.language(of: "zh-TW") == "zh-Hant")
+        #expect(TranslationDirection.language(of: "zh-Hans-CN") == "zh-Hans")
+        #expect(TranslationDirection.language(of: "ja-JP") == "ja")
+        #expect(TranslationDirection.target(source: "en", preferred: "zh-Hant") == "zh-Hant")
+        #expect(TranslationDirection.target(source: "zh-Hans", preferred: "zh-Hant") == "en")
+    }
 }

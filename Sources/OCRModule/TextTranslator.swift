@@ -24,9 +24,15 @@ public enum TranslationDirection {
         return base(preferred) == "en" ? "ko" : "en"
     }
 
-    /// 시스템 첫 번째 언어 ("ko-KR" → "ko")
+    /// 시스템 첫 번째 언어 ("ko-KR" → "ko"). 중국어는 글자까지 ("zh-TW" → "zh-Hant", "zh-CN" → "zh-Hans")
     public static var preferred: String {
-        base(Locale.preferredLanguages.first ?? "en")
+        language(of: Locale.preferredLanguages.first ?? "en")
+    }
+
+    static func language(of identifier: String) -> String {
+        let code = base(identifier)
+        guard code == "zh" else { return code }
+        return Locale.Language(identifier: identifier).maximalIdentifier.contains("Hant") ? "zh-Hant" : "zh-Hans"
     }
 
     private static func base(_ identifier: String) -> String {

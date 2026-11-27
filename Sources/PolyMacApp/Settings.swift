@@ -355,6 +355,9 @@ private struct LanguagePane: View {
         case .system: return L("시스템 설정 따르기", "Use system language")
         case .ko: return "한국어"
         case .en: return "English"
+        case .ja: return "日本語"
+        case .zhHans: return "简体中文"
+        case .zhHant: return "繁體中文"
         }
     }
 
@@ -366,8 +369,8 @@ private struct LanguagePane: View {
                 }
                 .pickerStyle(.radioGroup)
             } footer: {
-                Text(L("바로 바뀝니다. \"시스템 설정 따르기\"는 macOS 첫 번째 언어가 한국어면 한국어, 아니면 영어입니다.",
-                       "Applies immediately. \"Use system language\" picks Korean when it is your first macOS language, otherwise English."))
+                Text(L("바로 바뀝니다. \"시스템 설정 따르기\"는 macOS 첫 번째 언어를 씁니다. 목록에 없는 언어면 영어입니다.",
+                       "Applies immediately. \"Use system language\" uses your first macOS language, or English if it is not in this list."))
                     .font(.caption).foregroundStyle(.secondary)
             }
         }

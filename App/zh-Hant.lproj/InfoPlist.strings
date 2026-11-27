@@ -1,0 +1,5 @@
+/* macOS 要求權限時顯示的文字 — 繁體中文 */
+"NSAppleEventsUsageDescription" = "讀取目前的 Finder 資料夾和所選項目，以便在此處打開終端機並複製路徑。";
+"NSDesktopFolderUsageDescription" = "修復桌面上被拆分的韓文檔案名，並套用你的整理規則。";
+"NSDocumentsFolderUsageDescription" = "當整理規則將檔案移到「文件」時使用。";
+"NSDownloadsFolderUsageDescription" = "修復「下載項目」中被拆分的韓文檔案名，並套用你的整理規則。";

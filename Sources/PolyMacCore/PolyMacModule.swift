@@ -29,9 +29,9 @@ public struct ModuleDescriptor: Sendable {
     public let enabledByDefault: Bool
 
     /// 현재 언어의 이름
-    public var displayName: String { L(name.ko, name.en) }
+    public var displayName: String { L10n.text(ko: name.ko, en: name.en) }
     /// 환경 설정에 보여 줄 한 줄 설명
-    public var summary: String { L(about.ko, about.en) }
+    public var summary: String { L10n.text(ko: about.ko, en: about.en) }
 
     public init(
         id: String,

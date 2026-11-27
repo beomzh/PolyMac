@@ -31,6 +31,9 @@ let samples: [Sample] = [
     Sample(name: "low-contrast", text: "회색 보조 설명: 기능이 꺼져 있으면 저장만 됩니다.", size: 12, foreground: gray, background: NSColor(white: 0.93, alpha: 1)),
     Sample(name: "symbols", text: "괄호 [대괄호] {중괄호} 「낫표」 — 줄표 · 가운뎃점 … 말줄임 ※ 참고"),
     Sample(name: "address", text: "서울특별시 강남구 테헤란로 152, 강남파이낸스센터 20층"),
+    Sample(name: "ja-body", text: "クリップボード履歴は暗号化して保存します。設定からいつでも消去できます。", font: "HiraginoSans-W3"),
+    Sample(name: "zh-hans-body", text: "剪贴板历史会加密保存。可以随时在设置中清除。", font: "PingFangSC-Regular"),
+    Sample(name: "zh-hant-body", text: "剪貼簿歷史會加密儲存。可以隨時在設定中清除。", font: "PingFangTC-Regular"),
     Sample(name: "english", text: "The quick brown fox jumps over the lazy dog. Version 2.4.1 (build 1187)", font: "HelveticaNeue"),
     // 큰 캡처 (약 2000×1700 px) — 정확도와 함께 키워 읽을 때 걸리는 시간을 본다
     Sample(name: "ko-long", text: (1...3).map { n in

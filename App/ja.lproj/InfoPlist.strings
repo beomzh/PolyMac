@@ -1,0 +1,5 @@
+/* macOS が権限を確認するときに表示する文言 — 日本語 */
+"NSAppleEventsUsageDescription" = "現在の Finder フォルダと選択した項目を読み取り、そこでターミナルを開いたりパスをコピーしたりします。";
+"NSDesktopFolderUsageDescription" = "デスクトップの分解された韓国語ファイル名を修正し、整理ルールを適用します。";
+"NSDocumentsFolderUsageDescription" = "整理ルールで書類フォルダにファイルを移動するときに使います。";
+"NSDownloadsFolderUsageDescription" = "ダウンロードの分解された韓国語ファイル名を修正し、整理ルールを適用します。";

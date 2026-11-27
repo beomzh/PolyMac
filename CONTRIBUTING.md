@@ -94,9 +94,16 @@ Example: `feat(organize): add source website condition`
 
 - Every Markdown document comes in two files: `NAME.md` in English (the default) and `NAME.ko.md` in Korean. They say the same thing in different languages. This covers `README`, `CONTRIBUTING`, `THIRD_PARTY_NOTICES`, `App/README` and everything in `docs/`.
 - Exceptions: `CHANGELOG.md` (one file; English from 0.2.15 on) and the PR template (English only).
+- `README.ja.md`, `README.zh-Hans.md` and `README.zh-Hant.md` are short summaries in Japanese and Chinese, not full translations. Keep their current version and feature list in step with `README.md`.
 - When you change one, change **the other in the same PR** — features, shortcuts, menu names, version numbers and links all count.
 - Each file starts with a language switch line under the title. Links in a Korean document point to the Korean version of other documents (`SECURITY.ko.md`), links in an English one to the English version.
 - Menu and button names in English documents match the app's English text (the second argument of `L("한국어", "English")`, `App/en.lproj`).
+
+## On-screen text in five languages
+
+- Write on-screen text where it is used as `L("한국어", "English")`. Japanese, Simplified Chinese and Traditional Chinese come from `Sources/PolyMacL10n/Catalog+ja.swift`, `Catalog+zhHans.swift` and `Catalog+zhHant.swift`, keyed by the English text; an interpolation `\(n)` becomes `{0}`, `{1}`… in the key, in order.
+- When you add or change a string, add its translations. `scripts/check-l10n.py` (run by `scripts/test.sh`) fails on a missing, empty or unused translation; `scripts/check-l10n.py --missing` prints the lines to fill in.
+- Text that macOS shows (permission prompts, Shortcuts actions, Finder service names) lives in `App/<language>.lproj`.
 - `scripts/check-docs.sh` checks that each pair has the same heading structure, the same bash commands, links to the same files and the language switch line, and that the two READMEs show the same current version. `scripts/test.sh` runs it first, so changing only one side fails the tests. It can't compare the sentences themselves, so line up the paragraphs you changed by hand.
 
 ## Must follow

@@ -2,6 +2,25 @@
 
 Development history, one entry per commit. For user-facing summaries see GitHub Releases; the rules are in docs/RELEASING.md. Entries before 0.2.15 are in Korean.
 
+[2026-11-27 13:48]
+- [Changed] - CHANGELOG.md: record the PR #50 (feat/ja-zh-languages) push
+
+[2026-11-27 13:47]
+- [Added] - Sources/PolyMacL10n/L10n.swift `AppLanguage`, `LString`, `L10n.matching`: Japanese, Simplified Chinese and Traditional Chinese display languages; the English literal is the catalog key (interpolations become {0}, {1}), so the 817 L("한국어", "English") call sites stay as they are, and "Use system language" now follows the first macOS language among the five
+- [Added] - Sources/PolyMacL10n/Catalog+ja.swift, Catalog+zhHans.swift, Catalog+zhHant.swift: translations of all 756 on-screen strings
+- [Added] - scripts/check-l10n.py: fails on a missing, empty or unused translation; run by scripts/test.sh
+- [Changed] - Sources/PolyMacCore/PolyMacModule.swift `ModuleDescriptor`: module names and summaries go through `L10n.text` so they are translated too
+- [Changed] - Sources/PolyMacApp/Settings.swift `LanguagePane`: 日本語, 简体中文 and 繁體中文 choices
+- [Added] - App/ja.lproj, App/zh-Hans.lproj, App/zh-Hant.lproj, App/Info.plist, scripts/build-app.sh: permission prompts, Shortcuts actions and Finder service names in Japanese and Chinese
+- [Changed] - Sources/OCRModule/TextRecognizer.swift `OCROptions.fallbackLanguages`: when the Korean-first pass finds no Hangul, read again with Japanese and Chinese detected automatically, because Vision reads only with the first language's model; Korean and English results are unchanged
+- [Changed] - Sources/CaptureModule/PinPanel.swift: Live Text on pins also reads Japanese and Chinese
+- [Changed] - Sources/OCRModule/TextTranslator.swift `TranslationDirection.preferred`: keeps zh-Hans or zh-Hant instead of plain zh
+- [Added] - scripts/make-ocr-samples.swift, Tests/OCRSamples: ja-body, zh-hans-body, zh-hant-body samples; Sources/OCRBench/main.swift: ko-en-only config and warm-up for the second pass
+- [Added] - Tests/PolyMacL10nTests, Tests/OCRModuleTests/TranslationDirectionTests.swift: language matching, catalog lookup with placeholders, English fallback, Chinese script
+- [Added] - README.ja.md, README.zh-Hans.md, README.zh-Hant.md: Japanese and Chinese summary READMEs, linked from README.md and README.ko.md; scripts/check-docs.sh checks their version and links
+- [Changed] - README.md, README.ko.md, CONTRIBUTING.md, CONTRIBUTING.ko.md, docs/OCR-BENCH.md, docs/OCR-BENCH.ko.md, docs/ARCHITECTURE.md, docs/ARCHITECTURE.ko.md: new languages, the translation rule and the two-pass OCR measurements
+- [Changed] - VERSION: 1.1.2
+
 [2026-11-16 17:39]
 - [Changed] - CHANGELOG.md: record the PR #49 (chore/1.1.0-release) push
 

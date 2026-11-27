@@ -8,6 +8,10 @@ import os
 public struct OCROptions: Sendable {
     /// 한국어가 앞이어야 한다 — 영어를 앞에 두면 한글을 거의 못 읽는다 (오류율 62%)
     public var languages = ["ko-KR", "en-US"]
+    /// 한글이 하나도 안 나오면 이 언어들로 한 번 더 읽는다 (언어 자동 판별). Vision은 첫 번째 언어 모델로 읽어서
+    /// 한국어가 앞이면 일본어·중국어를 아예 못 읽고, 일본어가 앞이거나 자동 판별이면 한글·영어 섞인 글을 망친다 —
+    /// 그래서 두 번에 나눈다. 빈 배열이면 한 번만 읽는다.
+    public var fallbackLanguages = ["ja-JP", "zh-Hans", "zh-Hant", "en-US"]
     public var languageCorrection = true
     /// 이미지를 이만큼 키워서 읽는다. 줄 첫 글자를 빠뜨리거나 기호를 잘못 읽는 일이 줄었다 (1 = 그대로).
     /// 이미 큰 캡처(upscaleMaxPixels 넘음)는 키우지 않는다 — 큰 글자엔 도움이 없고 시간만 든다 (2000×1870에서 +0.24초).
@@ -28,18 +32,23 @@ public enum TextRecognizer {
                                  lineMode: OCRLineMode = .current) async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
-                let textRequest = VNRecognizeTextRequest()
-                textRequest.recognitionLevel = .accurate
-                textRequest.recognitionLanguages = options.languages
-                textRequest.usesLanguageCorrection = options.languageCorrection
                 let barcodeRequest = VNDetectBarcodesRequest()
                 let factor = image.width * image.height <= options.upscaleMaxPixels ? options.upscale : 1
-                let handler = VNImageRequestHandler(cgImage: scaled(image, by: factor), options: [:])
+                let input = scaled(image, by: factor)
+                let handler = VNImageRequestHandler(cgImage: input, options: [:])
                 do {
-                    try handler.perform([textRequest, barcodeRequest])
+                    let first = textRequest(options.languages, automatic: false, options: options)
+                    try handler.perform([first, barcodeRequest])
+                    var observations = first.results ?? []
+                    if !options.fallbackLanguages.isEmpty, !containsHangul(observations) {
+                        let second = textRequest(options.fallbackLanguages, automatic: true, options: options)
+                        // 새 핸들러로 — 같은 핸들러에 자동 판별 요청을 이어 보내면 Vision 안에서 멈춘 적이 있다
+                        try VNImageRequestHandler(cgImage: input, options: [:]).perform([second])
+                        if let better = second.results, containsKanaOrHan(better) { observations = better }
+                    }
                     let codes = (barcodeRequest.results ?? []).compactMap(\.payloadStringValue)
                     // 기호 정리는 줄을 잇기 전에 — 이은 뒤에 하면 줄 맨 앞 글머리표가 줄 가운데로 와서 가운뎃점이 된다
-                    let lines = (textRequest.results ?? []).compactMap { observation in
+                    let lines = observations.compactMap { observation in
                         observation.topCandidates(1).first.map {
                             LineJoiner.Line(text: options.cleanup ? OCRCleanup.fixLine($0.string) : $0.string, box: observation.boundingBox)
                         }
@@ -50,6 +59,28 @@ public enum TextRecognizer {
                 } catch {
                     continuation.resume(throwing: error)
                 }
+            }
+        }
+    }
+
+    private static func textRequest(_ languages: [String], automatic: Bool, options: OCROptions) -> VNRecognizeTextRequest {
+        let request = VNRecognizeTextRequest()
+        request.recognitionLevel = .accurate
+        request.recognitionLanguages = languages
+        request.automaticallyDetectsLanguage = automatic
+        request.usesLanguageCorrection = options.languageCorrection
+        return request
+    }
+
+    static func containsHangul(_ observations: [VNRecognizedTextObservation]) -> Bool {
+        observations.contains { ($0.topCandidates(1).first?.string ?? "").unicodeScalars.contains { (0xAC00...0xD7A3).contains($0.value) || (0x3131...0x318E).contains($0.value) } }
+    }
+
+    /// 가나(일본어) 또는 한자(중국어·일본어)가 있는지
+    static func containsKanaOrHan(_ observations: [VNRecognizedTextObservation]) -> Bool {
+        observations.contains { observation in
+            (observation.topCandidates(1).first?.string ?? "").unicodeScalars.contains {
+                (0x3040...0x30FF).contains($0.value) || (0x4E00...0x9FFF).contains($0.value) || (0x3400...0x4DBF).contains($0.value)
             }
         }
     }

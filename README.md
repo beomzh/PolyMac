@@ -1,6 +1,6 @@
 <p align="center"><img src="docs/assets/logo.png" width="128" alt="PolyMac logo"></p>
 
-<p align="center"><b>English</b> · <a href="README.ko.md">한국어</a></p>
+<p align="center"><b>English</b> · <a href="README.ko.md">한국어</a> · <a href="README.ja.md">日本語</a> · <a href="README.zh-Hans.md">简体中文</a> · <a href="README.zh-Hant.md">繁體中文</a></p>
 
 # PolyMac
 
@@ -52,7 +52,7 @@ Several apps = several menu bar icons, several permission prompts, shortcut conf
 |---|---|---|
 | **Window** | Shortcut window layout (½, ⅓, ¼, maximize, next display), snap by dragging to edges | Resident (light) |
 | **Capture** | Area/window/full capture, **pin on screen**, non-destructive markup (editable later) | Resident (waits for shortcuts only) |
-| **OCR** | Capture straight to text on the clipboard, mixed Korean/English, QR, URL and table recognition | Loaded when needed |
+| **OCR** | Capture straight to text on the clipboard, Korean, English, Japanese and Chinese, QR, URL and table recognition | Loaded when needed |
 | **Clipboard** | Clipboard history: search, pin, text, images and files, password apps excluded automatically | Resident (light) |
 | **Finder** | Real `⌘X` cut, open Terminal here, open in editor, copy path, send to a chosen folder | Resident (listens for events only) |
 | **Normalize** | **Automatically fixes decomposed (NFD) Korean filenames**, converts copied text to NFC, Windows-friendly zip | Resident (FSEvents watch only) |
@@ -105,7 +105,7 @@ Then run `scripts/build-app.sh --install` → [reset permissions](#troubleshooti
 | `⌃⌥⌘→` / `⌃⌥⌘←` | Next / previous display |
 | `⌥⌘Z` | Undo window position |
 | `⌃⇧1` | Capture area → **editing toolbar** (box, arrow, pen, text, mosaic, numbers, extract text, pin, save, copy) |
-| `⌃⇧2` | Select area → **extract text** → clipboard (Korean/English, QR) |
+| `⌃⇧2` | Select area → **extract text** → clipboard (Korean, English, Japanese, Chinese, QR) |
 | `⌃⇧3` | Capture area → **pin on screen** right away |
 | `⌃⇧4` | Clipboard image → pin on screen |
 | `⌃⇧5` | Clipboard image → **extract text** (works for images from other capture apps too) |
@@ -183,7 +183,7 @@ Copying something else after `⌘X` cancels the cut, and `⌘V` becomes a normal
 | Tab | Contents |
 |---|---|
 | Features | Turn each feature on or off (off unloads it from memory and releases its shortcuts), open at login, data folder |
-| Language | Use system language / 한국어 / English — changes immediately |
+| Language | Use system language / 한국어 / English / 日本語 / 简体中文 / 繁體中文 — changes immediately |
 | Notifications | Show notifications (off also hides permission and failure notices), position (bottom center, bottom left/right, screen center, top center, top left/right), display time (1–10 s, default 2 s — longer notices scale with it), text and background color — for each, "System" (follows light/dark mode, default) / 6 swatches / Custom (color panel, background can be transparent), font size (10–28 pt), maximum width (240–800 pt), padding — changes preview immediately, "Restore Defaults" |
 | Finder Tools | Choose the apps for Open Terminal Here and Open in Editor (same setting as the menu's Finder Tools › Terminal app/Editor app). You can choose even while the feature is off |
 | Korean Filenames | Add, remove, or turn off folders checked for decomposed Korean names; restore the defaults (Downloads, Desktop) |
@@ -293,7 +293,7 @@ When a log file (`*-log.txt`) passes 1 MB, it is renamed like `organize-log.1.tx
 | Core | Working | Module on/off, global shortcuts + **settings screen**, permission guidance, notices, open at login, Settings (features, language, shortcuts, permissions) | — |
 | Window | Working | Halves, ⅓, ⅔, quarters (shortcuts set by you), maximize, center, move between displays, undo, snap by dragging to edges (halves, maximize, quarters) | — |
 | Capture | Working | Area capture, window detection, magnifier and color copy, move/resize the area, editing toolbar (box, arrow, pen, text, mosaic, numbers), pins + re-editable markup, save, pin click-through, `⌘`-drag to export, re-pin the last 10 captures | - |
-| OCR | Working | Korean/English recognition, QR, NFC copy, clipboard image recognition, line-break handling (as shown, paragraphs, single line), small-text boost and symbol cleanup, accuracy benchmark, table recognition (macOS 26+, TSV and Markdown), Shortcuts actions (App Intents), `polymac://` integration (must be allowed), indentation kept, link open button, Live Text on pins, on-device translation (macOS 15+) | - |
+| OCR | Working | Korean, English, Japanese and Chinese recognition, QR, NFC copy, clipboard image recognition, line-break handling (as shown, paragraphs, single line), small-text boost and symbol cleanup, accuracy benchmark, table recognition (macOS 26+, TSV and Markdown), Shortcuts actions (App Intents), `polymac://` integration (must be allowed), indentation kept, link open button, Live Text on pins, on-device translation (macOS 15+) | - |
 | Clipboard | Working | Text (including long logs), image and file history, compact list + slide-out preview, search, source app, pinning, retention period (default 7 days) and count, password exclusion, per-app exclusion, encrypted storage, formatting (RTF) kept, paste as plain text, source tags, pin images on screen (`⌘↩`) | - |
 | Finder | Working | Cut (shortcut changeable), open Terminal (app selectable), open in editor (app selectable), copy path, right-click menu (Services), send to a chosen folder, pending-cut indicator | - |
 | Normalize | Working | Automatic NFC in Downloads and Desktop, right-click fix (including subfolders), Windows-friendly zip, fixing decomposed Korean in copied text | - |
@@ -463,7 +463,7 @@ Matches Spectacle's default shortcuts, so moving over feels the same.
 - Copy part of the text on a pin by dragging over it: right-click the pin › Select Text
 - (planned) Click the notice to correct the text and copy again
 - Settings
-  - Languages: recognized in the order Korean → English (putting English first makes it miss almost all Korean, so this isn't changed — [measurements](docs/OCR-BENCH.md))
+  - Languages: recognized in the order Korean → English (putting English first makes it miss almost all Korean, so this isn't changed — [measurements](docs/OCR-BENCH.md)). If no Korean is found, it reads once more with Japanese and Chinese (Simplified, Traditional) detected automatically; Vision reads with the first language only, so Korean first misses Japanese and Chinese entirely
   - Small-text boost: captures of 2 MP or less are read at 2× size, and `•` between Korean text becomes `·`, `•·•` becomes `…`
   - Line breaks (Settings › Text Recognition, or menu › Text Recognition (OCR) › Line breaks): Keep lines as shown (default) / Join into paragraphs (joins lines broken mid-sentence, as in PDFs and web pages, and breaks only between paragraphs) / Single line (for search boxes and translators). English end-of-line hyphens (`recog-` + `nition`) are joined.
   - Indentation kept: with "Keep lines as shown", leading spaces in code, YAML and lists are kept (most accurate with monospaced fonts. Differences under two spaces and text in several side-by-side columns are left as is — [measurements](docs/OCR-BENCH.md))

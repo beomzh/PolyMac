@@ -150,7 +150,7 @@ OCR 시간에 영역 선택과 클립보드 쓰기는 들어 있지 않다. 이�
 polymac/
 ├─ Package.swift              # 모듈 코어 (SwiftPM) — swift build / swift test
 ├─ Sources/
-│  ├─ PolyMacL10n/            # 화면 문구 언어 고르기 L("한국어", "English") — 의존성 없음
+│  ├─ PolyMacL10n/            # 화면 문구 언어 고르기 L("한국어", "English"), 일본어·중국어는 영어 문구를 키로 한 번역표 — 의존성 없음
 │  ├─ PolyMacCore/              # 모듈 계약, 레지스트리, 공유 서비스
 │  ├─ WindowModule/
 │  ├─ CaptureModule/
